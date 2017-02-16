@@ -16,7 +16,6 @@ namespace Tests.QueryDsl.Geo.DistanceRange
 				gte = "200.0km",
 				lt = "400.0mi",
 				lte = "400.0mi",
-				distance_type = "arc",
 				optimize_bbox = "indexed",
 				validation_method = "strict",
 				_name = "named_query",
@@ -34,7 +33,6 @@ namespace Tests.QueryDsl.Geo.DistanceRange
 			Boost = 1.1,
 			Name = "named_query",
 			Field = Infer.Field<Project>(p=>p.Location),
-			DistanceType = GeoDistanceType.Arc,
 			GreaterThanOrEqualTo = Nest.Distance.Kilometers(200),
 			GreaterThan = Nest.Distance.Kilometers(200),
 			LessThan = Nest.Distance.Miles(400),
@@ -49,7 +47,6 @@ namespace Tests.QueryDsl.Geo.DistanceRange
 				.Boost(1.1)
 				.Name("named_query")
 				.Field(p=>p.Location)
-				.DistanceType(GeoDistanceType.Arc)
 				.GreaterThanOrEqualTo(200, DistanceUnit.Kilometers)
 				.GreaterThan(200, DistanceUnit.Kilometers)
 				.Location(new GeoLocation(40, -70))

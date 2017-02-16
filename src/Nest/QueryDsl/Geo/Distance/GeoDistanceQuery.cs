@@ -16,9 +16,6 @@ namespace Nest
 		[JsonProperty("optimize_bbox")]
 		GeoOptimizeBBox? OptimizeBoundingBox { get; set; }
 
-		[JsonProperty("distance_type")]
-		GeoDistanceType? DistanceType { get; set; }
-
 		[Obsolete("Deprecated. Use ValidationMethod")]
 		[JsonProperty("coerce")]
 		bool? Coerce { get; set; }
@@ -38,7 +35,6 @@ namespace Nest
 		public GeoLocation Location { get; set; }
 		public Distance Distance { get; set; }
 		public GeoOptimizeBBox? OptimizeBoundingBox { get; set; }
-		public GeoDistanceType? DistanceType { get; set; }
 
 		[Obsolete("Deprecated. Use ValidationMethod")]
 		public bool? Coerce { get; set; }
@@ -61,7 +57,6 @@ namespace Nest
 		protected override bool Conditionless => GeoDistanceQuery.IsConditionless(this);
 		GeoLocation IGeoDistanceQuery.Location { get; set; }
 		Distance IGeoDistanceQuery.Distance { get; set; }
-		GeoDistanceType? IGeoDistanceQuery.DistanceType { get; set; }
 		GeoOptimizeBBox? IGeoDistanceQuery.OptimizeBoundingBox { get; set; }
 		bool? IGeoDistanceQuery.Coerce { get; set; }
 		bool? IGeoDistanceQuery.IgnoreMalformed { get; set; }
@@ -76,8 +71,6 @@ namespace Nest
 		public GeoDistanceQueryDescriptor<T> Distance(double distance, DistanceUnit unit) => Assign(a => a.Distance = new Distance(distance, unit));
 
 		public GeoDistanceQueryDescriptor<T> Optimize(GeoOptimizeBBox optimize) => Assign(a => a.OptimizeBoundingBox = optimize);
-
-		public GeoDistanceQueryDescriptor<T> DistanceType(GeoDistanceType type) => Assign(a => a.DistanceType = type);
 
 		[Obsolete("Deprecated. Use ValidationMethod(GeoValidationMethod? validation)")]
 		public GeoDistanceQueryDescriptor<T> Coerce(bool? coerce = true) => Assign(a => a.Coerce = coerce);
