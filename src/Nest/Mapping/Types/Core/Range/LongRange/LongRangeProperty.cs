@@ -1,10 +1,8 @@
-using System;
-using Elasticsearch.Net;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface ILongRangeProperty : IRangeProperty { }
 
 	public class LongRangeProperty : RangePropertyBase, ILongRangeProperty

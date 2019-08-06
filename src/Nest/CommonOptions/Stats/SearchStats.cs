@@ -1,47 +1,47 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class SearchStats
 	{
-		[JsonProperty(PropertyName = "open_contexts")]
-		public long OpenContexts { get; set; }
-
-		[JsonProperty(PropertyName = "fetch_current")]
+		[DataMember(Name ="fetch_current")]
 		public long FetchCurrent { get; set; }
 
-		[JsonProperty(PropertyName = "fetch_time_in_millis")]
+		[DataMember(Name ="fetch_time_in_millis")]
 		public long FetchTimeInMilliseconds { get; set; }
 
-		[JsonProperty(PropertyName = "fetch_total")]
+		[DataMember(Name ="fetch_total")]
 		public long FetchTotal { get; set; }
 
-		[JsonProperty(PropertyName = "query_current")]
+		[DataMember(Name ="open_contexts")]
+		public long OpenContexts { get; set; }
+
+		[DataMember(Name ="query_current")]
 		public long QueryCurrent { get; set; }
 
-		[JsonProperty(PropertyName = "query_time_in_millis")]
+		[DataMember(Name ="query_time_in_millis")]
 		public long QueryTimeInMilliseconds { get; set; }
 
-		[JsonProperty(PropertyName = "query_total")]
+		[DataMember(Name ="query_total")]
 		public long QueryTotal { get; set; }
 
-		[JsonProperty(PropertyName = "scroll_current")]
+		[DataMember(Name ="scroll_current")]
 		public long ScrollCurrent { get; set; }
 
-		[JsonProperty(PropertyName = "scroll_time_in_millis")]
+		[DataMember(Name ="scroll_time_in_millis")]
 		public long ScrollTimeInMilliseconds { get; set; }
 
-		[JsonProperty(PropertyName = "scroll_total")]
+		[DataMember(Name ="scroll_total")]
 		public long ScrollTotal { get; set; }
 
-		[JsonProperty(PropertyName = "suggest_current")]
+		[DataMember(Name ="suggest_current")]
 		public long SuggestCurrent { get; set; }
 
-		[JsonProperty(PropertyName = "suggest_time_in_millis")]
+		[DataMember(Name ="suggest_time_in_millis")]
 		public long SuggestTimeInMilliseconds { get; set; }
 
-		[JsonProperty(PropertyName = "suggest_total")]
+		[DataMember(Name ="suggest_total")]
 		public long SuggestTotal { get; set; }
 	}
 }

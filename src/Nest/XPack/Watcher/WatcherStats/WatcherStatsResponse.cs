@@ -1,34 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonObject]
-	public interface IWatcherStatsResponse : IResponse
+	public class WatcherStatsResponse : ResponseBase
 	{
-		[JsonProperty("watcher_state")]
-		WatcherState WatcherState { get; }
+		[DataMember(Name ="cluster_name")]
+		public string ClusterName { get; internal set; }
 
-		[JsonProperty("watch_count")]
-		long WatchCount { get; }
+		[DataMember(Name ="manually_stopped")]
+		public bool ManuallyStopped { get; internal set; }
 
-		[JsonProperty("execution_thread_pool")]
-		ExecutionThreadPool ExecutionThreadPool { get; }
-
-		[JsonProperty("current_watches")]
-		IReadOnlyCollection<WatchRecordStats> CurrentWatches { get; }
-
-		[JsonProperty("queued_watches")]
-		IReadOnlyCollection<WatchRecordQueuedStats> QueuedWatches { get; }
-
-		[JsonProperty("manually_stopped")]
-		bool ManuallyStopped { get; }
+		[DataMember(Name ="stats")]
+		public IReadOnlyCollection<WatcherNodeStats> Stats { get; internal set; } = EmptyReadOnly<WatcherNodeStats>.Collection;
 	}
 
-	[JsonConverter(typeof(StringEnumConverter))]
+	public class WatcherNodeStats
+	{
+		[DataMember(Name ="current_watches")]
+		public IReadOnlyCollection<WatchRecordStats> CurrentWatches { get; internal set; } = EmptyReadOnly<WatchRecordStats>.Collection;
+
+		[DataMember(Name ="execution_thread_pool")]
+		public ExecutionThreadPool ExecutionThreadPool { get; internal set; }
+
+		[DataMember(Name ="queued_watches")]
+		public IReadOnlyCollection<WatchRecordQueuedStats> QueuedWatches { get; internal set; } = EmptyReadOnly<WatchRecordQueuedStats>.Collection;
+
+		[DataMember(Name ="watch_count")]
+		public long WatchCount { get; internal set; }
+
+		[DataMember(Name ="watcher_state")]
+		public WatcherState WatcherState { get; internal set; }
+	}
+
+	[StringEnum]
 	public enum WatcherState
 	{
 		[EnumMember(Value = "stopped")]
@@ -44,53 +52,38 @@ namespace Nest
 		Stopping,
 	}
 
-	public class WatcherStatsResponse : ResponseBase, IWatcherStatsResponse
-	{
-		public WatcherState WatcherState { get; internal set; }
-
-		public long WatchCount { get; internal set; }
-
-		public ExecutionThreadPool ExecutionThreadPool { get; internal set; }
-
-		public IReadOnlyCollection<WatchRecordStats> CurrentWatches { get; internal set; }
-
-		public IReadOnlyCollection<WatchRecordQueuedStats> QueuedWatches { get; internal set; }
-
-		public bool ManuallyStopped { get; internal set; }
-	}
-
 	public class WatchRecordQueuedStats
 	{
-		[JsonProperty("watch_id")]
-		public string WatchId { get; internal set; }
-
-		[JsonProperty("watch_record_id")]
-		public string WatchRecordId { get; internal set; }
-
-		[JsonProperty("triggered_time")]
-		public DateTimeOffset? TriggeredTime { get; internal set; }
-
-		[JsonProperty("execution_time")]
+		[DataMember(Name ="execution_time")]
 		public DateTimeOffset? ExecutionTime { get; internal set; }
 
+		[DataMember(Name ="triggered_time")]
+		public DateTimeOffset? TriggeredTime { get; internal set; }
+
+		[DataMember(Name ="watch_id")]
+		public string WatchId { get; internal set; }
+
+		[DataMember(Name ="watch_record_id")]
+		public string WatchRecordId { get; internal set; }
 	}
+
 	public class WatchRecordStats : WatchRecordQueuedStats
 	{
-		[JsonProperty("execution_phase")]
+		[DataMember(Name ="execution_phase")]
 		public ExecutionPhase? ExecutionPhase { get; internal set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class ExecutionThreadPool
 	{
-		[JsonProperty("queue_size")]
-		public long QueueSize { get; internal set; }
-
-		[JsonProperty("max_size")]
+		[DataMember(Name ="max_size")]
 		public long MaxSize { get; internal set; }
+
+		[DataMember(Name ="queue_size")]
+		public long QueueSize { get; internal set; }
 	}
 
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum ExecutionPhase
 	{
 		[EnumMember(Value = "awaits_execution")]

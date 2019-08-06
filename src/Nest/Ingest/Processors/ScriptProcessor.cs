@@ -1,49 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	/// <summary>
-	/// Allows inline, stored, and file scripts to be executed within ingest pipelines.
+	/// Allows inline and stored scripts to be executed within ingest pipelines.
 	/// </summary>
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ProcessorJsonConverter<ScriptProcessor>))]
+	[InterfaceDataContract]
 	public interface IScriptProcessor : IProcessor
 	{
 		/// <summary>
-		/// The scripting language. Defaults to painless
-		/// </summary>
-		[JsonProperty("lang")]
-		string Lang { get; set; }
-
-		/// <summary>
-		/// The script file to refer to
-		/// </summary>
-		[JsonProperty("file")]
-		string File { get; set; }
-
-		/// <summary>
 		/// The stored script id to refer to
 		/// </summary>
-		[JsonProperty("id")]
+		[DataMember(Name ="id")]
 		string Id { get; set; }
 
 		/// <summary>
-		/// An inline script to be executed
+		/// The scripting language. Defaults to painless
 		/// </summary>
-		[JsonProperty("inline")]
-		string Inline { get; set; }
+		[DataMember(Name ="lang")]
+		string Lang { get; set; }
 
 		/// <summary>
 		/// Parameters for the script
 		/// </summary>
-		[JsonProperty("params")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, object>))]
+		[DataMember(Name ="params")]
+		[JsonFormatter(typeof(VerbatimDictionaryInterfaceKeysFormatter<string, object>))]
 		Dictionary<string, object> Params { get; set; }
+
+		/// <summary>
+		/// An inline script to be executed
+		/// </summary>
+		[DataMember(Name ="source")]
+		string Source { get; set; }
 	}
 
 	/// <summary>
@@ -51,7 +42,10 @@ namespace Nest
 	/// </summary>
 	public class ScriptProcessor : ProcessorBase, IScriptProcessor
 	{
-		protected override string Name => "script";
+		/// <summary>
+		/// The stored script id to refer to
+		/// </summary>
+		public string Id { get; set; }
 
 		/// <summary>
 		/// The scripting language. Defaults to painless
@@ -59,24 +53,14 @@ namespace Nest
 		public string Lang { get; set; }
 
 		/// <summary>
-		/// The script file to refer to
-		/// </summary>
-		public string File { get; set; }
-
-		/// <summary>
-		/// The stored script id to refer to
-		/// </summary>
-		public string Id { get; set; }
-
-		/// <summary>
-		/// An inline script to be executed
-		/// </summary>
-		public string Inline { get; set; }
-
-		/// <summary>
 		/// Parameters for the script
 		/// </summary>
 		public Dictionary<string, object> Params { get; set; }
+
+		/// <summary> An inline script to be executed </summary>
+		public string Source { get; set; }
+
+		protected override string Name => "script";
 	}
 
 	/// <summary>
@@ -86,42 +70,35 @@ namespace Nest
 		: ProcessorDescriptorBase<ScriptProcessorDescriptor, IScriptProcessor>, IScriptProcessor
 	{
 		protected override string Name => "script";
-
+		string IScriptProcessor.Id { get; set; }
 		string IScriptProcessor.Lang { get; set; }
-		string IScriptProcessor.File{ get; set; }
-		string IScriptProcessor.Id{ get; set; }
-		string IScriptProcessor.Inline { get; set; }
 		Dictionary<string, object> IScriptProcessor.Params { get; set; }
+		string IScriptProcessor.Source { get; set; }
 
 		/// <summary>
 		/// The scripting language. Defaults to painless
 		/// </summary>
-		public ScriptProcessorDescriptor Lang(string lang) => Assign(a => a.Lang = lang);
-
-		/// <summary>
-		/// The script file to refer to
-		/// </summary>
-		public ScriptProcessorDescriptor File(string file) => Assign(a => a.File = file);
+		public ScriptProcessorDescriptor Lang(string lang) => Assign(lang, (a, v) => a.Lang = v);
 
 		/// <summary>
 		/// The stored script id to refer to
 		/// </summary>
-		public ScriptProcessorDescriptor Id(string id) => Assign(a => a.Id = id);
+		public ScriptProcessorDescriptor Id(string id) => Assign(id, (a, v) => a.Id = v);
 
 		/// <summary>
 		/// An inline script to be executed
 		/// </summary>
-		public ScriptProcessorDescriptor Inline(string inline) => Assign(a => a.Inline = inline);
+		public ScriptProcessorDescriptor Source(string source) => Assign(source, (a, v) => a.Source = v);
 
 		/// <summary>
 		/// Parameters for the script
 		/// </summary>
-		public ScriptProcessorDescriptor Params(Dictionary<string, object> scriptParams) => Assign(a => a.Params = scriptParams);
+		public ScriptProcessorDescriptor Params(Dictionary<string, object> scriptParams) => Assign(scriptParams, (a, v) => a.Params = v);
 
 		/// <summary>
 		/// Parameters for the script
 		/// </summary>
 		public ScriptProcessorDescriptor Params(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> paramsSelector) =>
-			Assign(a => a.Params = paramsSelector?.Invoke(new FluentDictionary<string, object>()));
+			Assign(paramsSelector, (a, v) => a.Params = v?.Invoke(new FluentDictionary<string, object>()));
 	}
 }

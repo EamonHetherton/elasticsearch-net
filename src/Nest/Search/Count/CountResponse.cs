@@ -1,20 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface ICountResponse : IResponse
+	[DataContract]
+	public class CountResponse : ResponseBase
 	{
-		long Count { get; }
-		ShardsMetaData Shards { get; }
-	}
-
-	[JsonObject]
-	public class CountResponse : ResponseBase, ICountResponse
-	{
-		[JsonProperty(PropertyName = "count")]
+		[DataMember(Name ="count")]
 		public long Count { get; internal set; }
 
-		[JsonProperty(PropertyName = "_shards")]
-		public ShardsMetaData Shards { get; internal set; }
+		[DataMember(Name ="_shards")]
+		public ShardStatistics Shards { get; internal set; }
 	}
 }

@@ -1,13 +1,14 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(FuzzinessJsonConverter))]
+	[JsonFormatter(typeof(FuzzinessInterfaceFormatter))]
 	public interface IFuzziness
 	{
-		bool Auto { get;  }
-		int? EditDistance { get;  }
-		double? Ratio { get;  }
+		bool Auto { get; }
+		int? Low { get; }
+		int? High { get; }
+		int? EditDistance { get; }
+		double? Ratio { get; }
 	}
 }

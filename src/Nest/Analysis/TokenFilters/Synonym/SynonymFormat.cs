@@ -1,14 +1,14 @@
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum SynonymFormat
 	{
 		[EnumMember(Value = "solr")]
 		Solr,
+
 		[EnumMember(Value = "wordnet")]
 		WordNet
 	}

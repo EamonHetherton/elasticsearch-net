@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -7,30 +7,29 @@ namespace Nest
 	/// </summary>
 	public interface ISnowballTokenFilter : ITokenFilter
 	{
-		[JsonProperty("language")]
+		[DataMember(Name ="language")]
 		SnowballLanguage? Language { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class SnowballTokenFilter : TokenFilterBase, ISnowballTokenFilter
 	{
 		public SnowballTokenFilter() : base("snowball") { }
 
-		///<inheritdoc/>
-		[JsonProperty("language")]
+		/// <inheritdoc />
+		[DataMember(Name ="language")]
 		public SnowballLanguage? Language { get; set; }
-
 	}
-	///<inheritdoc/>
-	public class SnowballTokenFilterDescriptor 
+
+	/// <inheritdoc />
+	public class SnowballTokenFilterDescriptor
 		: TokenFilterDescriptorBase<SnowballTokenFilterDescriptor, ISnowballTokenFilter>, ISnowballTokenFilter
 	{
 		protected override string Type => "snowball";
 
 		SnowballLanguage? ISnowballTokenFilter.Language { get; set; }
 
-		///<inheritdoc/>
-		public SnowballTokenFilterDescriptor Language(SnowballLanguage? language) => Assign(a => a.Language = language);
+		/// <inheritdoc />
+		public SnowballTokenFilterDescriptor Language(SnowballLanguage? language) => Assign(language, (a, v) => a.Language = v);
 	}
-
 }

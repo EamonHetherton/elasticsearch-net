@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(MultiSearchJsonConverter))]
+	[MapsApi("msearch.json")]
+	[JsonFormatter(typeof(MultiSearchFormatter))]
 	public partial interface IMultiSearchRequest
 	{
 		IDictionary<string, ISearchRequest> Operations { get; set; }
@@ -12,18 +14,29 @@ namespace Nest
 
 	public partial class MultiSearchRequest
 	{
+		protected sealed override void RequestDefaults(MultiSearchRequestParameters parameters)
+		{
+			TypedKeys = true;
+			parameters.CustomResponseBuilder = new MultiSearchResponseBuilder(this);
+		}
+
 		public IDictionary<string, ISearchRequest> Operations { get; set; }
 	}
 
-	[DescriptorFor("Msearch")]
 	public partial class MultiSearchDescriptor
 	{
-		internal IDictionary<string, ISearchRequest> _operations = new Dictionary<string, ISearchRequest>();
+		protected sealed override void RequestDefaults(MultiSearchRequestParameters parameters)
+		{
+			TypedKeys();
+			parameters.CustomResponseBuilder = new MultiSearchResponseBuilder(this);
+		}
+
+		private IDictionary<string, ISearchRequest> _operations = new Dictionary<string, ISearchRequest>();
 
 		IDictionary<string, ISearchRequest> IMultiSearchRequest.Operations
 		{
-			get { return _operations; }
-			set { _operations = value; }
+			get => _operations;
+			set => _operations = value;
 		}
 
 		public MultiSearchDescriptor Search<T>(string name, Func<SearchDescriptor<T>, ISearchRequest> searchSelector) where T : class
@@ -31,15 +44,13 @@ namespace Nest
 			name.ThrowIfNull(nameof(name));
 			searchSelector.ThrowIfNull(nameof(searchSelector));
 			var descriptor = searchSelector(new SearchDescriptor<T>());
-			if (descriptor == null)
-				return this;
-			this._operations.Add(name, descriptor);
+			if (descriptor == null) return this;
+
+			_operations.Add(name, descriptor);
 			return this;
 		}
 
-		public MultiSearchDescriptor Search<T>(Func<SearchDescriptor<T>, ISearchRequest> searchSelector) where T : class
-		{
-			return this.Search(Guid.NewGuid().ToString(), searchSelector);
-		}
+		public MultiSearchDescriptor Search<T>(Func<SearchDescriptor<T>, ISearchRequest> searchSelector) where T : class =>
+			Search(Guid.NewGuid().ToString(), searchSelector);
 	}
 }

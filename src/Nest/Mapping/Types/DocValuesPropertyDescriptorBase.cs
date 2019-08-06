@@ -1,20 +1,17 @@
-﻿using System;
-using Elasticsearch.Net;
-
-namespace Nest
+﻿namespace Nest
 {
+	/// <inheritdoc cref="IDocValuesProperty" />
 	public abstract class DocValuesPropertyDescriptorBase<TDescriptor, TInterface, T>
-	: CorePropertyDescriptorBase<TDescriptor, TInterface, T>, IDocValuesProperty
-	where TDescriptor : DocValuesPropertyDescriptorBase<TDescriptor, TInterface, T>, TInterface
-	where TInterface : class, IDocValuesProperty
-	where T : class
+		: CorePropertyDescriptorBase<TDescriptor, TInterface, T>, IDocValuesProperty
+		where TDescriptor : DocValuesPropertyDescriptorBase<TDescriptor, TInterface, T>, TInterface
+		where TInterface : class, IDocValuesProperty
+		where T : class
 	{
-		bool? IDocValuesProperty.DocValues { get; set; }
-
-		[Obsolete("Please use overload taking FieldType")]
-		protected DocValuesPropertyDescriptorBase(string type) : base(type) { }
 		protected DocValuesPropertyDescriptorBase(FieldType type) : base(type) { }
 
-		public TDescriptor DocValues(bool docValues = true) => Assign(a => a.DocValues = docValues);
+		bool? IDocValuesProperty.DocValues { get; set; }
+
+		/// <inheritdoc cref="IDocValuesProperty.DocValues" />
+		public TDescriptor DocValues(bool? docValues = true) => Assign(docValues, (a, v) => a.DocValues = v);
 	}
 }

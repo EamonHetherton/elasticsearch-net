@@ -1,21 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class StoreStats
 	{
-		[JsonProperty(PropertyName = "size")]
+		[DataMember(Name ="size")]
 		public string Size { get; set; }
 
-		[JsonProperty(PropertyName = "size_in_bytes")]
+		[DataMember(Name ="size_in_bytes")]
 		public double SizeInBytes { get; set; }
-
-		[JsonProperty("throttle_time")]
-		public string ThrottleTime { get; set; }
-
-		[JsonProperty("throttle_time_in_millis")]
-		public long ThrottleTimeInMilliseconds { get; set; }
 	}
-
 }

@@ -1,13 +1,13 @@
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReindexRoutingJsonConverter))]
+	[JsonFormatter(typeof(ReindexRoutingFormatter))]
 	public class ReindexRouting
 	{
-		private readonly string _newRoutingValue;
-		public static ReindexRouting Keep = new ReindexRouting("keep", true);
 		public static ReindexRouting Discard = new ReindexRouting("discard", true);
+		public static ReindexRouting Keep = new ReindexRouting("keep", true);
+		private readonly string _newRoutingValue;
 
 		/// <summary>
 		/// Use ReindexRouting.Keep or ReindexRouting.Discard if you want to sent "keep" or "discard", this

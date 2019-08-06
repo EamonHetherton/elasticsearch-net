@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,40 +7,37 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Pipeline/MovingAverage/MovingAverageHoltWintersAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Pipeline/MovingAverage/MovingAverageHoltWintersAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[moving-average-holt-winters-aggregation-usage]]
-== Moving Average Holt Winters Aggregation Usage
+=== Moving Average Holt Winters Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Size(0)
-.Aggregations(a => a
-    .DateHistogram("projects_started_per_month", dh => dh
-        .Field(p => p.StartedOn)
-        .Interval(DateInterval.Month)
-        .Aggregations(aa => aa
-            .Sum("commits", sm => sm
-                .Field(p => p.NumberOfCommits)
-            )
-            .MovingAverage("commits_moving_avg", mv => mv
-                .BucketsPath("commits")
-                .Window(60)
-                .Model(m => m
-                    .HoltWinters(hw => hw
-                        .Type(HoltWintersType.Multiplicative)
-                        .Alpha(0.5f)
-                        .Beta(0.5f)
-                        .Gamma(0.5f)
-                        .Period(30)
-                        .Pad(false)
-                    )
+a => a
+.DateHistogram("projects_started_per_month", dh => dh
+    .Field(p => p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa => aa
+        .Sum("commits", sm => sm
+            .Field(p => p.NumberOfCommits)
+        )
+        .MovingAverage("commits_moving_avg", mv => mv
+            .BucketsPath("commits")
+            .Window(4)
+            .Model(m => m
+                .HoltWinters(hw => hw
+                    .Type(HoltWintersType.Multiplicative)
+                    .Alpha(0.5f)
+                    .Beta(0.5f)
+                    .Gamma(0.5f)
+                    .Period(2)
+                    .Pad(false)
                 )
             )
         )
@@ -48,33 +45,29 @@ s => s
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>()
+new DateHistogramAggregation("projects_started_per_month")
 {
-    Size = 0,
-    Aggregations = new DateHistogramAggregation("projects_started_per_month")
-    {
-        Field = "startedOn",
-        Interval = DateInterval.Month,
-        Aggregations =
-            new SumAggregation("commits", "numberOfCommits") &&
-            new MovingAverageAggregation("commits_moving_avg", "commits")
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations =
+        new SumAggregation("commits", "numberOfCommits")
+        && new MovingAverageAggregation("commits_moving_avg", "commits")
+        {
+            Window = 4,
+            Model = new HoltWintersModel
             {
-                Window = 60,
-                Model = new HoltWintersModel
-                {
-                    Type = HoltWintersType.Multiplicative,
-                    Alpha = 0.5f,
-                    Beta = 0.5f,
-                    Gamma = 0.5f,
-                    Period = 30,
-                    Pad = false
-                }
+                Type = HoltWintersType.Multiplicative,
+                Alpha = 0.5f,
+                Beta = 0.5f,
+                Gamma = 0.5f,
+                Period = 2,
+                Pad = false
             }
-    }
+        }
 }
 ----
 
@@ -82,32 +75,29 @@ new SearchRequest<Project>()
 .Example json output
 ----
 {
-  "size": 0,
-  "aggs": {
-    "projects_started_per_month": {
-      "date_histogram": {
-        "field": "startedOn",
-        "interval": "month"
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
+        }
       },
-      "aggs": {
-        "commits": {
-          "sum": {
-            "field": "numberOfCommits"
-          }
-        },
-        "commits_moving_avg": {
-          "moving_avg": {
-            "buckets_path": "commits",
-            "window": 60,
-            "model": "holt_winters",
-            "settings": {
-              "type": "mult",
-              "alpha": 0.5,
-              "beta": 0.5,
-              "gamma": 0.5,
-              "period": 30,
-              "pad": false
-            }
+      "commits_moving_avg": {
+        "moving_avg": {
+          "buckets_path": "commits",
+          "window": 4,
+          "model": "holt_winters",
+          "settings": {
+            "type": "mult",
+            "alpha": 0.5,
+            "beta": 0.5,
+            "gamma": 0.5,
+            "period": 2,
+            "pad": false
           }
         }
       }
@@ -116,10 +106,37 @@ new SearchRequest<Project>()
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
+
+var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
+projectsPerMonth.Should().NotBeNull();
+projectsPerMonth.Buckets.Should().NotBeNull();
+projectsPerMonth.Buckets.Count.Should().BeGreaterThan(0);
+
+var bucketCount = 0;
+foreach (var item in projectsPerMonth.Buckets)
+{
+    bucketCount++;
+
+    var commits = item.Sum("commits");
+    commits.Should().NotBeNull();
+    commits.Value.Should().BeGreaterThan(0);
+
+    var movingAverage = item.MovingAverage("commits_moving_avg");
+
+    // Moving Average specifies a window of 4 so
+    // moving average values should exist from 5th bucketr onwards
+    if (bucketCount <= 4)
+        movingAverage.Should().BeNull();
+    else
+    {
+        movingAverage.Should().NotBeNull();
+        movingAverage.Value.Should().HaveValue();
+    }
+}
 ----
 

@@ -1,56 +1,53 @@
 using System;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<HistogramAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HistogramAggregation))]
 	public interface IHistogramAggregation : IBucketAggregation
 	{
-		[JsonProperty("field")]
-		Field Field { get; set; }
-
-		[JsonProperty("script")]
-		IScript Script { get; set; }
-
-		[JsonProperty("interval")]
-		double? Interval { get; set; }
-
-		[JsonProperty("min_doc_count")]
-		int? MinimumDocumentCount { get; set; }
-
-		[JsonProperty("order")]
-		HistogramOrder Order { get; set; }
-
-		[JsonProperty("extended_bounds")]
+		[DataMember(Name ="extended_bounds")]
 		ExtendedBounds<double> ExtendedBounds { get; set; }
 
-		[JsonProperty("pre_offset")]
-		long? PreOffset { get; set; }
+		[DataMember(Name ="field")]
+		Field Field { get; set; }
 
-		[JsonProperty("post_offset")]
-		long? PostOffset { get; set; }
+		[DataMember(Name ="interval")]
+		double? Interval { get; set; }
 
-		[JsonProperty("missing")]
+		[DataMember(Name ="min_doc_count")]
+		int? MinimumDocumentCount { get; set; }
+
+		[DataMember(Name ="missing")]
 		double? Missing { get; set; }
+
+		[DataMember(Name ="offset")]
+		double? Offset { get; set; }
+
+		[DataMember(Name ="order")]
+		HistogramOrder Order { get; set; }
+
+		[DataMember(Name ="script")]
+		IScript Script { get; set; }
 	}
 
 	public class HistogramAggregation : BucketAggregationBase, IHistogramAggregation
 	{
-		public Field Field { get; set; }
-		public IScript Script { get; set; }
-		public double? Interval { get; set; }
-		public int? MinimumDocumentCount { get; set; }
-		public HistogramOrder Order { get; set; }
-		public ExtendedBounds<double> ExtendedBounds { get; set; }
-		public long? PreOffset { get; set; }
-		public long? PostOffset { get; set; }
-		public double? Missing { get; set; }
-
 		internal HistogramAggregation() { }
 
 		public HistogramAggregation(string name) : base(name) { }
+
+		public ExtendedBounds<double> ExtendedBounds { get; set; }
+		public Field Field { get; set; }
+		public double? Interval { get; set; }
+		public int? MinimumDocumentCount { get; set; }
+		public double? Missing { get; set; }
+		public double? Offset { get; set; }
+		public HistogramOrder Order { get; set; }
+		public IScript Script { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.Histogram = this;
 	}
@@ -59,53 +56,48 @@ namespace Nest
 		: BucketAggregationDescriptorBase<HistogramAggregationDescriptor<T>, IHistogramAggregation, T>, IHistogramAggregation
 		where T : class
 	{
+		ExtendedBounds<double> IHistogramAggregation.ExtendedBounds { get; set; }
 		Field IHistogramAggregation.Field { get; set; }
-
-		IScript IHistogramAggregation.Script { get; set; }
 
 		double? IHistogramAggregation.Interval { get; set; }
 
 		int? IHistogramAggregation.MinimumDocumentCount { get; set; }
 
-		HistogramOrder IHistogramAggregation.Order { get; set; }
-
-		ExtendedBounds<double> IHistogramAggregation.ExtendedBounds { get; set; }
-
-		long? IHistogramAggregation.PreOffset { get; set; }
-
-		long? IHistogramAggregation.PostOffset { get; set; }
-
 		double? IHistogramAggregation.Missing { get; set; }
 
-		public HistogramAggregationDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		double? IHistogramAggregation.Offset { get; set; }
 
-		public HistogramAggregationDescriptor<T> Field(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
+		HistogramOrder IHistogramAggregation.Order { get; set; }
 
-		public HistogramAggregationDescriptor<T> Script(string script) => Assign(a => a.Script = (InlineScript)script);
+		IScript IHistogramAggregation.Script { get; set; }
+
+		public HistogramAggregationDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
+
+		public HistogramAggregationDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
+
+		public HistogramAggregationDescriptor<T> Script(string script) => Assign((InlineScript)script, (a, v) => a.Script = v);
 
 		public HistogramAggregationDescriptor<T> Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
-			Assign(a => a.Script = scriptSelector?.Invoke(new ScriptDescriptor()));
+			Assign(scriptSelector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 
-		public HistogramAggregationDescriptor<T> Interval(double interval) => Assign(a => a.Interval = interval);
+		public HistogramAggregationDescriptor<T> Interval(double? interval) => Assign(interval, (a, v) => a.Interval = v);
 
-		public HistogramAggregationDescriptor<T> MinimumDocumentCount(int minimumDocumentCount) =>
-			Assign(a => a.MinimumDocumentCount = minimumDocumentCount);
+		public HistogramAggregationDescriptor<T> MinimumDocumentCount(int? minimumDocumentCount) =>
+			Assign(minimumDocumentCount, (a, v) => a.MinimumDocumentCount = v);
 
-		public HistogramAggregationDescriptor<T> Order(HistogramOrder order) => Assign(a => a.Order = order);
+		public HistogramAggregationDescriptor<T> Order(HistogramOrder order) => Assign(order, (a, v) => a.Order = v);
 
 		public HistogramAggregationDescriptor<T> OrderAscending(string key) =>
-			Assign(a => a.Order = new HistogramOrder { Key = key, Order = SortOrder.Descending });
+			Assign(new HistogramOrder { Key = key, Order = SortOrder.Descending }, (a, v) => a.Order = v);
 
 		public HistogramAggregationDescriptor<T> OrderDescending(string key) =>
-			Assign(a => a.Order = new HistogramOrder { Key = key, Order = SortOrder.Descending });
+			Assign(new HistogramOrder { Key = key, Order = SortOrder.Descending }, (a, v) => a.Order = v);
 
 		public HistogramAggregationDescriptor<T> ExtendedBounds(double min, double max) =>
-			Assign(a => a.ExtendedBounds = new ExtendedBounds<double> { Minimum = min, Maximum = max });
+			Assign(new ExtendedBounds<double> { Minimum = min, Maximum = max }, (a, v) => a.ExtendedBounds = v);
 
-		public HistogramAggregationDescriptor<T> PreOffset(long preOffset) => Assign(a => a.PreOffset = preOffset);
+		public HistogramAggregationDescriptor<T> Offset(double? offset) => Assign(offset, (a, v) => a.Offset = v);
 
-		public HistogramAggregationDescriptor<T> PostOffset(long postOffset) => Assign(a => a.PostOffset = postOffset);
-
-		public HistogramAggregationDescriptor<T> Missing(double missing) => Assign(a => a.Missing = missing);
+		public HistogramAggregationDescriptor<T> Missing(double? missing) => Assign(missing, (a, v) => a.Missing = v);
 	}
 }

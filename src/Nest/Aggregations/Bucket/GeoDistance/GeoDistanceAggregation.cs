@@ -2,85 +2,76 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<GeoDistanceAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(GeoDistanceAggregation))]
 	public interface IGeoDistanceAggregation : IBucketAggregation
 	{
-		[JsonProperty("field")]
-		Field Field { get; set; }
-
-		[JsonProperty("origin")]
-		GeoLocation Origin { get; set; }
-
-		[JsonProperty("unit")]
-		DistanceUnit? Unit { get; set; }
-
-		[JsonProperty("distance_type")]
+		[DataMember(Name ="distance_type")]
 		GeoDistanceType? DistanceType { get; set; }
 
-		[JsonProperty(PropertyName = "ranges")]
-#pragma warning disable 618
-		IEnumerable<IRange> Ranges { get; set; }
-#pragma warning restore 618
+		[DataMember(Name ="field")]
+		Field Field { get; set; }
+
+		[DataMember(Name ="origin")]
+		GeoLocation Origin { get; set; }
+
+		[DataMember(Name ="ranges")]
+		IEnumerable<IAggregationRange> Ranges { get; set; }
+
+		[DataMember(Name ="unit")]
+		DistanceUnit? Unit { get; set; }
 	}
 
 	public class GeoDistanceAggregation : BucketAggregationBase, IGeoDistanceAggregation
 	{
-		public Field Field { get; set; }
-
-		public GeoLocation Origin { get; set; }
-
-		public DistanceUnit? Unit { get; set; }
-
-		public GeoDistanceType? DistanceType { get; set; }
-
-#pragma warning disable 618
-		public IEnumerable<IRange> Ranges { get; set; }
-#pragma warning restore 618
-
 		internal GeoDistanceAggregation() { }
 
 		public GeoDistanceAggregation(string name) : base(name) { }
 
+		public GeoDistanceType? DistanceType { get; set; }
+		public Field Field { get; set; }
+
+		public GeoLocation Origin { get; set; }
+
+		public IEnumerable<IAggregationRange> Ranges { get; set; }
+
+		public DistanceUnit? Unit { get; set; }
+
 		internal override void WrapInContainer(AggregationContainer c) => c.GeoDistance = this;
 	}
 
-	public class GeoDistanceAggregationDescriptor<T> :
-		BucketAggregationDescriptorBase<GeoDistanceAggregationDescriptor<T>, IGeoDistanceAggregation, T>
+	public class GeoDistanceAggregationDescriptor<T>
+		: BucketAggregationDescriptorBase<GeoDistanceAggregationDescriptor<T>, IGeoDistanceAggregation, T>
 			, IGeoDistanceAggregation
 		where T : class
 	{
+		GeoDistanceType? IGeoDistanceAggregation.DistanceType { get; set; }
 		Field IGeoDistanceAggregation.Field { get; set; }
 
 		GeoLocation IGeoDistanceAggregation.Origin { get; set; }
 
+		IEnumerable<IAggregationRange> IGeoDistanceAggregation.Ranges { get; set; }
+
 		DistanceUnit? IGeoDistanceAggregation.Unit { get; set; }
 
-		GeoDistanceType? IGeoDistanceAggregation.DistanceType { get; set; }
+		public GeoDistanceAggregationDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-#pragma warning disable 618
-		IEnumerable<IRange> IGeoDistanceAggregation.Ranges { get; set; }
-#pragma warning restore 618
+		public GeoDistanceAggregationDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
 
-		public GeoDistanceAggregationDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		public GeoDistanceAggregationDescriptor<T> Origin(double lat, double lon) => Assign(new GeoLocation(lat, lon), (a, v) => a.Origin = v);
 
-		public GeoDistanceAggregationDescriptor<T> Field(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
+		public GeoDistanceAggregationDescriptor<T> Origin(GeoLocation geoLocation) => Assign(geoLocation, (a, v) => a.Origin = v);
 
-		public GeoDistanceAggregationDescriptor<T> Origin(double lat, double lon) => Assign(a => a.Origin = new GeoLocation(lat, lon));
+		public GeoDistanceAggregationDescriptor<T> Unit(DistanceUnit? unit) => Assign(unit, (a, v) => a.Unit = v);
 
-		public GeoDistanceAggregationDescriptor<T> Origin(GeoLocation geoLocation) => Assign(a => a.Origin = geoLocation);
+		public GeoDistanceAggregationDescriptor<T> DistanceType(GeoDistanceType? geoDistance) => Assign(geoDistance, (a, v) => a.DistanceType = v);
 
-		public GeoDistanceAggregationDescriptor<T> Unit(DistanceUnit unit) => Assign(a => a.Unit = unit);
-
-		public GeoDistanceAggregationDescriptor<T> DistanceType(GeoDistanceType? geoDistance) => Assign(a => a.DistanceType = geoDistance);
-
-#pragma warning disable 618
-		public GeoDistanceAggregationDescriptor<T> Ranges(params Func<RangeDescriptor, IRange>[] ranges) =>
-			Assign(a => a.Ranges = ranges?.Select(r => r(new RangeDescriptor())));
-#pragma warning restore 618
+		public GeoDistanceAggregationDescriptor<T> Ranges(params Func<AggregationRangeDescriptor, IAggregationRange>[] ranges) =>
+			Assign(ranges?.Select(r => r(new AggregationRangeDescriptor())), (a, v) => a.Ranges = v);
 	}
 }

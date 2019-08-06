@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,22 +7,25 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/NestSpecific/Raw/RawCombineUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/NestSpecific/Raw/RawCombineUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[raw-combine-usage]]
-== Raw Combine Usage
+=== Raw Combine Usage
 
-=== Fluent DSL Example
+NEST's <<raw-query-usage, raw query>> can be combined with other queries using a <<compound-queries, compound query>>
+such as a `bool` query.
+
+==== Fluent DSL example
 
 [source,csharp]
 ----
 q.Raw(RawTermQuery) && q.Term("x", "y")
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,7 +7,7 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Search/Request/SortUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Search/Request/SortUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
@@ -18,7 +18,8 @@ please modify the original csharp file found at the link and submit the PR with 
 Allows to add one or more sort on specific fields. Each sort can be reversed as well.
 The sort is defined on a per field level, with special field name for `_score` to sort by score.
 
-=== Fluent DSL Example
+[float]
+=== Fluent DSL example
 
 [source,csharp]
 ----
@@ -29,35 +30,42 @@ s => s
     .Descending(SortSpecialField.Score)
     .Ascending(SortSpecialField.DocumentIndexOrder)
     .Field(f => f
-        .Field(p => p.LastActivity)
+        .Field(p => p.Tags.First().Added)
         .Order(SortOrder.Descending)
         .MissingLast()
         .UnmappedType(FieldType.Date)
         .Mode(SortMode.Average)
-        .NestedPath(p => p.Tags)
-        .NestedFilter(q => q.MatchAll())
+        .Nested(n => n
+            .Path(p => p.Tags)
+            .Filter(q => q.MatchAll())
+        )
+    )
+    .Field(f => f
+        .Field(p => p.NumberOfCommits)
+        .Order(SortOrder.Descending)
+        .Missing(-1)
     )
     .GeoDistance(g => g
-        .Field(p => p.Location)
+        .Field(p => p.LocationPoint)
         .DistanceType(GeoDistanceType.Arc)
         .Order(SortOrder.Ascending)
         .Unit(DistanceUnit.Centimeters)
         .Mode(SortMode.Min)
-        .PinTo(new GeoLocation(70, -70), new GeoLocation(-12, 12))
+        .Points(new GeoLocation(70, -70), new GeoLocation(-12, 12))
     )
     .Script(sc => sc
         .Type("number")
         .Ascending()
         .Script(script => script
-            .Inline("doc['numberOfCommits'].value * factor")
-            .Lang("groovy")
+            .Source("doc['numberOfCommits'].value * params.factor")
             .Params(p => p.Add("factor", 1.1))
         )
     )
 )
 ----
 
-=== Object Initializer Syntax Example
+[float]
+=== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -65,36 +73,44 @@ new SearchRequest<Project>
 {
     Sort = new List<ISort>
     {
-        new SortField { Field = "startedOn", Order = SortOrder.Ascending },
-        new SortField { Field = "name", Order = SortOrder.Descending },
-        new SortField { Field = "_score", Order = SortOrder.Descending },
-        new SortField { Field = "_doc", Order = SortOrder.Ascending },
-        new SortField
+        new FieldSort { Field = "startedOn", Order = SortOrder.Ascending },
+        new FieldSort { Field = "name", Order = SortOrder.Descending },
+        new FieldSort { Field = "_score", Order = SortOrder.Descending },
+        new FieldSort { Field = "_doc", Order = SortOrder.Ascending },
+        new FieldSort
         {
-            Field = Field<Project>(p=>p.LastActivity),
+            Field = Field<Project>(p => p.Tags.First().Added),
             Order = SortOrder.Descending,
             Missing = "_last",
             UnmappedType = FieldType.Date,
             Mode = SortMode.Average,
-            NestedPath = Field<Project>(p=>p.Tags),
-            NestedFilter = new MatchAllQuery(),
+            Nested = new NestedSort
+            {
+                Path = Field<Project>(p => p.Tags),
+                Filter = new MatchAllQuery()
+            }
+        },
+        new FieldSort
+        {
+            Field = Field<Project>(p => p.NumberOfCommits),
+            Order = SortOrder.Descending,
+            Missing = -1
         },
         new GeoDistanceSort
         {
-            Field = "location",
+            Field = "locationPoint",
             Order = SortOrder.Ascending,
             DistanceType = GeoDistanceType.Arc,
-            GeoUnit = DistanceUnit.Centimeters,
+            Unit = DistanceUnit.Centimeters,
             Mode = SortMode.Min,
-            Points = new [] {new GeoLocation(70, -70), new GeoLocation(-12, 12) }
+            Points = new[] { new GeoLocation(70, -70), new GeoLocation(-12, 12) }
         },
         new ScriptSort
         {
             Type = "number",
             Order = SortOrder.Ascending,
-            Script =  new InlineScript("doc['numberOfCommits'].value * factor")
+            Script = new InlineScript("doc['numberOfCommits'].value * params.factor")
             {
-                Lang = "groovy",
                 Params = new Dictionary<string, object>
                 {
                     { "factor", 1.1 }
@@ -131,20 +147,28 @@ new SearchRequest<Project>
       }
     },
     {
-      "lastActivity": {
+      "tags.added": {
         "missing": "_last",
         "order": "desc",
         "mode": "avg",
-        "nested_filter": {
-          "match_all": {}
+        "nested": {
+          "path": "tags",
+          "filter": {
+            "match_all": {}
+          }
         },
-        "nested_path": "tags",
         "unmapped_type": "date"
       }
     },
     {
+      "numberOfCommits": {
+        "missing": -1,
+        "order": "desc"
+      }
+    },
+    {
       "_geo_distance": {
-        "location": [
+        "locationPoint": [
           {
             "lat": 70.0,
             "lon": -70.0
@@ -168,9 +192,83 @@ new SearchRequest<Project>
           "params": {
             "factor": 1.1
           },
-          "inline": "doc['numberOfCommits'].value * factor",
-          "lang": "groovy"
+          "source": "doc['numberOfCommits'].value * params.factor"
         }
+      }
+    }
+  ]
+}
+----
+
+[float]
+=== Nested sort usage
+
+In Elasticsearch 6.1.0+, using `nested_path` and `nested_filter` for sorting on fields mapped as
+`nested` types is deprecated. Instead, you should use the `nested` sort instead.
+
+[source,csharp]
+----
+s => s
+.Sort(ss => ss
+    .Field(f => f
+        .Field(p => p.Tags.First().Added)
+        .Order(SortOrder.Descending)
+        .MissingLast()
+        .UnmappedType(FieldType.Date)
+        .Mode(SortMode.Average)
+        .Nested(n => n
+            .Path(p => p.Tags)
+            .Filter(ff => ff
+                .MatchAll()
+            )
+        )
+    )
+)
+----
+
+[float]
+=== Object Initializer syntax example
+
+[source,csharp]
+----
+new SearchRequest<Project>
+{
+    Sort = new List<ISort>
+    {
+        new FieldSort
+        {
+            Field = Field<Project>(p => p.Tags.First().Added),
+            Order = SortOrder.Descending,
+            Missing = "_last",
+            UnmappedType = FieldType.Date,
+            Mode = SortMode.Average,
+            Nested = new NestedSort
+            {
+                Path = Field<Project>(p => p.Tags),
+                Filter = new MatchAllQuery()
+            }
+        }
+    }
+}
+----
+
+[source,javascript]
+.Example json output
+----
+{
+  "sort": [
+    {
+      "tags.added": {
+        "missing": "_last",
+        "order": "desc",
+        "mode": "avg",
+        "nested": {
+          "path": "tags",
+          "filter": {
+            "match_all": {}
+          }
+        },
+        "unmapped_type": "date"
       }
     }
   ]

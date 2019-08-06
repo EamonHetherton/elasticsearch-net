@@ -1,24 +1,19 @@
 ﻿namespace Nest
 {
+	[MapsApi("get_source.json")]
+	[ResponseBuilderWithGeneric("SourceRequestResponseBuilder<TDocument>.Instance")]
 	public partial interface ISourceRequest { }
 
-	public interface ISourceRequest<T> : ISourceRequest where T : class { }
+	// ReSharper disable UnusedTypeParameter
+	public partial interface ISourceRequest<TDocument> where TDocument : class { }
 
 	public partial class SourceRequest { }
 
-	public partial class SourceRequest<T> where T : class { }
+	// ReSharper disable UnusedTypeParameter
+	public partial class SourceRequest<TDocument> where TDocument : class { }
 
-	[DescriptorFor("GetSource")]
-	public partial class SourceDescriptor<T> where T : class
+	public partial class SourceDescriptor<TDocument> where TDocument : class
 	{
-		public SourceDescriptor<T> ExecuteOnPrimary()
-		{
-			return this.Preference("_primary");
-		}
-
-		public SourceDescriptor<T> ExecuteOnLocalShard()
-		{
-			return this.Preference("_local");
-		}
+		public SourceDescriptor<TDocument> ExecuteOnLocalShard() => Preference("_local");
 	}
 }

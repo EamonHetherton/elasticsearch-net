@@ -1,159 +1,144 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<TermsAggregation<object>>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(TermsAggregation))]
 	public interface ITermsAggregation : IBucketAggregation
 	{
-		[JsonProperty("field")]
-		Field Field { get; set; }
+		[DataMember(Name ="collect_mode")]
+		TermsAggregationCollectMode? CollectMode { get; set; }
 
-		[JsonProperty("script")]
-		IScript Script { get; set; }
+		[DataMember(Name ="exclude")]
+		TermsExclude Exclude { get; set; }
 
-		[JsonProperty("size")]
-		int? Size { get; set; }
-
-		[JsonProperty("shard_size")]
-		int? ShardSize { get; set; }
-
-		[JsonProperty("min_doc_count")]
-		int? MinimumDocumentCount { get; set; }
-
-		[JsonProperty("execution_hint")]
+		[DataMember(Name ="execution_hint")]
 		TermsAggregationExecutionHint? ExecutionHint { get; set; }
 
-		[JsonProperty("order")]
+		[DataMember(Name ="field")]
+		Field Field { get; set; }
+
+		[DataMember(Name ="include")]
+		TermsInclude Include { get; set; }
+
+		[DataMember(Name ="min_doc_count")]
+		int? MinimumDocumentCount { get; set; }
+
+		[DataMember(Name ="missing")]
+		object Missing { get; set; }
+
+		[DataMember(Name ="order")]
 		IList<TermsOrder> Order { get; set; }
 
-		[JsonProperty("include")]
-		TermsIncludeExclude Include { get; set; }
+		[DataMember(Name ="script")]
+		IScript Script { get; set; }
 
-		[JsonProperty("exclude")]
-		TermsIncludeExclude Exclude { get; set; }
+		[DataMember(Name ="shard_size")]
+		int? ShardSize { get; set; }
 
-		[JsonProperty("collect_mode")]
-		TermsAggregationCollectMode? CollectMode { get; set; }
+		[DataMember(Name ="show_term_doc_count_error")]
+		bool? ShowTermDocCountError { get; set; }
+
+		[DataMember(Name ="size")]
+		int? Size { get; set; }
 	}
 
-	public interface ITermsAggregation<TFieldType> : ITermsAggregation
+	public class TermsAggregation : BucketAggregationBase, ITermsAggregation
 	{
-		[JsonProperty("missing")]
-		TFieldType Missing { get; set; }
-	}
-
-	public class TermsAggregation<TFieldType> : BucketAggregationBase, ITermsAggregation<TFieldType>
-	{
-		public Field Field { get; set; }
-		public IScript Script { get; set; }
-		public int? Size { get; set; }
-		public int? ShardSize { get; set; }
-		public int? MinimumDocumentCount { get; set; }
-		public TermsAggregationExecutionHint? ExecutionHint { get; set; }
-		public IList<TermsOrder> Order { get; set; }
-		public TermsIncludeExclude Include { get; set; }
-		public TermsIncludeExclude Exclude { get; set; }
-		public TermsAggregationCollectMode? CollectMode { get; set; }
-		public TFieldType Missing { get; set; }
-
 		internal TermsAggregation() { }
 
 		public TermsAggregation(string name) : base(name) { }
 
+		public TermsAggregationCollectMode? CollectMode { get; set; }
+		public TermsExclude Exclude { get; set; }
+		public TermsAggregationExecutionHint? ExecutionHint { get; set; }
+		public Field Field { get; set; }
+		public TermsInclude Include { get; set; }
+		public int? MinimumDocumentCount { get; set; }
+		public object Missing { get; set; }
+		public IList<TermsOrder> Order { get; set; }
+		public IScript Script { get; set; }
+		public int? ShardSize { get; set; }
+		public bool? ShowTermDocCountError { get; set; }
+		public int? Size { get; set; }
+
 		internal override void WrapInContainer(AggregationContainer c) => c.Terms = this;
 	}
 
-	public class TermsAggregation : TermsAggregation<string>
-	{
-		public TermsAggregation(string name) : base(name) { }
-	}
-
-	public class TermsAggregationDescriptor<T, TFieldType>
-		: BucketAggregationDescriptorBase<TermsAggregationDescriptor<T, TFieldType>, ITermsAggregation<TFieldType>, T>
-			, ITermsAggregation<TFieldType>
+	public class TermsAggregationDescriptor<T>
+		: BucketAggregationDescriptorBase<TermsAggregationDescriptor<T>, ITermsAggregation, T>, ITermsAggregation
 		where T : class
 	{
+		TermsAggregationCollectMode? ITermsAggregation.CollectMode { get; set; }
+
+		TermsExclude ITermsAggregation.Exclude { get; set; }
+
+		TermsAggregationExecutionHint? ITermsAggregation.ExecutionHint { get; set; }
 		Field ITermsAggregation.Field { get; set; }
 
-		IScript ITermsAggregation.Script { get; set; }
-
-		int? ITermsAggregation.Size { get; set; }
-
-		int? ITermsAggregation.ShardSize { get; set; }
+		TermsInclude ITermsAggregation.Include { get; set; }
 
 		int? ITermsAggregation.MinimumDocumentCount { get; set; }
 
-		TermsAggregationExecutionHint? ITermsAggregation.ExecutionHint { get; set; }
+		object ITermsAggregation.Missing { get; set; }
 
 		IList<TermsOrder> ITermsAggregation.Order { get; set; }
 
-		TermsIncludeExclude ITermsAggregation.Include { get; set; }
+		IScript ITermsAggregation.Script { get; set; }
 
-		TermsIncludeExclude ITermsAggregation.Exclude { get; set; }
+		int? ITermsAggregation.ShardSize { get; set; }
 
-		TermsAggregationCollectMode? ITermsAggregation.CollectMode { get; set; }
+		bool? ITermsAggregation.ShowTermDocCountError { get; set; }
 
-		TFieldType ITermsAggregation<TFieldType>.Missing { get; set; }
+		int? ITermsAggregation.Size { get; set; }
 
-		public TermsAggregationDescriptor<T, TFieldType> Field(Field field) => Assign(a => a.Field = field);
+		public TermsAggregationDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Field(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
+		public TermsAggregationDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Script(string script) => Assign(a => a.Script = (InlineScript)script);
+		public TermsAggregationDescriptor<T> Script(string script) => Assign((InlineScript)script, (a, v) => a.Script = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
-			Assign(a => a.Script = scriptSelector?.Invoke(new ScriptDescriptor()));
+		public TermsAggregationDescriptor<T> Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
+			Assign(scriptSelector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 
-		public TermsAggregationDescriptor<T, TFieldType> Size(int size) => Assign(a => a.Size = size);
+		public TermsAggregationDescriptor<T> Size(int? size) => Assign(size, (a, v) => a.Size = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> ShardSize(int shardSize) => Assign(a => a.ShardSize = shardSize);
+		public TermsAggregationDescriptor<T> ShardSize(int? shardSize) => Assign(shardSize, (a, v) => a.ShardSize = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> MinimumDocumentCount(int minimumDocumentCount) =>
-			Assign(a => a.MinimumDocumentCount = minimumDocumentCount);
+		public TermsAggregationDescriptor<T> MinimumDocumentCount(int? minimumDocumentCount) =>
+			Assign(minimumDocumentCount, (a, v) => a.MinimumDocumentCount = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> ExecutionHint(TermsAggregationExecutionHint executionHint) =>
-			Assign(a => a.ExecutionHint = executionHint);
+		public TermsAggregationDescriptor<T> ExecutionHint(TermsAggregationExecutionHint? executionHint) =>
+			Assign(executionHint, (a, v) => a.ExecutionHint = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Order(TermsOrder order) => Assign(a =>
-		{
-			a.Order = a.Order ?? new List<TermsOrder>();
-			a.Order.Add(order);
-		});
+		public TermsAggregationDescriptor<T> Order(Func<TermsOrderDescriptor<T>, IPromise<IList<TermsOrder>>> selector) =>
+			Assign(selector, (a, v) => a.Order = v?.Invoke(new TermsOrderDescriptor<T>())?.Value);
 
-		public TermsAggregationDescriptor<T, TFieldType> OrderAscending(string key) => Assign(a =>
-		{
-			a.Order = a.Order ?? new List<TermsOrder>();
-			a.Order.Add(new TermsOrder { Key = key, Order = SortOrder.Ascending });
-		});
+		public TermsAggregationDescriptor<T> Include(long partition, long numberOfPartitions) =>
+			Assign(new TermsInclude(partition, numberOfPartitions), (a, v) => a.Include = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> OrderDescending(string key) => Assign(a =>
-		{
-			a.Order = a.Order ?? new List<TermsOrder>();
-			a.Order.Add(new TermsOrder { Key = key, Order = SortOrder.Descending });
-		});
+		public TermsAggregationDescriptor<T> Include(string includePattern) =>
+			Assign(new TermsInclude(includePattern), (a, v) => a.Include = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Include(long partion, long numberOfPartitions) =>
-			Assign(a => a.Include = new TermsIncludeExclude() {Partition = partion, NumberOfPartitions = numberOfPartitions});
+		public TermsAggregationDescriptor<T> Include(IEnumerable<string> values) =>
+			Assign(new TermsInclude(values), (a, v) => a.Include = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Include(string includePattern, string regexFlags = null) =>
-			Assign(a => a.Include = new TermsIncludeExclude() { Pattern = includePattern, Flags = regexFlags });
+		public TermsAggregationDescriptor<T> Exclude(string excludePattern) =>
+			Assign(new TermsExclude(excludePattern), (a, v) => a.Exclude = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Include(IEnumerable<string> values) =>
-			Assign(a => a.Include = new TermsIncludeExclude { Values = values });
+		public TermsAggregationDescriptor<T> Exclude(IEnumerable<string> values) =>
+			Assign(new TermsExclude(values), (a, v) => a.Exclude = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Exclude(string excludePattern, string regexFlags = null) =>
-			Assign(a => a.Exclude = new TermsIncludeExclude() { Pattern = excludePattern, Flags = regexFlags });
+		public TermsAggregationDescriptor<T> CollectMode(TermsAggregationCollectMode? collectMode) =>
+			Assign(collectMode, (a, v) => a.CollectMode = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> Exclude(IEnumerable<string> values) =>
-			Assign(a => a.Exclude = new TermsIncludeExclude { Values = values });
+		public TermsAggregationDescriptor<T> Missing(object missing) => Assign(missing, (a, v) => a.Missing = v);
 
-		public TermsAggregationDescriptor<T, TFieldType> CollectMode(TermsAggregationCollectMode collectMode) =>
-			Assign(a => a.CollectMode = collectMode);
-
-		public TermsAggregationDescriptor<T, TFieldType> Missing(TFieldType missing) => Assign(a => a.Missing = missing);
+		public TermsAggregationDescriptor<T> ShowTermDocCountError(bool? showTermDocCountError = true) =>
+			Assign(showTermDocCountError, (a, v) => a.ShowTermDocCountError = v);
 	}
 }

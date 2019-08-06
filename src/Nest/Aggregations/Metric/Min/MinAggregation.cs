@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<MinAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(MinAggregation))]
 	public interface IMinAggregation : IMetricAggregation { }
 
 	public class MinAggregation : MetricAggregationBase, IMinAggregation
@@ -15,8 +15,8 @@ namespace Nest
 		internal override void WrapInContainer(AggregationContainer c) => c.Min = this;
 	}
 
-	public class MinAggregationDescriptor<T> 
+	public class MinAggregationDescriptor<T>
 		: MetricAggregationDescriptorBase<MinAggregationDescriptor<T>, IMinAggregation, T>
-			, IMinAggregation 
+			, IMinAggregation
 		where T : class { }
 }

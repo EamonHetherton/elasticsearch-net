@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,37 +7,32 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Metric/Cardinality/CardinalityAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Metric/Cardinality/CardinalityAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[cardinality-aggregation-usage]]
-== Cardinality Aggregation Usage
+=== Cardinality Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Cardinality("state_count", c => c
-        .Field(p => p.State)
-        .PrecisionThreshold(100)
-    )
+a => a
+.Cardinality("state_count", c => c
+    .Field(p => p.State)
+    .PrecisionThreshold(100)
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new CardinalityAggregation("state_count", Field<Project>(p => p.State))
 {
-    Aggregations = new CardinalityAggregation("state_count", Field<Project>(p => p.State))
-    {
-        PrecisionThreshold = 100
-    }
+    PrecisionThreshold = 100
 }
 ----
 
@@ -45,23 +40,21 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "state_count": {
-      "cardinality": {
-        "field": "state",
-        "precision_threshold": 100
-      }
+  "state_count": {
+    "cardinality": {
+      "field": "state",
+      "precision_threshold": 100
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var projectCount = response.Aggs.Cardinality("state_count");
+var projectCount = response.Aggregations.Cardinality("state_count");
 projectCount.Should().NotBeNull();
 projectCount.Value.Should().Be(3);
 ----

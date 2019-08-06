@@ -1,44 +1,45 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
+	[InterfaceDataContract]
 	public interface ILoggingAction : IAction
 	{
-		[JsonProperty("text")]
-		string Text { get; set; }
-
-		[JsonProperty("category")]
+		[DataMember(Name = "category")]
 		string Category { get; set; }
 
-		[JsonProperty("level")]
+		[DataMember(Name = "level")]
 		LogLevel? Level { get; set; }
+
+		[DataMember(Name = "text")]
+		string Text { get; set; }
 	}
 
 	public class LoggingAction : ActionBase, ILoggingAction
 	{
+		public LoggingAction(string name) : base(name) { }
+
 		public override ActionType ActionType => ActionType.Logging;
-		public string Text { get; set; }
 		public string Category { get; set; }
 		public LogLevel? Level { get; set; }
-
-		public LoggingAction(string name) : base(name) {}
+		public string Text { get; set; }
 	}
 
 	public class LoggingActionDescriptor : ActionsDescriptorBase<LoggingActionDescriptor, ILoggingAction>, ILoggingAction
 	{
+		public LoggingActionDescriptor(string name) : base(name) { }
+
 		protected override ActionType ActionType => ActionType.Logging;
+		string ILoggingAction.Category { get; set; }
 
 		LogLevel? ILoggingAction.Level { get; set; }
 		string ILoggingAction.Text { get; set; }
-		string ILoggingAction.Category { get; set; }
 
-		public LoggingActionDescriptor(string name) : base(name) {}
+		public LoggingActionDescriptor Level(LogLevel? level) => Assign(level, (a, v) => a.Level = v);
 
-		public LoggingActionDescriptor Level(LogLevel level) => Assign(a => a.Level = level);
+		public LoggingActionDescriptor Text(string text) => Assign(text, (a, v) => a.Text = v);
 
-		public LoggingActionDescriptor Text(string text) => Assign(a => a.Text = text);
-
-		public LoggingActionDescriptor Category(string category) => Assign(a => a.Category = category);
+		public LoggingActionDescriptor Category(string category) => Assign(category, (a, v) => a.Category = v);
 	}
 }

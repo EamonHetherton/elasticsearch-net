@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,42 +7,43 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/ClientConcepts/ConnectionPooling/Failover/FallingOver.doc.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/ClientConcepts/ConnectionPooling/Failover/FallingOver.doc.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
-[[falling-over]]
-== Fail over
+[[fail-over]]
+=== Fail over
 
-When using connection pooling and the pool has sufficient nodes a request will be retried if
-the call to a node throws an exception or returns a 502 or 503
+When using a connection pool with more than one node, a request will be retried if
+the call to a node throws an exception or returns a 502, 503 or 504 response
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways())
     .ClientCalls(r => r.OnPort(9201).SucceedAlways())
     .StaticConnectionPool()
     .Settings(s => s.DisablePing())
 );
+
 audit = await audit.TraceCall(
     new ClientCall {
-        { BadResponse, 9200 },
-        { HealthyResponse, 9201 },
+        { AuditEvent.BadResponse, 9200 },
+        { AuditEvent.HealthyResponse, 9201 },
     }
 );
 ----
 
 [[bad-gateway]]
-=== 502 Bad Gateway
+==== 502 Bad Gateway
 
 Will be treated as an error that requires retrying
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways(502))
     .ClientCalls(r => r.OnPort(9201).SucceedAlways())
@@ -52,20 +53,20 @@ var audit = new Auditor(() => Framework.Cluster
 
 audit = await audit.TraceCall(
     new ClientCall {
-        { BadResponse, 9200 },
-        { HealthyResponse, 9201 },
+        { AuditEvent.BadResponse, 9200 },
+        { AuditEvent.HealthyResponse, 9201 },
     }
 );
 ----
 
 [[service-unavailable]]
-=== 503 Service Unavailable
+==== 503 Service Unavailable
 
 Will be treated as an error that requires retrying
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways(503))
     .ClientCalls(r => r.OnPort(9201).SucceedAlways())
@@ -75,20 +76,20 @@ var audit = new Auditor(() => Framework.Cluster
 
 audit = await audit.TraceCall(
     new ClientCall {
-        { BadResponse, 9200 },
-        { HealthyResponse, 9201 },
+        { AuditEvent.BadResponse, 9200 },
+        { AuditEvent.HealthyResponse, 9201 },
     }
 );
 ----
 
 [[gateway-timeout]]
-=== 504 Gateway Timeout
+==== 504 Gateway Timeout
 
 Will be treated as an error that requires retrying
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways(504))
     .ClientCalls(r => r.OnPort(9201).SucceedAlways())
@@ -98,20 +99,20 @@ var audit = new Auditor(() => Framework.Cluster
 
 audit = await audit.TraceCall(
     new ClientCall {
-        { BadResponse, 9200 },
-        { HealthyResponse, 9201 },
+        { AuditEvent.BadResponse, 9200 },
+        { AuditEvent.HealthyResponse, 9201 },
     }
 );
 ----
 
-If a call returns a valid http status code other than 502 or 503, the request won't be retried.
+If a call returns a __valid__ HTTP status code other than 502 or 503, the request won't be retried.
 
-IMPORTANT: Different requests may have different status codes that are deemed valid. For example,
-a *404 Not Found* response is a valid status code for an index exists request
+IMPORTANT: Different requests may have different status codes that are deemed __valid__. For example,
+a *404 Not Found* response is a __valid__ status code for an index exists request
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways(418))
     .ClientCalls(r => r.OnPort(9201).SucceedAlways())
@@ -121,7 +122,7 @@ var audit = new Auditor(() => Framework.Cluster
 
 audit = await audit.TraceCall(
     new ClientCall {
-        { BadResponse, 9200 },
+        { AuditEvent.BadResponse, 9200 },
     }
 );
 ----

@@ -1,26 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using Newtonsoft.Json;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	public interface ICancelTasksResponse: IResponse
+	public class CancelTasksResponse : ResponseBase
 	{
-		[JsonProperty("nodes")]
-		IReadOnlyDictionary<string, TaskExecutingNode> Nodes { get; }
+		public override bool IsValid => base.IsValid && !NodeFailures.HasAny();
 
-		[JsonProperty("node_failures")]
-		IReadOnlyCollection<Throwable> NodeFailures { get; }
-	}
+		[DataMember(Name = "node_failures")]
+		public IReadOnlyCollection<ErrorCause> NodeFailures { get; internal set; } = EmptyReadOnly<ErrorCause>.Collection;
 
-	public class CancelTasksResponse : ResponseBase, ICancelTasksResponse
-	{
-		public override bool IsValid => base.IsValid && !this.NodeFailures.HasAny();
-
+		[DataMember(Name = "nodes")]
 		public IReadOnlyDictionary<string, TaskExecutingNode> Nodes { get; internal set; } = EmptyReadOnly<string, TaskExecutingNode>.Dictionary;
-		public IReadOnlyCollection<Throwable> NodeFailures { get; internal set; } = EmptyReadOnly<Throwable>.Collection;
 	}
+
 }

@@ -1,22 +1,20 @@
 using System.Diagnostics;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IIpProperty : IDocValuesProperty
 	{
-		[JsonProperty("index")]
-		bool? Index { get; set; }
-
-		[JsonProperty("boost")]
+		[DataMember(Name ="boost")]
 		double? Boost { get; set; }
 
-		[JsonProperty("null_value")]
-		string NullValue { get; set; }
+		[DataMember(Name ="index")]
+		bool? Index { get; set; }
 
-		[JsonProperty("include_in_all")]
-		bool? IncludeInAll { get; set; }
+		[DataMember(Name ="null_value")]
+		string NullValue { get; set; }
 	}
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -25,7 +23,6 @@ namespace Nest
 		public IpProperty() : base(FieldType.Ip) { }
 
 		public double? Boost { get; set; }
-		public bool? IncludeInAll { get; set; }
 		public bool? Index { get; set; }
 		public string NullValue { get; set; }
 	}
@@ -35,19 +32,16 @@ namespace Nest
 		: DocValuesPropertyDescriptorBase<IpPropertyDescriptor<T>, IIpProperty, T>, IIpProperty
 		where T : class
 	{
-		bool? IIpProperty.Index { get; set; }
-		double? IIpProperty.Boost { get; set; }
-		string IIpProperty.NullValue { get; set; }
-		bool? IIpProperty.IncludeInAll { get; set; }
-
 		public IpPropertyDescriptor() : base(FieldType.Ip) { }
 
-		public IpPropertyDescriptor<T> Index(bool index) => Assign(a => a.Index = index);
+		double? IIpProperty.Boost { get; set; }
+		bool? IIpProperty.Index { get; set; }
+		string IIpProperty.NullValue { get; set; }
 
-		public IpPropertyDescriptor<T> Boost(double boost) => Assign(a => a.Boost = boost);
+		public IpPropertyDescriptor<T> Index(bool? index = true) => Assign(index, (a, v) => a.Index = v);
 
-		public IpPropertyDescriptor<T> NullValue(string nullValue) => Assign(a => a.NullValue = nullValue);
+		public IpPropertyDescriptor<T> Boost(double? boost) => Assign(boost, (a, v) => a.Boost = v);
 
-		public IpPropertyDescriptor<T> IncludeInAll(bool includeInAll = true) => Assign(a => a.IncludeInAll = includeInAll);
+		public IpPropertyDescriptor<T> NullValue(string nullValue) => Assign(nullValue, (a, v) => a.NullValue = v);
 	}
 }

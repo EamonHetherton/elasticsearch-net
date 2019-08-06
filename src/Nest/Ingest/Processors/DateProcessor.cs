@@ -1,46 +1,66 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ProcessorJsonConverter<DateProcessor>))]
+	[InterfaceDataContract]
 	public interface IDateProcessor : IProcessor
 	{
-		[JsonProperty("field")]
+		/// <summary>
+		/// The field to get the date from.
+		/// </summary>
+		[DataMember(Name ="field")]
 		Field Field { get; set; }
 
-		[JsonProperty("target_field")]
-		Field TargetField { get; set; }
-
-		[JsonProperty("formats")]
+		/// <summary>
+		/// An array of the expected date formats. Can be a Joda pattern or one of
+		/// the following formats: ISO8601, UNIX, UNIX_MS, or TAI64N.
+		/// </summary>
+		[DataMember(Name ="formats")]
 		IEnumerable<string> Formats { get; set; }
 
-		[JsonProperty("timezone")]
-		string Timezone { get; set; }
-
-		[JsonProperty("locale")]
+		/// <summary>
+		/// The locale to use when parsing the date, relevant when parsing month names or week days.
+		/// Supports template snippets.
+		/// </summary>
+		[DataMember(Name ="locale")]
 		string Locale { get; set; }
+
+		/// <summary>
+		/// The field that will hold the parsed date. Defaults to @timestamp
+		/// </summary>
+		[DataMember(Name ="target_field")]
+		Field TargetField { get; set; }
+
+		/// <summary>
+		/// The timezone to use when parsing the date. Supports template snippets.
+		/// </summary>
+		[DataMember(Name ="timezone")]
+		string TimeZone { get; set; }
 	}
 
 	public class DateProcessor : ProcessorBase, IDateProcessor
 	{
-		protected override string Name => "date";
-
+		/// <inheritdoc />
 		public Field Field { get; set; }
 
-		public Field TargetField { get; set; }
-
+		/// <inheritdoc />
 		public IEnumerable<string> Formats { get; set; }
 
-		public string Timezone { get; set; }
-
+		/// <inheritdoc />
 		public string Locale { get; set; }
+
+		/// <inheritdoc />
+		public Field TargetField { get; set; }
+
+		/// <inheritdoc />
+		public string TimeZone { get; set; }
+
+		/// <inheritdoc />
+		protected override string Name => "date";
 	}
 
 	public class DateProcessorDescriptor<T>
@@ -50,27 +70,35 @@ namespace Nest
 		protected override string Name => "date";
 
 		Field IDateProcessor.Field { get; set; }
-		Field IDateProcessor.TargetField { get; set; }
 		IEnumerable<string> IDateProcessor.Formats { get; set; }
-		string IDateProcessor.Timezone { get; set; }
 		string IDateProcessor.Locale { get; set; }
+		Field IDateProcessor.TargetField { get; set; }
+		string IDateProcessor.TimeZone { get; set; }
 
-		public DateProcessorDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		/// <inheritdoc cref="IDateProcessor.Field" />
+		public DateProcessorDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public DateProcessorDescriptor<T> Field(Expression<Func<T, object>> objectPath) =>
-			Assign(a => a.Field = objectPath);
+		/// <inheritdoc cref="IDateProcessor.Field" />
+		public DateProcessorDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> objectPath) =>
+			Assign(objectPath, (a, v) => a.Field = v);
 
-		public DateProcessorDescriptor<T> TargetField(Field field) => Assign(a => a.TargetField = field);
+		/// <inheritdoc cref="IDateProcessor.TargetField" />
+		public DateProcessorDescriptor<T> TargetField(Field field) => Assign(field, (a, v) => a.TargetField = v);
 
-		public DateProcessorDescriptor<T> TargetField(Expression<Func<T, object>> objectPath) =>
-			Assign(a => a.TargetField = objectPath);
+		/// <inheritdoc cref="IDateProcessor.TargetField" />
+		public DateProcessorDescriptor<T> TargetField<TValue>(Expression<Func<T, TValue>> objectPath) =>
+			Assign(objectPath, (a, v) => a.TargetField = v);
 
-		public DateProcessorDescriptor<T> Formats(IEnumerable<string> matchFormats) => Assign(a => a.Formats = matchFormats);
+		/// <inheritdoc cref="IDateProcessor.Formats" />
+		public DateProcessorDescriptor<T> Formats(IEnumerable<string> matchFormats) => Assign(matchFormats, (a, v) => a.Formats = v);
 
-		public DateProcessorDescriptor<T> Formats(params string[] matchFormats) => Assign(a => a.Formats = matchFormats);
+		/// <inheritdoc cref="IDateProcessor.Formats" />
+		public DateProcessorDescriptor<T> Formats(params string[] matchFormats) => Assign(matchFormats, (a, v) => a.Formats = v);
 
-		public DateProcessorDescriptor<T> Timezone(string timezone) => Assign(a => a.Timezone = timezone);
+		/// <inheritdoc cref="IDateProcessor.TimeZone" />
+		public DateProcessorDescriptor<T> TimeZone(string timezone) => Assign(timezone, (a, v) => a.TimeZone = v);
 
-		public DateProcessorDescriptor<T> Locale(string locale) => Assign(a => a.Locale = locale);
+		/// <inheritdoc cref="IDateProcessor.Locale" />
+		public DateProcessorDescriptor<T> Locale(string locale) => Assign(locale, (a, v) => a.Locale = v);
 	}
 }

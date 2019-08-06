@@ -1,54 +1,74 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(PropertyJsonConverter))]
+	/// <summary>
+	/// A mapping for a property type to a document field in Elasticsearch
+	/// </summary>
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(PropertyFormatter))]
 	public interface IProperty : IFieldMapping
 	{
-		PropertyName Name { get; set; }
-
-		[JsonProperty("type")]
-		TypeName Type { get; set; }
+		/// <summary>
+		/// Local property metadata that will not be stored in Elasticsearch with the mappings
+		/// </summary>
+		[IgnoreDataMember]
+		IDictionary<string, object> LocalMetadata { get; set; }
 
 		/// <summary>
-		/// Local property metadata that will NOT be stored in Elasticsearch with the mappings
+		/// The name of the property
 		/// </summary>
-		[JsonIgnore]
-		IDictionary<string, object> LocalMetadata { get; set; }
+		[IgnoreDataMember]
+		PropertyName Name { get; set; }
+
+		/// <summary>
+		/// The datatype of the property
+		/// </summary>
+		[DataMember(Name = "type")]
+		string Type { get; set; }
 	}
 
+	/// <summary>
+	/// A mapping for a property from a CLR type
+	/// </summary>
 	public interface IPropertyWithClrOrigin
 	{
+		/// <summary>
+		/// The CLR property to which the mapping relates
+		/// </summary>
 		PropertyInfo ClrOrigin { get; set; }
 	}
 
+	/// <inheritdoc cref="IProperty" />
 	[DebuggerDisplay("{DebugDisplay}")]
 	public abstract class PropertyBase : IProperty, IPropertyWithClrOrigin
 	{
-		[Obsolete("Please use overload taking FieldType")]
-		protected PropertyBase(TypeName typeName)
-		{
-			Type = typeName;
-		}
-#pragma warning disable 618
-		protected PropertyBase(FieldType type) : this(type.GetStringValue()) { }
-#pragma warning restore 618
+		protected PropertyBase(FieldType type) => ((IProperty)this).Type = type.GetStringValue();
 
-		protected string DebugDisplay => $"Type: {Type.DebugDisplay}, Name: {Name.DebugDisplay} ";
+		/// <inheritdoc />
+		public IDictionary<string, object> LocalMetadata { get; set; }
 
+		/// <inheritdoc />
 		public PropertyName Name { get; set; }
-		public virtual TypeName Type { get; set; }
-		PropertyInfo IPropertyWithClrOrigin.ClrOrigin { get; set; }
+
+		protected string DebugDisplay => $"Type: {((IProperty)this).Type ?? "<empty>"}, Name: {Name.DebugDisplay} ";
 
 		/// <summary>
-		/// Local property metadata that will NOT be stored in Elasticsearch with the mappings
+		/// Override for the property type, used for custom mappings
 		/// </summary>
-		public IDictionary<string, object> LocalMetadata { get; set; }
+		protected string TypeOverride { get; set; }
+
+		PropertyInfo IPropertyWithClrOrigin.ClrOrigin { get; set; }
+
+		string IProperty.Type
+		{
+			get => TypeOverride;
+			set => TypeOverride = value;
+		}
 	}
 }

@@ -1,21 +1,25 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
-    public enum TextQueryType
-    {
+	[StringEnum]
+	public enum TextQueryType
+	{
 		[EnumMember(Value = "best_fields")]
-        BestFields,
+		BestFields,
+
 		[EnumMember(Value = "most_fields")]
-        MostFields,
+		MostFields,
+
 		[EnumMember(Value = "cross_fields")]
-        CrossFields,
+		CrossFields,
+
 		[EnumMember(Value = "phrase")]
-        Phrase,
+		Phrase,
+
 		[EnumMember(Value = "phrase_prefix")]
-        PhrasePrefix
-    }
+		PhrasePrefix
+	}
 }

@@ -11,13 +11,13 @@ namespace Nest
 	{
 		Field IFieldNameQuery.Field { get; set; }
 
-		bool IQuery.IsVerbatim { get; set; }
-
 		bool IQuery.IsStrict { get; set; }
 
-		public TDescriptor Field(Field field) => Assign(a => a.Field = field);
+		bool IQuery.IsVerbatim { get; set; }
 
-		public TDescriptor Field(Expression<Func<T, object>> objectPath) =>
-			Assign(a => a.Field = objectPath);
+		public TDescriptor Field(Field field) => Assign(field, (a, v) => a.Field = v);
+
+		public TDescriptor Field<TValue>(Expression<Func<T, TValue>> objectPath) =>
+			Assign(objectPath, (a, v) => a.Field = v);
 	}
 }

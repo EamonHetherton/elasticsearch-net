@@ -1,34 +1,74 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net.Utf8Json.Resolvers;
+
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReserializeJsonConverter<TriggerContainer, ITriggerContainer>))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(TriggerContainerInterfaceFormatter))]
 	public interface ITriggerContainer
 	{
-		[JsonProperty("schedule")]
+		[DataMember(Name ="schedule")]
 		IScheduleContainer Schedule { get; set; }
 	}
 
+	[JsonFormatter(typeof(TriggerContainerFormatter))]
 	public class TriggerContainer : ITriggerContainer, IDescriptor
 	{
-		IScheduleContainer ITriggerContainer.Schedule { get; set; }
-
-		public TriggerContainer() {}
+		public TriggerContainer() { }
 
 		public TriggerContainer(TriggerBase trigger)
 		{
 			trigger.ThrowIfNull(nameof(trigger));
 			trigger.WrapInContainer(this);
 		}
+
+		IScheduleContainer ITriggerContainer.Schedule { get; set; }
 	}
 
 	public class TriggerDescriptor : TriggerContainer
 	{
-		private TriggerDescriptor Assign(Action<ITriggerContainer> assigner) => Fluent.Assign(this, assigner);
+		private TriggerDescriptor Assign<TValue>(TValue value, Action<ITriggerContainer, TValue> assigner) => Fluent.Assign(this, value, assigner);
 
 		public TriggerDescriptor Schedule(Func<ScheduleDescriptor, IScheduleContainer> selector) =>
-			Assign(a => a.Schedule = selector?.InvokeOrDefault(new ScheduleDescriptor()));
+			Assign(selector, (a, v) => a.Schedule = v?.InvokeOrDefault(new ScheduleDescriptor()));
+	}
+
+	internal class TriggerContainerFormatter : IJsonFormatter<TriggerContainer>
+	{
+		public TriggerContainer Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
+		{
+			var formatter = DynamicObjectResolver.AllowPrivateExcludeNullCamelCase.GetFormatter<TriggerContainer>();
+			return formatter.Deserialize(ref reader, formatterResolver);
+		}
+
+		public void Serialize(ref JsonWriter writer, TriggerContainer value, IJsonFormatterResolver formatterResolver)
+		{
+			var queryFormatter = formatterResolver.GetFormatter<ITriggerContainer>();
+			queryFormatter.Serialize(ref writer, value, formatterResolver);
+		}
+	}
+
+	internal class TriggerContainerInterfaceFormatter : IJsonFormatter<ITriggerContainer>
+	{
+		public ITriggerContainer Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
+		{
+			var formatter = formatterResolver.GetFormatter<TriggerContainer>();
+			return formatter.Deserialize(ref reader, formatterResolver);
+		}
+
+		public void Serialize(ref JsonWriter writer, ITriggerContainer value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null)
+			{
+				writer.WriteNull();
+				return;
+			}
+
+			var formatter = DynamicObjectResolver.ExcludeNullCamelCase.GetFormatter<ITriggerContainer>();
+			formatter.Serialize(ref writer, value, formatterResolver);
+		}
 	}
 }

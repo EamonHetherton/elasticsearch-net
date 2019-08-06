@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<LaplaceSmoothingModel>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(LaplaceSmoothingModel))]
 	public interface ILaplaceSmoothingModel : ISmoothingModel
 	{
-		[JsonProperty("alpha")]
+		[DataMember(Name ="alpha")]
 		double? Alpha { get; set; }
 	}
 
@@ -20,8 +20,8 @@ namespace Nest
 
 	public class LaplaceSmoothingModelDescriptor : DescriptorBase<LaplaceSmoothingModelDescriptor, ILaplaceSmoothingModel>, ILaplaceSmoothingModel
 	{
-		double? ILaplaceSmoothingModel.Alpha{ get; set; }
+		double? ILaplaceSmoothingModel.Alpha { get; set; }
 
-		public LaplaceSmoothingModelDescriptor Alpha(double? alpha) => Assign(a => a.Alpha = alpha);
+		public LaplaceSmoothingModelDescriptor Alpha(double? alpha) => Assign(alpha, (a, v) => a.Alpha = v);
 	}
 }

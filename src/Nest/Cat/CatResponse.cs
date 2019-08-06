@@ -1,19 +1,14 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface ICatResponse<out TCatRecord> : IResponse
+	[DataContract]
+	public class CatResponse<TCatRecord> : ResponseBase
 		where TCatRecord : ICatRecord
 	{
-		IReadOnlyCollection<TCatRecord> Records { get; }
-	}
-
-	[JsonObject]
-	public class CatResponse<TCatRecord> : ResponseBase, ICatResponse<TCatRecord>
-		where TCatRecord : ICatRecord
-	{
+		[IgnoreDataMember]
 		public IReadOnlyCollection<TCatRecord> Records { get; internal set; } = EmptyReadOnly<TCatRecord>.Collection;
 	}
 }

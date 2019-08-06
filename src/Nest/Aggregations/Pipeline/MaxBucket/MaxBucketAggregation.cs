@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<MaxBucketAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(MaxBucketAggregation))]
 	public interface IMaxBucketAggregation : IPipelineAggregation { }
 
 	public class MaxBucketAggregation
 		: PipelineAggregationBase, IMaxBucketAggregation
 	{
-		internal MaxBucketAggregation () { }
+		internal MaxBucketAggregation() { }
 
 		public MaxBucketAggregation(string name, SingleBucketsPath bucketsPath)
 			: base(name, bucketsPath) { }
@@ -19,7 +19,5 @@ namespace Nest
 
 	public class MaxBucketAggregationDescriptor
 		: PipelineAggregationDescriptorBase<MaxBucketAggregationDescriptor, IMaxBucketAggregation, SingleBucketsPath>
-		, IMaxBucketAggregation
-	{
-	}
+			, IMaxBucketAggregation { }
 }

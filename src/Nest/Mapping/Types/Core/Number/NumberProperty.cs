@@ -1,35 +1,33 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface INumberProperty : IDocValuesProperty
 	{
-		[JsonProperty("index")]
-		bool? Index { get; set; }
-
-		[JsonProperty("boost")]
+		[DataMember(Name = "boost")]
 		double? Boost { get; set; }
 
-		[JsonProperty("null_value")]
-		double? NullValue { get; set; }
-
-		[JsonProperty("include_in_all")]
-		bool? IncludeInAll { get; set; }
-
-		[JsonProperty("ignore_malformed")]
-		bool? IgnoreMalformed { get; set; }
-
-		[JsonProperty("coerce")]
+		[DataMember(Name = "coerce")]
 		bool? Coerce { get; set; }
 
-		[JsonProperty("fielddata")]
+		[DataMember(Name = "fielddata")]
 		INumericFielddata Fielddata { get; set; }
 
-		[JsonProperty("scaling_factor")]
+		[DataMember(Name = "ignore_malformed")]
+		bool? IgnoreMalformed { get; set; }
+
+		[DataMember(Name = "index")]
+		bool? Index { get; set; }
+
+		[DataMember(Name = "null_value")]
+		double? NullValue { get; set; }
+
+		[DataMember(Name = "scaling_factor")]
 		double? ScalingFactor { get; set; }
 	}
 
@@ -37,17 +35,16 @@ namespace Nest
 	public class NumberProperty : DocValuesPropertyBase, INumberProperty
 	{
 		public NumberProperty() : base(FieldType.Float) { }
-		public NumberProperty(NumberType type) : base(type.ToFieldType()) { }
-		[Obsolete("Please use overload taking NumberType")]
-		protected NumberProperty(string type) : base(type) { }
 
-		public bool? Index { get; set; }
+		public NumberProperty(NumberType type) : base(type.ToFieldType()) { }
+
 		public double? Boost { get; set; }
-		public double? NullValue { get; set; }
-		public bool? IncludeInAll { get; set; }
-		public bool? IgnoreMalformed { get; set; }
 		public bool? Coerce { get; set; }
 		public INumericFielddata Fielddata { get; set; }
+		public bool? IgnoreMalformed { get; set; }
+
+		public bool? Index { get; set; }
+		public double? NullValue { get; set; }
 		public double? ScalingFactor { get; set; }
 	}
 
@@ -60,41 +57,35 @@ namespace Nest
 	{
 		protected NumberPropertyDescriptorBase() : base(FieldType.Float) { }
 
-		[Obsolete("Please use overload taking FieldType")]
-		protected NumberPropertyDescriptorBase(string type) : base(type) { }
+		protected NumberPropertyDescriptorBase(FieldType type) : base(type) { }
 
-		bool? INumberProperty.Index { get; set; }
 		double? INumberProperty.Boost { get; set; }
-		double? INumberProperty.NullValue { get; set; }
-		bool? INumberProperty.IncludeInAll { get; set; }
-		bool? INumberProperty.IgnoreMalformed { get; set; }
 		bool? INumberProperty.Coerce { get; set; }
 		INumericFielddata INumberProperty.Fielddata { get; set; }
+		bool? INumberProperty.IgnoreMalformed { get; set; }
+
+		bool? INumberProperty.Index { get; set; }
+		double? INumberProperty.NullValue { get; set; }
 		double? INumberProperty.ScalingFactor { get; set; }
 
-		public TDescriptor Type(NumberType type) => Assign(a => a.Type = type.GetStringValue());
+		public TDescriptor Type(NumberType? type) => Assign(type?.GetStringValue(), (a, v) => a.Type = v);
 
-		public TDescriptor Index(bool index) => Assign(a => a.Index = index);
+		public TDescriptor Index(bool? index = true) => Assign(index, (a, v) => a.Index = v);
 
-		public TDescriptor Boost(double boost) => Assign(a => a.Boost = boost);
+		public TDescriptor Boost(double? boost) => Assign(boost, (a, v) => a.Boost = v);
 
-		public TDescriptor NullValue(double nullValue) => Assign(a => a.NullValue = nullValue);
+		public TDescriptor NullValue(double? nullValue) => Assign(nullValue, (a, v) => a.NullValue = v);
 
-		public TDescriptor IncludeInAll(bool includeInAll = true) => Assign(a => a.IncludeInAll = includeInAll);
+		public TDescriptor IgnoreMalformed(bool? ignoreMalformed = true) => Assign(ignoreMalformed, (a, v) => a.IgnoreMalformed = v);
 
-		public TDescriptor IgnoreMalformed(bool ignoreMalformed = true) => Assign(a => a.IgnoreMalformed = ignoreMalformed);
-
-		public TDescriptor Coerce(bool coerce = true) => Assign(a => a.Coerce = coerce);
+		public TDescriptor Coerce(bool? coerce = true) => Assign(coerce, (a, v) => a.Coerce = v);
 
 		public TDescriptor Fielddata(Func<NumericFielddataDescriptor, INumericFielddata> selector) =>
-			Assign(a => a.Fielddata = selector(new NumericFielddataDescriptor()));
+			Assign(selector(new NumericFielddataDescriptor()), (a, v) => a.Fielddata = v);
 
-		public TDescriptor ScalingFactor(double scalingFactor) => Assign(a => a.ScalingFactor = scalingFactor);
+		public TDescriptor ScalingFactor(double? scalingFactor) => Assign(scalingFactor, (a, v) => a.ScalingFactor = v);
 	}
 
-	public class NumberPropertyDescriptor<T>
-		: NumberPropertyDescriptorBase<NumberPropertyDescriptor<T>, INumberProperty, T>, INumberProperty
-		where T : class
-	{
-	}
+	public class NumberPropertyDescriptor<T> : NumberPropertyDescriptorBase<NumberPropertyDescriptor<T>, INumberProperty, T>
+		where T : class { }
 }

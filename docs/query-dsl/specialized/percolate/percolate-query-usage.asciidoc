@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,13 +7,13 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/Specialized/Percolate/PercolateQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/Specialized/Percolate/PercolateQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[percolate-query-usage]]
-== Percolate Query Usage
+=== Percolate Query Usage
 
 The percolate query can be used to match queries stored in an index.
 The percolate query itself contains the document that will be used as query to match with the stored queries.
@@ -26,53 +26,25 @@ See the Elasticsearch documentation on {ref_current}/query-dsl-percolate-query.h
 In this example, we have a document stored with a `query` field that is mapped as a `percolator` type. This field
 contains a `match` query.
 
+==== Fluent DSL example
+
 [source,csharp]
 ----
-foreach (var index in values.Values)
+q
+.Percolate(p => p
+    .Document(Project.Instance)
+    .Field(f => f.Query)
+)
+----
+
+==== Object Initializer syntax example
+
+[source,csharp]
+----
+new PercolateQuery
 {
-    this.Client.CreateIndex(index, c => c
-        .Settings(settings=>settings
-            .Analysis(Seeder.ProjectAnalysisSettings)
-        )
-        .Mappings(m => m
-            .Map<Project>(mm => mm.AutoMap()
-                .Properties(Seeder.ProjectProperties)
-            )
-            .Map<PercolatedQuery>(mm => mm.AutoMap()
-                .Properties(Seeder.PercolatedQueryProperties)
-            )
-        )
-    );
-
-    this.Client.Index(new PercolatedQuery
-    {
-        Id = PercolatorId,
-        Query = new QueryContainer(new MatchQuery
-        {
-            Field = Infer.Field<Project>(f => f.LeadDeveloper.FirstName),
-            Query = "Martijn"
-        })
-    }, d => d.Index(index));
-
-    this.Client.Refresh(index);
-}
-----
-
-=== Fluent DSL Example
-
-[source,csharp]
-----
-f =>
-f.Query(QueryFluent).Index(CallIsolatedValue).AllTypes()
-----
-
-=== Object Initializer Syntax Example
-
-[source,csharp]
-----
-new SearchRequest<PercolatedQuery>(CallIsolatedValue, Types.All)
-{
-    Query = this.QueryInitializer
+    Document = Project.Instance,
+    Field = Infer.Field<ProjectPercolation>(f => f.Query)
 }
 ----
 
@@ -81,7 +53,6 @@ new SearchRequest<PercolatedQuery>(CallIsolatedValue, Types.All)
 ----
 {
   "percolate": {
-    "document_type": "project",
     "document": {
       "name": "Koch, Collier and Mohr",
       "state": "BellyUp",
@@ -103,31 +74,7 @@ new SearchRequest<PercolatedQuery>(CallIsolatedValue, Types.All)
 }
 ----
 
-=== Fluent DSL Example
-
-[source,csharp]
-----
-q
-.Percolate(p => p
-    .DocumentType(typeof(Project))
-    .Document(Project.Instance)
-    .Field(f => f.Query)
-)
-----
-
-=== Object Initializer Syntax Example
-
-[source,csharp]
-----
-new PercolateQuery
-{
-    DocumentType = typeof(Project),
-    Document = Project.Instance,
-    Field = Infer.Field<PercolatedQuery>(f => f.Query)
-}
-----
-
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
@@ -139,7 +86,6 @@ match.Id.Should().Be(PercolatorId);
 ((IQueryContainer)match.Query).Match.Should().NotBeNull();
 ----
 
-[[percolate-an-existing-document]]
 [float]
 == Percolate an existing document
 
@@ -160,32 +106,29 @@ The required fields to percolate an existing document are:
 
 See the Elasticsearch documentation on {ref_current}/query-dsl-percolate-query.html[percolate query] for more details.
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
 q
 .Percolate(p => p
-    .Type<Project>()
     .Index<Project>()
     .Id(Project.Instance.Name)
+    .Routing(Project.Instance.Name)
     .Field(f => f.Query)
-    .DocumentType<Project>() <1>
 )
 ----
-<1> specify the `type`, `index`, `id`, `field`, `document_type` of the document to fetch, to percolate.
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
 new PercolateQuery
 {
-    Type = typeof(Project),
     Index = IndexName.From<Project>(),
     Id = Project.Instance.Name,
-    DocumentType = typeof(Project),
-    Field = Infer.Field<PercolatedQuery>(f => f.Query)
+    Routing = Project.Instance.Name,
+    Field = Infer.Field<ProjectPercolation>(f => f.Query)
 }
 ----
 
@@ -194,22 +137,131 @@ new PercolateQuery
 ----
 {
   "percolate": {
-    "type": "project",
+    "type": "doc",
     "index": "project",
     "id": "Durgan LLC",
-    "document_type": "project",
+    "routing": "Durgan LLC",
     "field": "query"
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.Total.Should().BeGreaterThan(0);
 response.Hits.Should().NotBeNull();
 response.Hits.Count().Should().BeGreaterThan(0);
+var match = response.Documents.First();
+match.Id.Should().Be(PercolatorId);
+((IQueryContainer)match.Query).Match.Should().NotBeNull();
+----
+
+[float]
+== Percolate multiple documents
+
+The percolate query can match multiple documents simultaneously with the indexed percolator queries.
+Percolating multiple documents in a single request can improve performance as queries
+only need to be parsed and matched once instead of multiple times.
+
+See the Elasticsearch documentation on {ref_current}/query-dsl-percolate-query.html[percolate query] for more details.
+
+==== Fluent DSL example
+
+[source,csharp]
+----
+q
+.Percolate(p => p
+    .Documents(Project.Instance, Project.Instance, Project.Instance)
+    .Field(f => f.Query)
+)
+----
+
+==== Object Initializer syntax example
+
+[source,csharp]
+----
+new PercolateQuery
+{
+    Documents = new[] { Project.Instance, Project.Instance, Project.Instance },
+    Field = Infer.Field<ProjectPercolation>(f => f.Query)
+}
+----
+
+[source,javascript]
+.Example json output
+----
+{
+  "percolate": {
+    "documents": [
+      {
+        "name": "Koch, Collier and Mohr",
+        "state": "BellyUp",
+        "startedOn": "2015-01-01T00:00:00",
+        "lastActivity": "0001-01-01T00:00:00",
+        "leadDeveloper": {
+          "gender": "Male",
+          "id": 0,
+          "firstName": "Martijn",
+          "lastName": "Laarman"
+        },
+        "location": {
+          "lat": 42.1523,
+          "lon": -80.321
+        }
+      },
+      {
+        "name": "Koch, Collier and Mohr",
+        "state": "BellyUp",
+        "startedOn": "2015-01-01T00:00:00",
+        "lastActivity": "0001-01-01T00:00:00",
+        "leadDeveloper": {
+          "gender": "Male",
+          "id": 0,
+          "firstName": "Martijn",
+          "lastName": "Laarman"
+        },
+        "location": {
+          "lat": 42.1523,
+          "lon": -80.321
+        }
+      },
+      {
+        "name": "Koch, Collier and Mohr",
+        "state": "BellyUp",
+        "startedOn": "2015-01-01T00:00:00",
+        "lastActivity": "0001-01-01T00:00:00",
+        "leadDeveloper": {
+          "gender": "Male",
+          "id": 0,
+          "firstName": "Martijn",
+          "lastName": "Laarman"
+        },
+        "location": {
+          "lat": 42.1523,
+          "lon": -80.321
+        }
+      }
+    ],
+    "field": "query"
+  }
+}
+----
+
+==== Handling Responses
+
+[source,csharp]
+----
+response.Total.Should().Be(1);
+response.Hits.Should().NotBeNull();
+response.Hits.Count.Should().Be(1);
+response.Fields.Count.Should().Be(1);
+
+var field = response.Fields.ElementAt(0);
+var values = field.ValuesOf<int>("_percolator_document_slot");
+values.Should().Contain(new[] { 0, 1, 2 });
+
 var match = response.Documents.First();
 match.Id.Should().Be(PercolatorId);
 ((IQueryContainer)match.Query).Match.Should().NotBeNull();

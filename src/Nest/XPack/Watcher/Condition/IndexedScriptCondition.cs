@@ -1,31 +1,26 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IIndexedScriptCondition : IScriptCondition
 	{
-		[JsonProperty("id")]
+		[DataMember(Name = "id")]
 		string Id { get; set; }
 	}
 
 	public class IndexedScriptCondition : ScriptConditionBase, IIndexedScriptCondition
 	{
-		public IndexedScriptCondition(string id)
-		{
-			this.Id = id;
-		}
+		public IndexedScriptCondition(string id) => Id = id;
 
 		public string Id { get; set; }
 	}
 
-	public class IndexedScriptConditionDescriptor :
-		ScriptConditionDescriptorBase<IndexedScriptConditionDescriptor, IIndexedScriptCondition>, IIndexedScriptCondition
+	public class IndexedScriptConditionDescriptor
+		: ScriptConditionDescriptorBase<IndexedScriptConditionDescriptor, IIndexedScriptCondition>, IIndexedScriptCondition
 	{
-		public IndexedScriptConditionDescriptor(string id)
-		{
-			Self.Id = id;
-		}
+		public IndexedScriptConditionDescriptor(string id) => Self.Id = id;
 
 		string IIndexedScriptCondition.Id { get; set; }
 	}

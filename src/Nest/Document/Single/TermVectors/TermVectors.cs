@@ -1,40 +1,40 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
+	[ReadAs(typeof(TermVectorsResult))]
 	public interface ITermVectors
 	{
-		string Index { get; }
-		string Type { get; }
-		string Id { get; }
-		long Version { get; }
 		bool Found { get; }
+		string Id { get; }
+		string Index { get; }
+		IReadOnlyDictionary<Field, TermVector> TermVectors { get; }
 		long Took { get; }
-		IReadOnlyDictionary<string, TermVector> TermVectors { get; }
+		long Version { get; }
 	}
 
 	public class TermVectorsResult : ITermVectors
 	{
-		[JsonProperty("_index")]
-		public string Index { get; internal set; }
-
-		[JsonProperty("_type")]
-		public string Type { get; internal set; }
-
-		[JsonProperty("_id")]
-		public string Id { get; internal set; }
-
-		[JsonProperty("_version")]
-		public long Version { get; internal set; }
-
-		[JsonProperty("found")]
+		[DataMember(Name ="found")]
 		public bool Found { get; internal set; }
 
-		[JsonProperty("took")]
+		[DataMember(Name ="_id")]
+		public string Id { get; internal set; }
+
+		[DataMember(Name ="_index")]
+		public string Index { get; internal set; }
+
+		[DataMember(Name ="term_vectors")]
+		[JsonFormatter(typeof(ResolvableReadOnlyDictionaryFormatter<Field, TermVector>))]
+		public IReadOnlyDictionary<Field, TermVector> TermVectors { get; internal set; } = EmptyReadOnly<Field, TermVector>.Dictionary;
+
+		[DataMember(Name ="took")]
 		public long Took { get; internal set; }
 
-		[JsonProperty("term_vectors")]
-		public IReadOnlyDictionary<string, TermVector> TermVectors { get; internal set; } = EmptyReadOnly<string, TermVector>.Dictionary;
+		[DataMember(Name ="_version")]
+		public long Version { get; internal set; }
 	}
 }

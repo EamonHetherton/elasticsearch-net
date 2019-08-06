@@ -1,14 +1,15 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum StringFielddataFormat
 	{
 		[EnumMember(Value = "paged_bytes")]
 		PagedBytes,
+
 		[EnumMember(Value = "disabled")]
 		Disabled
 	}

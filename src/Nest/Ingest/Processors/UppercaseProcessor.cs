@@ -1,40 +1,76 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ProcessorJsonConverter<UppercaseProcessor>))]
+	/// <summary>
+	/// Converts a string to its uppercase equivalent.
+	/// </summary>
+	[InterfaceDataContract]
 	public interface IUppercaseProcessor : IProcessor
 	{
-		[JsonProperty("field")]
+		/// <summary>
+		/// The field to make uppercase
+		/// </summary>
+		[DataMember(Name ="field")]
 		Field Field { get; set; }
+
+		/// <summary>
+		/// If <c>true</c> and <see cref="Field" /> does not exist or is null,
+		/// the processor quietly exits without modifying the document. Default is <c>false</c>
+		/// </summary>
+		[DataMember(Name = "ignore_missing")]
+		bool? IgnoreMissing { get; set; }
+
+		/// <summary>
+		/// The field to assign the converted value to, by default field is updated in-place
+		/// </summary>
+		[DataMember(Name = "target_field")]
+		Field TargetField { get; set; }
 	}
 
 	public class UppercaseProcessor : ProcessorBase, IUppercaseProcessor
 	{
-		protected override string Name => "uppercase";
-		[JsonProperty("field")]
+		/// <inheritdoc />
+		[DataMember(Name ="field")]
 		public Field Field { get; set; }
+
+		/// <inheritdoc />
+		public bool? IgnoreMissing { get; set; }
+
+		/// <inheritdoc />
+		public Field TargetField { get; set; }
+
+		protected override string Name => "uppercase";
 	}
 
-	//TODO RENAME TO PROCESSOR AND WRITE A CODE STANDARDS TEST FOR THIS
-	public class UppercaseProcessDescriptor<T>
-		: ProcessorDescriptorBase<UppercaseProcessDescriptor<T>, IUppercaseProcessor>, IUppercaseProcessor
+	public class UppercaseProcessorDescriptor<T>
+		: ProcessorDescriptorBase<UppercaseProcessorDescriptor<T>, IUppercaseProcessor>, IUppercaseProcessor
 		where T : class
 	{
 		protected override string Name => "uppercase";
 
 		Field IUppercaseProcessor.Field { get; set; }
+		bool? IUppercaseProcessor.IgnoreMissing { get; set; }
+		Field IUppercaseProcessor.TargetField { get; set; }
 
-		public UppercaseProcessDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		/// <inheritdoc cref="IUppercaseProcessor.Field" />
+		public UppercaseProcessorDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public UppercaseProcessDescriptor<T> Field(Expression<Func<T, object>> objectPath) =>
-			Assign(a => a.Field = objectPath);
+		/// <inheritdoc cref="IUppercaseProcessor.Field" />
+		public UppercaseProcessorDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> objectPath) =>
+			Assign(objectPath, (a, v) => a.Field = v);
+
+		/// <inheritdoc cref="IUppercaseProcessor.TargetField" />
+		public UppercaseProcessorDescriptor<T> TargetField(Field field) => Assign(field, (a, v) => a.TargetField = v);
+
+		/// <inheritdoc cref="IUppercaseProcessor.TargetField" />
+		public UppercaseProcessorDescriptor<T> TargetField(Expression<Func<T, object>> objectPath) =>
+			Assign(objectPath, (a, v) => a.TargetField = v);
+
+		/// <inheritdoc cref="IUppercaseProcessor.IgnoreMissing" />
+		public UppercaseProcessorDescriptor<T> IgnoreMissing(bool? ignoreMissing = true) => Assign(ignoreMissing, (a, v) => a.IgnoreMissing = v);
 	}
 }

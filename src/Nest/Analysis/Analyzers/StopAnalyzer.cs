@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -11,45 +11,43 @@ namespace Nest
 		/// <summary>
 		/// A list of stopword to initialize the stop filter with. Defaults to the english stop words.
 		/// </summary>
-		[JsonProperty("stopwords")]
+		[DataMember(Name ="stopwords")]
 		StopWords StopWords { get; set; }
 
 		/// <summary>
 		/// A path (either relative to config location, or absolute) to a stopwords file configuration.
 		/// </summary>
-		[JsonProperty("stopwords_path")]
+		[DataMember(Name ="stopwords_path")]
 		string StopwordsPath { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class StopAnalyzer : AnalyzerBase, IStopAnalyzer
 	{
-		public StopAnalyzer() : base("stop") {}
+		public StopAnalyzer() : base("stop") { }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public StopWords StopWords { get; set; }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public string StopwordsPath { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class StopAnalyzerDescriptor :
-		AnalyzerDescriptorBase<StopAnalyzerDescriptor, IStopAnalyzer>, IStopAnalyzer
+	/// <inheritdoc />
+	public class StopAnalyzerDescriptor : AnalyzerDescriptorBase<StopAnalyzerDescriptor, IStopAnalyzer>, IStopAnalyzer
 	{
 		protected override string Type => "stop";
 
 		StopWords IStopAnalyzer.StopWords { get; set; }
 		string IStopAnalyzer.StopwordsPath { get; set; }
 
-		public StopAnalyzerDescriptor StopWords(params string[] stopWords) => Assign(a => a.StopWords = stopWords);
+		public StopAnalyzerDescriptor StopWords(params string[] stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
 		public StopAnalyzerDescriptor StopWords(IEnumerable<string> stopWords) =>
-			Assign(a => a.StopWords = stopWords.ToListOrNullIfEmpty());
+			Assign(stopWords.ToListOrNullIfEmpty(), (a, v) => a.StopWords = v);
 
-		public StopAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(a => a.StopWords = stopWords);
+		public StopAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
-		public StopAnalyzerDescriptor StopwordsPath(string path) => Assign(a => a.StopwordsPath = path);
-
+		public StopAnalyzerDescriptor StopwordsPath(string path) => Assign(path, (a, v) => a.StopwordsPath = v);
 	}
 }

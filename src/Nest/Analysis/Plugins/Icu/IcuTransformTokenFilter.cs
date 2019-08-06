@@ -1,38 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
 	/// <summary>
 	/// Transforms are used to process Unicode text in many different ways, such as case mapping,
 	/// normalization, transliteration and bidirectional text handling.
-	/// Part of the `analysis-icu` plugin: https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-icu.html
 	/// </summary>
+	/// <remarks>
+	/// Requires analysis-icu plugin to be installed
+	/// </remarks>
 	public interface IIcuTransformTokenFilter : ITokenFilter
 	{
 		/// <summary>
 		/// Specify text direction with the dir parameter which accepts forward (default) for LTR and reverse for RTL.
 		/// </summary>
-		[JsonProperty("dir")]
+		[DataMember(Name ="dir")]
 		IcuTransformDirection? Direction { get; set; }
 
-		[JsonProperty("id")]
+		[DataMember(Name ="id")]
 		string Id { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class IcuTransformTokenFilter : TokenFilterBase, IIcuTransformTokenFilter
 	{
 		public IcuTransformTokenFilter() : base("icu_transform") { }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public IcuTransformDirection? Direction { get; set; }
 
 		public string Id { get; set; }
 	}
 
-	///<inheritdoc/>
+	/// <inheritdoc />
 	public class IcuTransformTokenFilterDescriptor
 		: TokenFilterDescriptorBase<IcuTransformTokenFilterDescriptor, IIcuTransformTokenFilter>, IIcuTransformTokenFilter
 	{
@@ -41,10 +41,10 @@ namespace Nest
 		IcuTransformDirection? IIcuTransformTokenFilter.Direction { get; set; }
 		string IIcuTransformTokenFilter.Id { get; set; }
 
-		///<inheritdoc/>
-		public IcuTransformTokenFilterDescriptor Direction(IcuTransformDirection? direction) => Assign(a => a.Direction = direction);
+		/// <inheritdoc />
+		public IcuTransformTokenFilterDescriptor Direction(IcuTransformDirection? direction) => Assign(direction, (a, v) => a.Direction = v);
 
-		///<inheritdoc/>
-		public IcuTransformTokenFilterDescriptor Id(string id) => Assign(a => a.Id = id);
+		/// <inheritdoc />
+		public IcuTransformTokenFilterDescriptor Id(string id) => Assign(id, (a, v) => a.Id = v);
 	}
 }

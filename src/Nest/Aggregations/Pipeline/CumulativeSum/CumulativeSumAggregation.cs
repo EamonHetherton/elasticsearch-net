@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<CumulativeSumAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(CumulativeSumAggregation))]
 	public interface ICumulativeSumAggregation : IPipelineAggregation { }
 
 	public class CumulativeSumAggregation
 		: PipelineAggregationBase, ICumulativeSumAggregation
 	{
-		internal CumulativeSumAggregation () { }
+		internal CumulativeSumAggregation() { }
 
 		public CumulativeSumAggregation(string name, SingleBucketsPath bucketsPath)
 			: base(name, bucketsPath) { }
@@ -19,7 +19,5 @@ namespace Nest
 
 	public class CumulativeSumAggregationDescriptor
 		: PipelineAggregationDescriptorBase<CumulativeSumAggregationDescriptor, ICumulativeSumAggregation, SingleBucketsPath>
-		, ICumulativeSumAggregation
-	{
-	}
+			, ICumulativeSumAggregation { }
 }

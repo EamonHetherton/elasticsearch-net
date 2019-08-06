@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -8,43 +8,43 @@ namespace Nest
 	/// </summary>
 	public interface IMappingCharFilter : ICharFilter
 	{
-		[JsonProperty("mappings")]
+		[DataMember(Name = "mappings")]
 		IEnumerable<string> Mappings { get; set; }
 
-		[JsonProperty("mappings_path")]
+		[DataMember(Name = "mappings_path")]
 		string MappingsPath { get; set; }
 	}
-	/// <inheritdoc/>
+
+	/// <inheritdoc />
 	public class MappingCharFilter : CharFilterBase, IMappingCharFilter
 	{
 		public MappingCharFilter() : base("mapping") { }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public IEnumerable<string> Mappings { get; set; }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public string MappingsPath { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class MappingCharFilterDescriptor 
+	/// <inheritdoc />
+	public class MappingCharFilterDescriptor
 		: CharFilterDescriptorBase<MappingCharFilterDescriptor, IMappingCharFilter>, IMappingCharFilter
 	{
 		protected override string Type => "mapping";
 		IEnumerable<string> IMappingCharFilter.Mappings { get; set; }
 		string IMappingCharFilter.MappingsPath { get; set; }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public MappingCharFilterDescriptor Mappings(params string[] mappings) =>
-			Assign(a => a.Mappings = mappings);
+			Assign(mappings, (a, v) => a.Mappings = v);
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public MappingCharFilterDescriptor Mappings(IEnumerable<string> mappings) =>
-			Assign(a => a.Mappings = mappings);
+			Assign(mappings, (a, v) => a.Mappings = v);
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public MappingCharFilterDescriptor MappingsPath(string path) =>
-			Assign(a => a.MappingsPath = path);
-
+			Assign(path, (a, v) => a.MappingsPath = v);
 	}
 }

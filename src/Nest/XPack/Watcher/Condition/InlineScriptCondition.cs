@@ -1,31 +1,25 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
 	public interface IInlineScriptCondition : IScriptCondition
 	{
-		[JsonProperty("inline")]
-		string Inline { get; set; }
+		[DataMember(Name ="source")]
+		string Source { get; set; }
 	}
 
 	public class InlineScriptCondition : ScriptConditionBase, IInlineScriptCondition
 	{
-		public InlineScriptCondition(string script)
-		{
-			this.Inline = script;
-		}
+		public InlineScriptCondition(string script) => Source = script;
 
-		public string Inline { get; set; }
+		public string Source { get; set; }
 	}
 
-	public class InlineScriptConditionDescriptor :
-		ScriptConditionDescriptorBase<InlineScriptConditionDescriptor, IInlineScriptCondition>, IInlineScriptCondition
+	public class InlineScriptConditionDescriptor
+		: ScriptConditionDescriptorBase<InlineScriptConditionDescriptor, IInlineScriptCondition>, IInlineScriptCondition
 	{
-		public InlineScriptConditionDescriptor(string script)
-		{
-			Self.Inline = script;
-		}
+		public InlineScriptConditionDescriptor(string source) => Self.Source = source;
 
-		string IInlineScriptCondition.Inline { get; set; }
+		string IInlineScriptCondition.Source { get; set; }
 	}
 }

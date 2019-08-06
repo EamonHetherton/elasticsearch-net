@@ -1,27 +1,24 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IExplainResponse<T> : IResponse
-		where T : class
+	public interface IExplainResponse<out TDocument> : IResponse
+		where TDocument : class
 	{
-		bool Matched { get; }
-		ExplanationDetail Explanation { get; }
-		InstantGet<T> Get { get; }
+		IInlineGet<TDocument> Get { get; }
 	}
 
-	[JsonObject]
-	public class ExplainResponse<T> : ResponseBase, IExplainResponse<T>
-		where T : class
+	[DataContract]
+	public class ExplainResponse<TDocument> : ResponseBase, IExplainResponse<TDocument>
+		where TDocument : class
 	{
-		[JsonProperty(PropertyName = "matched")]
-		public bool Matched { get; internal set; }
-
-		[JsonProperty(PropertyName = "explanation")]
+		[DataMember(Name ="explanation")]
 		public ExplanationDetail Explanation { get; internal set; }
 
-		[JsonProperty(PropertyName = "get")]
-		public InstantGet<T> Get { get; internal set; }
+		[DataMember(Name ="get")]
+		public IInlineGet<TDocument> Get { get; internal set; }
+
+		[DataMember(Name ="matched")]
+		public bool Matched { get; internal set; }
 	}
 }

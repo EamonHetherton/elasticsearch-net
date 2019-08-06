@@ -1,52 +1,45 @@
-﻿using Elasticsearch.Net;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public partial interface IElasticClient
 	{
-		IShrinkIndexResponse ShrinkIndex(IndexName source, IndexName target, Func<ShrinkIndexDescriptor, IShrinkIndexRequest> selector = null);
+		ShrinkIndexResponse ShrinkIndex(IndexName source, IndexName target, Func<ShrinkIndexDescriptor, IShrinkIndexRequest> selector = null);
 
-		IShrinkIndexResponse ShrinkIndex(IShrinkIndexRequest request);
+		ShrinkIndexResponse ShrinkIndex(IShrinkIndexRequest request);
 
-		Task<IShrinkIndexResponse> ShrinkIndexAsync(
+		Task<ShrinkIndexResponse> ShrinkIndexAsync(
 			IndexName source,
 			IndexName target,
 			Func<ShrinkIndexDescriptor, IShrinkIndexRequest> selector = null,
-			CancellationToken cancellationToken = default(CancellationToken)
+			CancellationToken cancellationToken = default
 		);
 
-		Task<IShrinkIndexResponse> ShrinkIndexAsync(IShrinkIndexRequest request, CancellationToken cancellationToken = default(CancellationToken));
+		Task<ShrinkIndexResponse> ShrinkIndexAsync(IShrinkIndexRequest request, CancellationToken ct = default);
 	}
 
 	public partial class ElasticClient
 	{
-		public IShrinkIndexResponse ShrinkIndex(IndexName source, IndexName target, Func<ShrinkIndexDescriptor, IShrinkIndexRequest> selector = null) =>
-			this.ShrinkIndex(selector.InvokeOrDefault(new ShrinkIndexDescriptor(source, target)));
+		public ShrinkIndexResponse ShrinkIndex(
+			IndexName source,
+			IndexName target,
+			Func<ShrinkIndexDescriptor, IShrinkIndexRequest> selector = null
+		) => ShrinkIndex(selector.InvokeOrDefault(new ShrinkIndexDescriptor(source, target)));
 
-		public IShrinkIndexResponse ShrinkIndex(IShrinkIndexRequest request) =>
-			this.Dispatcher.Dispatch<IShrinkIndexRequest, ShrinkIndexRequestParameters, ShrinkIndexResponse>(
-				request,
-				this.LowLevelDispatch.IndicesShrinkDispatch<ShrinkIndexResponse>
-			);
+		public ShrinkIndexResponse ShrinkIndex(IShrinkIndexRequest request) =>
+			DoRequest<IShrinkIndexRequest, ShrinkIndexResponse>(request, request.RequestParameters);
 
-		public Task<IShrinkIndexResponse> ShrinkIndexAsync(
+		public Task<ShrinkIndexResponse> ShrinkIndexAsync(
 			IndexName source,
 			IndexName target,
 			Func<ShrinkIndexDescriptor, IShrinkIndexRequest> selector = null,
-			CancellationToken cancellationToken = default(CancellationToken)
-		) => this.ShrinkIndexAsync(selector.InvokeOrDefault(new ShrinkIndexDescriptor(source, target)));
+			CancellationToken cancellationToken = default
+		) => ShrinkIndexAsync(selector.InvokeOrDefault(new ShrinkIndexDescriptor(source, target)));
 
-		public Task<IShrinkIndexResponse> ShrinkIndexAsync(IShrinkIndexRequest request, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.Dispatcher.DispatchAsync<IShrinkIndexRequest, ShrinkIndexRequestParameters, ShrinkIndexResponse, IShrinkIndexResponse>(
-				request,
-				cancellationToken,
-				this.LowLevelDispatch.IndicesShrinkDispatchAsync<ShrinkIndexResponse>
-			);
+		public Task<ShrinkIndexResponse> ShrinkIndexAsync(IShrinkIndexRequest request, CancellationToken ct = default) =>
+			DoRequestAsync<IShrinkIndexRequest, ShrinkIndexResponse>(request, request.RequestParameters, ct);
 	}
 }

@@ -1,37 +1,38 @@
 ﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<ConstantScoreQueryDescriptor<object>>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(ConstantScoreQuery))]
 	public interface IConstantScoreQuery : IQuery
 	{
-		[JsonProperty(PropertyName = "filter")]
+		[DataMember(Name ="filter")]
 		QueryContainer Filter { get; set; }
 	}
 
+	[DataContract]
 	public class ConstantScoreQuery : QueryBase, IConstantScoreQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
-		public string Lang { get; set; }
-		public string Script { get; set; }
-		public Dictionary<string, object> Params { get; set; }
 		public QueryContainer Filter { get; set; }
 
+		protected override bool Conditionless => IsConditionless(this);
+
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.ConstantScore = this;
+
 		internal static bool IsConditionless(IConstantScoreQuery q) => q.Filter.NotWritable();
 	}
 
+	[DataContract]
 	public class ConstantScoreQueryDescriptor<T>
 		: QueryDescriptorBase<ConstantScoreQueryDescriptor<T>, IConstantScoreQuery>
-		, IConstantScoreQuery where T : class
+			, IConstantScoreQuery where T : class
 	{
 		protected override bool Conditionless => ConstantScoreQuery.IsConditionless(this);
 		QueryContainer IConstantScoreQuery.Filter { get; set; }
 
 		public ConstantScoreQueryDescriptor<T> Filter(Func<QueryContainerDescriptor<T>, QueryContainer> selector) =>
-			Assign(a => a.Filter = selector?.Invoke(new QueryContainerDescriptor<T>()));
+			Assign(selector, (a, v) => a.Filter = v?.Invoke(new QueryContainerDescriptor<T>()));
 	}
 }

@@ -5,30 +5,31 @@ namespace Nest
 {
 	public abstract class BulkOperationBase : IBulkOperation
 	{
-		public IndexName Index { get; set; }
-		public TypeName Type { get; set; }
 		public Id Id { get; set; }
+		public IndexName Index { get; set; }
+
+		public int? RetriesOnConflict { get; set; }
+		public Routing Routing { get; set; }
 		public long? Version { get; set; }
 		public VersionType? VersionType { get; set; }
-		public string Routing { get; set; }
-		public Id Parent { get; set; }
-		[Obsolete("This property is no longer returned on indices created in Elasticsearch 5.x and up")]
-		public long? Timestamp { get; set; }
-		[Obsolete("This property is no longer returned on indices created in Elasticsearch 5.x and up")]
-		public Time Ttl { get; set; }
-		public int? RetriesOnConflict { get; set; }
-
-		string IBulkOperation.Operation => this.Operation;
+		protected abstract Type ClrType { get; }
 		protected abstract string Operation { get; }
 
-		Type IBulkOperation.ClrType => this.ClrType;
-		protected abstract Type ClrType { get; }
+		Type IBulkOperation.ClrType => ClrType;
 
-		object IBulkOperation.GetBody() => this.GetBody();
+		string IBulkOperation.Operation => Operation;
+
+		object IBulkOperation.GetBody() => GetBody();
+
+		Id IBulkOperation.GetIdForOperation(Inferrer inferrer) => GetIdForOperation(inferrer);
+
+		Routing IBulkOperation.GetRoutingForOperation(Inferrer inferrer) => GetRoutingForOperation(inferrer);
+
 		protected abstract object GetBody();
 
-		Id IBulkOperation.GetIdForOperation(Inferrer inferrer) => this.GetIdForOperation(inferrer);
-		protected virtual Id GetIdForOperation(Inferrer inferrer) => this.Id ?? new Id(this.GetBody());
+		protected virtual Id GetIdForOperation(Inferrer inferrer) => Id ?? new Id(GetBody());
+
+		protected virtual Routing GetRoutingForOperation(Inferrer inferrer) => Routing ?? new Routing(GetBody());
 	}
 
 	public abstract class BulkOperationDescriptorBase<TDescriptor, TInterface>
@@ -36,67 +37,52 @@ namespace Nest
 		where TDescriptor : BulkOperationDescriptorBase<TDescriptor, TInterface>, TInterface, IBulkOperation
 		where TInterface : class, IBulkOperation
 	{
-		string IBulkOperation.Operation => this.BulkOperationType;
+		protected abstract Type BulkOperationClrType { get; }
 		protected abstract string BulkOperationType { get; }
 
-		Type IBulkOperation.ClrType => this.BulkOperationClrType;
-		protected abstract Type BulkOperationClrType { get; }
+		Type IBulkOperation.ClrType => BulkOperationClrType;
+		Id IBulkOperation.Id { get; set; }
 
-		protected abstract object GetBulkOperationBody();
+		IndexName IBulkOperation.Index { get; set; }
+		string IBulkOperation.Operation => BulkOperationType;
+
+		int? IBulkOperation.RetriesOnConflict { get; set; }
+		Routing IBulkOperation.Routing { get; set; }
+		long? IBulkOperation.Version { get; set; }
+		VersionType? IBulkOperation.VersionType { get; set; }
 
 		/// <summary>
 		/// Only used for bulk update operations but in the future might come in handy for other complex bulk ops.
 		/// </summary>
 		/// <returns></returns>
-		object IBulkOperation.GetBody() => this.GetBulkOperationBody();
+		object IBulkOperation.GetBody() => GetBulkOperationBody();
 
-		Id IBulkOperation.GetIdForOperation(Inferrer inferrer) => this.GetIdForOperation(inferrer);
+		Id IBulkOperation.GetIdForOperation(Inferrer inferrer) => GetIdForOperation(inferrer);
 
-		protected virtual Id GetIdForOperation(Inferrer inferrer) => Self.Id ?? new Id(this.GetBulkOperationBody());
+		Routing IBulkOperation.GetRoutingForOperation(Inferrer inferrer) => GetRoutingForOperation(inferrer);
 
-		IndexName IBulkOperation.Index { get; set; }
-		TypeName IBulkOperation.Type { get; set; }
-		Id IBulkOperation.Id { get; set; }
-		long? IBulkOperation.Version { get; set; }
-		VersionType? IBulkOperation.VersionType { get; set; }
-		string IBulkOperation.Routing { get; set; }
-		Id IBulkOperation.Parent { get; set; }
-		[Obsolete("This property is no longer returned on indices created in Elasticsearch 5.x and up")]
-		long? IBulkOperation.Timestamp { get; set; }
-		[Obsolete("This property is no longer returned on indices created in Elasticsearch 5.x and up")]
-		Time IBulkOperation.Ttl { get; set; }
-		int? IBulkOperation.RetriesOnConflict { get; set; }
+		protected abstract object GetBulkOperationBody();
+
+		protected virtual Id GetIdForOperation(Inferrer inferrer) => Self.Id ?? new Id(GetBulkOperationBody());
+
+		protected virtual Routing GetRoutingForOperation(Inferrer inferrer) => Self.Routing ?? new Routing(GetBulkOperationBody());
 
 		/// <summary>
 		/// Manually set the index, default to the default index or the fixed index set on the bulk operation
 		/// </summary>
-		public TDescriptor Index(IndexName index) => Assign(a => a.Index = index);
-		public TDescriptor Index<T>() => Assign(a => a.Index = typeof(T));
+		public TDescriptor Index(IndexName index) => Assign(index, (a, v) => a.Index = v);
 
-		/// <summary>
-		/// Manualy set the type to get the object from, default to whatever
-		/// T will be inferred to if not passed or the fixed type set on the parent bulk operation
-		/// </summary>
-		public TDescriptor Type(TypeName type) => Assign(a => a.Type = type);
-		public TDescriptor Type<T>() => Assign(a => a.Type = typeof(T));
+		public TDescriptor Index<T>() => Assign(typeof(T), (a, v) => a.Index = v);
 
 		/// <summary>
 		/// Manually set the id for the newly created object
 		/// </summary>
-		public TDescriptor Id(Id id) => Assign(a => a.Id = id);
+		public TDescriptor Id(Id id) => Assign(id, (a, v) => a.Id = v);
 
-		public TDescriptor Version(long? version) => Assign(a => a.Version = version);
+		public TDescriptor Version(long? version) => Assign(version, (a, v) => a.Version = v);
 
-		public TDescriptor VersionType(VersionType versionType) => Assign(a => a.VersionType = versionType);
+		public TDescriptor VersionType(VersionType? versionType) => Assign(versionType, (a, v) => a.VersionType = v);
 
-		public TDescriptor Routing(string routing) => Assign(a => a.Routing = routing);
-
-		public TDescriptor Parent(Id parent) => Assign(a => a.Parent = parent);
-
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.x and up")]
-		public TDescriptor Timestamp(long? timestamp) => Assign(a => a.Timestamp = timestamp);
-
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.x and up")]
-		public TDescriptor Ttl(Time ttl) => Assign(a => a.Ttl = ttl);
+		public TDescriptor Routing(Routing routing) => Assign(routing, (a, v) => a.Routing = v);
 	}
 }

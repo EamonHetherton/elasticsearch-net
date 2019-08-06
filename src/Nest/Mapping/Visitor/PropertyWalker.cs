@@ -1,17 +1,17 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public class PropertyWalker
 	{
-		private readonly Type _type;
-		private readonly IPropertyVisitor _visitor;
 		private readonly int _maxRecursion;
 		private readonly ConcurrentDictionary<Type, int> _seenTypes;
+		private readonly Type _type;
+		private readonly IPropertyVisitor _visitor;
 
 		public PropertyWalker(Type type, IPropertyVisitor visitor, int maxRecursion = 0)
 		{
@@ -34,19 +34,17 @@ namespace Nest
 		{
 			var properties = new Properties();
 
-			int seen;
-			if (seenTypes != null && seenTypes.TryGetValue(_type, out seen) && seen > maxRecursion)
+			if (seenTypes != null && seenTypes.TryGetValue(_type, out var seen) && seen > maxRecursion)
 				return properties;
 
 			foreach (var propertyInfo in _type.AllPropertiesCached())
 			{
 				var attribute = ElasticsearchPropertyAttributeBase.From(propertyInfo);
-				if (attribute != null && attribute.Ignore)
-					continue;
+				if (attribute != null && attribute.Ignore) continue;
+				if (_visitor.SkipProperty(propertyInfo, attribute)) continue;
 
 				var property = GetProperty(propertyInfo, attribute);
-				var withCLrOrigin = property as IPropertyWithClrOrigin;
-				if (withCLrOrigin != null)
+				if (property is IPropertyWithClrOrigin withCLrOrigin)
 					withCLrOrigin.ClrOrigin = propertyInfo;
 				properties.Add(propertyInfo, property);
 			}
@@ -57,16 +55,14 @@ namespace Nest
 		private IProperty GetProperty(PropertyInfo propertyInfo, ElasticsearchPropertyAttributeBase attribute)
 		{
 			var property = _visitor.Visit(propertyInfo, attribute);
-			if (property != null)
-				return property;
+			if (property != null) return property;
 
 			if (propertyInfo.GetGetMethod().IsStatic)
 				return null;
 
-			property = attribute ?? InferProperty(propertyInfo.PropertyType);
+			property = attribute ?? InferProperty(propertyInfo);
 
-			var objectProperty = property as IObjectProperty;
-			if (objectProperty != null)
+			if (property is IObjectProperty objectProperty)
 			{
 				var type = GetUnderlyingType(propertyInfo.PropertyType);
 				var seenTypes = new ConcurrentDictionary<Type, int>(_seenTypes);
@@ -80,16 +76,17 @@ namespace Nest
 			return property;
 		}
 
-		private IProperty InferProperty(Type type)
+		private static IProperty InferProperty(PropertyInfo propertyInfo)
 		{
-			type = GetUnderlyingType(type);
+			var type = GetUnderlyingType(propertyInfo.PropertyType);
 
 			if (type == typeof(string))
 				return new TextProperty
 				{
 					Fields = new Properties
 					{
-						{ "keyword", new KeywordProperty
+						{
+							"keyword", new KeywordProperty
 							{
 								IgnoreAbove = 256
 							}
@@ -97,10 +94,16 @@ namespace Nest
 					}
 				};
 
-			if (type.IsEnumType())
-				return new NumberProperty(NumberType.Integer);
+			if (type.IsEnum)
+			{
+				if (type.GetTypeInfo().GetCustomAttribute<StringEnumAttribute>() != null
+					|| propertyInfo.GetCustomAttribute<StringEnumAttribute>() != null)
+					return new KeywordProperty();
 
-			if (type.IsValue())
+				return new NumberProperty(NumberType.Integer);
+			}
+
+			if (type.IsValueType)
 			{
 				switch (type.Name)
 				{
@@ -139,9 +142,6 @@ namespace Nest
 			if (type == typeof(CompletionField))
 				return new CompletionProperty();
 
-			if (type == typeof(Attachment))
-				return new AttachmentProperty();
-
 			if (type == typeof(DateRange))
 				return new DateRangeProperty();
 
@@ -157,10 +157,19 @@ namespace Nest
 			if (type == typeof(LongRange))
 				return new LongRangeProperty();
 
+			if (type == typeof(IpAddressRange))
+				return new IpRangeProperty();
+
+			if (type == typeof(QueryContainer))
+				return new PercolatorProperty();
+
+			if (type == typeof(IGeoShape))
+				return new GeoShapeProperty();
+
 			return new ObjectProperty();
 		}
 
-		private Type GetUnderlyingType(Type type)
+		private static Type GetUnderlyingType(Type type)
 		{
 			if (type.IsArray)
 				return type.GetElementType();

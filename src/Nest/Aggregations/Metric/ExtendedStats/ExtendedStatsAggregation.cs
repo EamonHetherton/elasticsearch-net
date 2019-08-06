@@ -1,10 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<ExtendedStatsAggregation>))]
-	public interface IExtendedStatsAggregation : IMetricAggregation { }
+	[InterfaceDataContract]
+	[ReadAs(typeof(ExtendedStatsAggregation))]
+	public interface IExtendedStatsAggregation : IMetricAggregation
+	{
+		[DataMember(Name ="sigma")]
+		double? Sigma { get; set; }
+	}
 
 	public class ExtendedStatsAggregation : MetricAggregationBase, IExtendedStatsAggregation
 	{
@@ -12,11 +17,19 @@ namespace Nest
 
 		public ExtendedStatsAggregation(string name, Field field) : base(name, field) { }
 
+		public double? Sigma { get; set; }
+
 		internal override void WrapInContainer(AggregationContainer c) => c.ExtendedStats = this;
 	}
 
-	public class ExtendedStatsAggregationDescriptor<T> 
+	public class ExtendedStatsAggregationDescriptor<T>
 		: MetricAggregationDescriptorBase<ExtendedStatsAggregationDescriptor<T>, IExtendedStatsAggregation, T>
-			, IExtendedStatsAggregation 
-		where T : class { }
+			, IExtendedStatsAggregation
+		where T : class
+	{
+		double? IExtendedStatsAggregation.Sigma { get; set; }
+
+		public ExtendedStatsAggregationDescriptor<T> Sigma(double? sigma) =>
+			Assign(sigma, (a, v) => a.Sigma = v);
+	}
 }

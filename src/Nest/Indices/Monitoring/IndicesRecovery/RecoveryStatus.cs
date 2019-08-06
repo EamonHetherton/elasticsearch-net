@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public class RecoveryStatus
 	{
-		[JsonProperty("shards")]
+		[DataMember(Name ="shards")]
 		public IReadOnlyCollection<ShardRecovery> Shards { get; internal set; } =
 			EmptyReadOnly<ShardRecovery>.Collection;
 	}

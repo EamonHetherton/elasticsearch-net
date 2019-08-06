@@ -1,21 +1,22 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	//only used by GetRoleResponse thus private setters and IReadOnlyCollection
 	public class XPackRole
 	{
-		[JsonProperty("cluster")]
+		[DataMember(Name = "cluster")]
 		public IReadOnlyCollection<string> Cluster { get; private set; } = EmptyReadOnly<string>.Collection;
 
-		[JsonProperty("run_as")]
-		public IReadOnlyCollection<string> RunAs { get; private set; }= EmptyReadOnly<string>.Collection;
-
-		[JsonProperty("indices")]
+		[DataMember(Name = "indices")]
 		public IReadOnlyCollection<IIndicesPrivileges> Indices { get; private set; } = EmptyReadOnly<IIndicesPrivileges>.Collection;
 
-		[JsonProperty("metadata")]
+		[DataMember(Name = "metadata")]
 		public IReadOnlyDictionary<string, object> Metadata { get; internal set; } = EmptyReadOnly<string, object>.Dictionary;
+
+		[DataMember(Name = "run_as")]
+		public IReadOnlyCollection<string> RunAs { get; private set; } = EmptyReadOnly<string>.Collection;
 	}
 }

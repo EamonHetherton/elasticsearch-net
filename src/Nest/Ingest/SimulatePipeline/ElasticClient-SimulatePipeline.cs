@@ -1,44 +1,43 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
-using System.Threading;
 
 namespace Nest
 {
 	public partial interface IElasticClient
 	{
-		/// <inheritdoc/>
-		ISimulatePipelineResponse SimulatePipeline(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector);
+		/// <inheritdoc />
+		SimulatePipelineResponse SimulatePipeline(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector);
 
-		/// <inheritdoc/>
-		ISimulatePipelineResponse SimulatePipeline(ISimulatePipelineRequest request);
+		/// <inheritdoc />
+		SimulatePipelineResponse SimulatePipeline(ISimulatePipelineRequest request);
 
-		/// <inheritdoc/>
-		Task<ISimulatePipelineResponse> SimulatePipelineAsync(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector, CancellationToken cancellationToken = default(CancellationToken));
+		/// <inheritdoc />
+		Task<SimulatePipelineResponse> SimulatePipelineAsync(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector,
+			CancellationToken ct = default
+		);
 
-		/// <inheritdoc/>
-		Task<ISimulatePipelineResponse> SimulatePipelineAsync(ISimulatePipelineRequest request, CancellationToken cancellationToken = default(CancellationToken));
-
+		/// <inheritdoc />
+		Task<SimulatePipelineResponse> SimulatePipelineAsync(ISimulatePipelineRequest request,
+			CancellationToken ct = default
+		);
 	}
+
 	public partial class ElasticClient
 	{
-		public ISimulatePipelineResponse SimulatePipeline(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector) =>
-			this.SimulatePipeline(selector?.Invoke(new SimulatePipelineDescriptor()));
+		public SimulatePipelineResponse SimulatePipeline(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector) =>
+			SimulatePipeline(selector?.Invoke(new SimulatePipelineDescriptor()));
 
-		public ISimulatePipelineResponse SimulatePipeline(ISimulatePipelineRequest request) =>
-			this.Dispatcher.Dispatch<ISimulatePipelineRequest, SimulatePipelineRequestParameters, SimulatePipelineResponse>(
-				request,
-				this.LowLevelDispatch.IngestSimulateDispatch<SimulatePipelineResponse>
-			);
+		public SimulatePipelineResponse SimulatePipeline(ISimulatePipelineRequest request) =>
+			DoRequest<ISimulatePipelineRequest, SimulatePipelineResponse>(request, request.RequestParameters);
 
-		public Task<ISimulatePipelineResponse> SimulatePipelineAsync(Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.SimulatePipelineAsync(selector?.Invoke(new SimulatePipelineDescriptor()), cancellationToken);
+		public Task<SimulatePipelineResponse> SimulatePipelineAsync(
+			Func<SimulatePipelineDescriptor, ISimulatePipelineRequest> selector,
+			CancellationToken ct = default
+		) => SimulatePipelineAsync(selector?.Invoke(new SimulatePipelineDescriptor()), ct);
 
-		public Task<ISimulatePipelineResponse> SimulatePipelineAsync(ISimulatePipelineRequest request, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.Dispatcher.DispatchAsync<ISimulatePipelineRequest, SimulatePipelineRequestParameters, SimulatePipelineResponse, ISimulatePipelineResponse>(
-				request,
-				cancellationToken,
-				this.LowLevelDispatch.IngestSimulateDispatchAsync<SimulatePipelineResponse>
-			);
+		public Task<SimulatePipelineResponse> SimulatePipelineAsync(ISimulatePipelineRequest request, CancellationToken ct = default) =>
+			DoRequestAsync<ISimulatePipelineRequest, SimulatePipelineResponse>(request, request.RequestParameters, ct);
 	}
 }

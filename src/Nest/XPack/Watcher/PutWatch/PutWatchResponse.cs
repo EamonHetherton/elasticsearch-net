@@ -1,27 +1,22 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<PutWatchResponse>))]
-	public interface IPutWatchResponse : IResponse
+	public class PutWatchResponse : ResponseBase
 	{
-		[JsonProperty("_id")]
-		string Id { get; }
+		[DataMember(Name = "created")]
+		public bool Created { get; internal set; }
 
-		[JsonProperty("_version")]
-		int Version { get; }
-
-		[JsonProperty("created")]
-		bool Created { get; }
-	}
-
-	public class PutWatchResponse : ResponseBase, IPutWatchResponse
-	{
+		[DataMember(Name = "_id")]
 		public string Id { get; internal set; }
 
+		[DataMember(Name = "_version")]
 		public int Version { get; internal set; }
 
-		public bool Created { get; internal set; }
+		[DataMember(Name = "_seq_no")]
+		public long SequenceNumber { get; internal set; }
+
+		[DataMember(Name = "_primary_term")]
+		public long PrimaryTerm { get; internal set; }
 	}
 }

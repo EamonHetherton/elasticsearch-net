@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,13 +7,13 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/ClientConcepts/ConnectionPooling/RequestOverrides/RespectsMaxRetryOverrides.doc.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/ClientConcepts/ConnectionPooling/RequestOverrides/RespectsMaxRetryOverrides.doc.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
-[[maximum-retries]]
-== Maximum Retries
+[[maximum-retries-per-request]]
+=== Maximum retries per request
 
 By default retry as many times as we have nodes. However retries still respect the request timeout.
 Meaning if you have a 100 node cluster and a request timeout of 20 seconds we will retry as many times as we can
@@ -21,13 +21,14 @@ but give up after 20 seconds
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways())
     .ClientCalls(r => r.OnPort(9209).SucceedAlways())
     .StaticConnectionPool()
     .Settings(s => s.DisablePing())
 );
+
 audit = await audit.TraceCall(
     new ClientCall(r => r.MaxRetries(2)) {
         { BadResponse, 9200 },
@@ -43,7 +44,7 @@ Remember that the actual number of requests is initial attempt + set number of r
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways())
     .ClientCalls(r => r.OnPort(9209).SucceedAlways())
@@ -67,7 +68,7 @@ not giving up on the fail fast principle. It's *NOT* a mechanism for forcing req
 
 [source,csharp]
 ----
-var audit = new Auditor(() => Framework.Cluster
+var audit = new Auditor(() => VirtualClusterWith
     .Nodes(10)
     .ClientCalls(r => r.FailAlways().Takes(TimeSpan.FromSeconds(3)))
     .ClientCalls(r => r.OnPort(9209).SucceedAlways())

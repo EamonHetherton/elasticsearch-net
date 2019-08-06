@@ -1,24 +1,25 @@
 using System;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<NestedAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(NestedAggregation))]
 	public interface INestedAggregation : IBucketAggregation
 	{
-		[JsonProperty("path")]
-		Field Path { get; set;}
+		[DataMember(Name ="path")]
+		Field Path { get; set; }
 	}
 
 	public class NestedAggregation : BucketAggregationBase, INestedAggregation
 	{
-		public Field Path { get; set; }
-
 		internal NestedAggregation() { }
 
 		public NestedAggregation(string name) : base(name) { }
+
+		public Field Path { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.Nested = this;
 	}
@@ -30,8 +31,8 @@ namespace Nest
 	{
 		Field INestedAggregation.Path { get; set; }
 
-		public NestedAggregationDescriptor<T> Path(Field path) => Assign(a => a.Path = path);
+		public NestedAggregationDescriptor<T> Path(Field path) => Assign(path, (a, v) => a.Path = v);
 
-		public NestedAggregationDescriptor<T> Path(Expression<Func<T, object>> path) => Assign(a => a.Path = path);
+		public NestedAggregationDescriptor<T> Path<TValue>(Expression<Func<T, TValue>> path) => Assign(path, (a, v) => a.Path = v);
 	}
 }

@@ -1,33 +1,32 @@
 using System;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonConverter(typeof(EnumMemberValueCasingJsonConverter<TimeUnit>))]
+	[StringEnum]
 	public enum TimeUnit
 	{
 		[EnumMember(Value = "nanos")]
 		Nanoseconds,
+
 		[EnumMember(Value = "micros")]
 		Microseconds,
+
 		[EnumMember(Value = "ms")]
 		Millisecond,
+
 		[EnumMember(Value = "s")]
 		Second,
+
 		[EnumMember(Value = "m")]
 		Minute,
+
 		[EnumMember(Value = "h")]
 		Hour,
+
 		[EnumMember(Value = "d")]
-		Day,
-		[EnumMember(Value = "w")]
-		Week,
-		[EnumMember(Value = "M")]
-		Month,
-		[EnumMember(Value = "y")]
-		Year
+		Day
 	}
 
 	public static class TimeUnitExtensions
@@ -50,12 +49,6 @@ namespace Nest
 					return "h";
 				case TimeUnit.Day:
 					return "d";
-				case TimeUnit.Week:
-					return "w";
-				case TimeUnit.Month:
-					return "M";
-				case TimeUnit.Year:
-					return "y";
 				default:
 					throw new ArgumentOutOfRangeException(nameof(value), value, null);
 			}

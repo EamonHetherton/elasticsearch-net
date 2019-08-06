@@ -1,31 +1,25 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<IndexState>))]
+	[ReadAs(typeof(IndexState))]
 	public interface IIndexState
 	{
-		[JsonProperty("settings")]
-		IIndexSettings Settings { get; set; }
-
-		[JsonProperty("aliases")]
+		[DataMember(Name ="aliases")]
 		IAliases Aliases { get; set; }
 
-		[JsonProperty("mappings")]
-		IMappings Mappings { get; set; }
+		[DataMember(Name = "mappings")]
+		ITypeMapping Mappings { get; set; }
 
-		[JsonProperty("similarity")]
-		ISimilarities Similarity { get; set; }
+		[DataMember(Name ="settings")]
+		IIndexSettings Settings { get; set; }
 	}
 
 	public class IndexState : IIndexState
 	{
-		public IIndexSettings Settings { get; set; }
-
-		public IMappings Mappings { get; set; }
-
 		public IAliases Aliases { get; set; }
 
-		public ISimilarities Similarity { get; set; }
+		public ITypeMapping Mappings { get; set; }
+		public IIndexSettings Settings { get; set; }
 	}
 }

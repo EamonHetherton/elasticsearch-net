@@ -1,57 +1,66 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<TopHitsAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(TopHitsAggregation))]
 	public interface ITopHitsAggregation : IMetricAggregation
 	{
-		[JsonProperty("from")]
-		int? From { get; set; }
+		[DataMember(Name ="docvalue_fields")]
+		Fields DocValueFields { get; set; }
 
-		[JsonProperty("size")]
-		int? Size { get; set; }
-
-		[JsonProperty("sort")]
-		IList<ISort> Sort { get; set; }
-
-		[JsonProperty("_source")]
-		Union<bool, ISourceFilter> Source { get; set; }
-
-		[JsonProperty("highlight")]
-		IHighlight Highlight { get; set; }
-
-		[JsonProperty("explain")]
+		[DataMember(Name ="explain")]
 		bool? Explain { get; set; }
 
-		[JsonProperty("script_fields")]
-		[JsonConverter(typeof(ReadAsTypeJsonConverter<ScriptFields>))]
+		[DataMember(Name ="from")]
+		int? From { get; set; }
+
+		[DataMember(Name ="highlight")]
+		IHighlight Highlight { get; set; }
+
+		[DataMember(Name ="script_fields")]
+		[ReadAs(typeof(ScriptFields))]
 		IScriptFields ScriptFields { get; set; }
 
-		[JsonProperty("fielddata_fields")]
-		Fields FielddataFields { get; set; }
+		[DataMember(Name ="size")]
+		int? Size { get; set; }
 
-		[JsonProperty("version")]
+		[DataMember(Name ="sort")]
+		IList<ISort> Sort { get; set; }
+
+		[DataMember(Name ="_source")]
+		Union<bool, ISourceFilter> Source { get; set; }
+
+		[DataMember(Name ="stored_fields")]
+		Fields StoredFields { get; set; }
+
+		[DataMember(Name ="track_scores")]
+		bool? TrackScores { get; set; }
+
+		[DataMember(Name ="version")]
 		bool? Version { get; set; }
 	}
 
 	public class TopHitsAggregation : MetricAggregationBase, ITopHitsAggregation
 	{
-		public int? From { get; set; }
-		public int? Size { get; set; }
-		public IList<ISort> Sort { get; set; }
-		public Union<bool, ISourceFilter> Source { get; set; }
-		public IHighlight Highlight { get; set; }
-		public bool? Explain { get; set; }
-		public IScriptFields ScriptFields { get; set; }
-		public Fields FielddataFields { get; set; }
-		public bool? Version { get; set; }
-
 		internal TopHitsAggregation() { }
 
 		public TopHitsAggregation(string name) : base(name, null) { }
+
+		public Fields DocValueFields { get; set; }
+		public bool? Explain { get; set; }
+		public int? From { get; set; }
+		public IHighlight Highlight { get; set; }
+		public IScriptFields ScriptFields { get; set; }
+		public int? Size { get; set; }
+		public IList<ISort> Sort { get; set; }
+		public Union<bool, ISourceFilter> Source { get; set; }
+		public Fields StoredFields { get; set; }
+		public bool? TrackScores { get; set; }
+		public bool? Version { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.TopHits = this;
 	}
@@ -61,7 +70,14 @@ namespace Nest
 			, ITopHitsAggregation
 		where T : class
 	{
+		Fields ITopHitsAggregation.DocValueFields { get; set; }
+
+		bool? ITopHitsAggregation.Explain { get; set; }
 		int? ITopHitsAggregation.From { get; set; }
+
+		IHighlight ITopHitsAggregation.Highlight { get; set; }
+
+		IScriptFields ITopHitsAggregation.ScriptFields { get; set; }
 
 		int? ITopHitsAggregation.Size { get; set; }
 
@@ -69,44 +85,43 @@ namespace Nest
 
 		Union<bool, ISourceFilter> ITopHitsAggregation.Source { get; set; }
 
-		IHighlight ITopHitsAggregation.Highlight { get; set; }
+		Fields ITopHitsAggregation.StoredFields { get; set; }
 
-		bool? ITopHitsAggregation.Explain { get; set; }
-
-		IScriptFields ITopHitsAggregation.ScriptFields { get; set; }
-
-		Fields ITopHitsAggregation.FielddataFields { get; set; }
+		bool? ITopHitsAggregation.TrackScores { get; set; }
 
 		bool? ITopHitsAggregation.Version { get; set; }
 
-		public TopHitsAggregationDescriptor<T> From(int from) => Assign(a => a.From = from);
+		public TopHitsAggregationDescriptor<T> From(int? from) => Assign(from, (a, v) => a.From = v);
 
-		public TopHitsAggregationDescriptor<T> Size(int size) => Assign(a => a.Size = size);
+		public TopHitsAggregationDescriptor<T> Size(int? size) => Assign(size, (a, v) => a.Size = v);
 
-		public TopHitsAggregationDescriptor<T> Sort(Func<SortFieldDescriptor<T>, IFieldSort> sortSelector) => Assign(a =>
-		{
-			a.Sort = a.Sort ?? new List<ISort>();
-			var sort = sortSelector?.Invoke(new SortFieldDescriptor<T>());
-			if (sort != null) a.Sort.Add(sort);
-		});
+		public TopHitsAggregationDescriptor<T> Sort(Func<SortDescriptor<T>, IPromise<IList<ISort>>> sortSelector) =>
+			Assign(sortSelector, (a, v) => a.Sort = v?.Invoke(new SortDescriptor<T>())?.Value);
 
-		public TopHitsAggregationDescriptor<T> Source(bool enabled = true) =>
-			Assign(a => a.Source = enabled);
+		public TopHitsAggregationDescriptor<T> Source(bool? enabled = true) =>
+			Assign(enabled, (a, v) => a.Source = v);
 
 		public TopHitsAggregationDescriptor<T> Source(Func<SourceFilterDescriptor<T>, ISourceFilter> selector) =>
-			Assign(a => a.Source = new Union<bool, ISourceFilter>(selector?.Invoke(new SourceFilterDescriptor<T>())));
+			Assign(selector, (a, v) => a.Source = new Union<bool, ISourceFilter>(v?.Invoke(new SourceFilterDescriptor<T>())));
 
 		public TopHitsAggregationDescriptor<T> Highlight(Func<HighlightDescriptor<T>, IHighlight> highlightSelector) =>
-			Assign(a => a.Highlight = highlightSelector?.Invoke(new HighlightDescriptor<T>()));
+			Assign(highlightSelector, (a, v) => a.Highlight = v?.Invoke(new HighlightDescriptor<T>()));
 
-		public TopHitsAggregationDescriptor<T> Explain(bool explain = true) => Assign(a => a.Explain = explain);
+		public TopHitsAggregationDescriptor<T> Explain(bool? explain = true) => Assign(explain, (a, v) => a.Explain = v);
 
 		public TopHitsAggregationDescriptor<T> ScriptFields(Func<ScriptFieldsDescriptor, IPromise<IScriptFields>> scriptFieldsSelector) =>
-			Assign(a => a.ScriptFields = scriptFieldsSelector?.Invoke(new ScriptFieldsDescriptor())?.Value);
+			Assign(scriptFieldsSelector, (a, v) => a.ScriptFields = v?.Invoke(new ScriptFieldsDescriptor())?.Value);
 
-		public TopHitsAggregationDescriptor<T> FielddataFields(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
-			Assign(a => a.FielddataFields = fields?.Invoke(new FieldsDescriptor<T>())?.Value);
+		public TopHitsAggregationDescriptor<T> StoredFields(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
+			Assign(fields, (a, v) => a.StoredFields = v?.Invoke(new FieldsDescriptor<T>())?.Value);
 
-		public TopHitsAggregationDescriptor<T> Version(bool version = true) => Assign(a => a.Version = version);
+		public TopHitsAggregationDescriptor<T> Version(bool? version = true) => Assign(version, (a, v) => a.Version = v);
+
+		public TopHitsAggregationDescriptor<T> TrackScores(bool? trackScores = true) => Assign(trackScores, (a, v) => a.TrackScores = v);
+
+		public TopHitsAggregationDescriptor<T> DocValueFields(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
+			Assign(fields, (a, v) => a.DocValueFields = v?.Invoke(new FieldsDescriptor<T>())?.Value);
+
+		public TopHitsAggregationDescriptor<T> DocValueFields(Fields fields) => Assign(fields, (a, v) => a.DocValueFields = v);
 	}
 }

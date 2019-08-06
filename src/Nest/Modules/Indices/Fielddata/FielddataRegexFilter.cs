@@ -1,12 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<FielddataRegexFilter>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(FielddataRegexFilter))]
 	public interface IFielddataRegexFilter
 	{
-		[JsonProperty("pattern")]
+		[DataMember(Name ="pattern")]
 		string Pattern { get; set; }
 	}
 
@@ -20,6 +21,6 @@ namespace Nest
 	{
 		string IFielddataRegexFilter.Pattern { get; set; }
 
-		public FielddataRegexFilterDescriptor Pattern(string pattern) => Assign(a => a.Pattern = pattern);
+		public FielddataRegexFilterDescriptor Pattern(string pattern) => Assign(pattern, (a, v) => a.Pattern = v);
 	}
 }

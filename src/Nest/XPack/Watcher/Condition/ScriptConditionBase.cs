@@ -1,19 +1,20 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json.Linq;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net.Utf8Json.Internal;
+
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ScriptConditionJsonConverter))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(ScriptConditionFormatter))]
 	public interface IScriptCondition : ICondition
 	{
-		[JsonProperty("lang")]
+		[DataMember(Name = "lang")]
 		string Lang { get; set; }
 
-		[JsonProperty("params")]
+		[DataMember(Name = "params")]
 		IDictionary<string, object> Params { get; set; }
 	}
 
@@ -27,11 +28,9 @@ namespace Nest
 
 	public class ScriptConditionDescriptor : DescriptorBase<ScriptConditionDescriptor, IDescriptor>
 	{
-		public FileScriptConditionDescriptor File(string file) => new FileScriptConditionDescriptor(file);
+		public IndexedScriptConditionDescriptor Id(string id) => new IndexedScriptConditionDescriptor(id);
 
-		public IndexedScriptConditionDescriptor Indexed(string id) => new IndexedScriptConditionDescriptor(id);
-
-		public InlineScriptConditionDescriptor Inline(string script) => new InlineScriptConditionDescriptor(script);
+		public InlineScriptConditionDescriptor Source(string source) => new InlineScriptConditionDescriptor(source);
 	}
 
 	public abstract class ScriptConditionDescriptorBase<TDescriptor, TInterface>
@@ -42,57 +41,112 @@ namespace Nest
 		string IScriptCondition.Lang { get; set; }
 		IDictionary<string, object> IScriptCondition.Params { get; set; }
 
-		public TDescriptor Lang(string lang) => Assign(a => a.Lang = lang);
+		public TDescriptor Lang(string lang) => Assign(lang, (a, v) => a.Lang = v);
 
 		public TDescriptor Params(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> paramsDictionary) =>
-			Assign(a => a.Params = paramsDictionary(new FluentDictionary<string, object>()));
+			Assign(paramsDictionary(new FluentDictionary<string, object>()), (a, v) => a.Params = v);
 
 		public TDescriptor Params(Dictionary<string, object> paramsDictionary) =>
-			Assign(a => a.Params = paramsDictionary);
+			Assign(paramsDictionary, (a, v) => a.Params = v);
 	}
 
-	internal class ScriptConditionJsonConverter : JsonConverter
+	internal class ScriptConditionFormatter : IJsonFormatter<IScriptCondition>
 	{
-		public override bool CanWrite => false;
-
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		private static readonly AutomataDictionary AutomataDictionary = new AutomataDictionary
 		{
-			throw new NotSupportedException();
-		}
+			{ "source", 0 },
+			{ "id", 1 },
+			{ "lang", 2 },
+			{ "params", 3 }
+		};
 
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+		public IScriptCondition Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
 		{
-			var o = JObject.Load(reader);
-			var dict = o.Properties().ToDictionary(p => p.Name, p => p.Value);
-			if (!dict.HasAny()) return null;
+			if (reader.GetCurrentJsonToken() != JsonToken.BeginObject)
+				return null;
 
+			var count = 0;
 			IScriptCondition scriptCondition = null;
-			if (dict.ContainsKey("inline"))
+			string language = null;
+			Dictionary<string, object> parameters = null;
+
+			while (reader.ReadIsInObject(ref count))
 			{
-				var inline = dict["inline"].ToString();
-				scriptCondition = new InlineScriptCondition(inline);
-			}
-			if (dict.ContainsKey("file"))
-			{
-				var file = dict["file"].ToString();
-				scriptCondition = new FileScriptCondition(file);
-			}
-			if (dict.ContainsKey("id"))
-			{
-				var id = dict["id"].ToString();
-				scriptCondition = new IndexedScriptCondition(id);
+				if (AutomataDictionary.TryGetValue(reader.ReadPropertyNameSegmentRaw(), out var value))
+				{
+					switch (value)
+					{
+						case 0:
+							scriptCondition = new InlineScriptCondition(reader.ReadString());
+							break;
+						case 1:
+							scriptCondition = new IndexedScriptCondition(reader.ReadString());
+							break;
+						case 2:
+							language = reader.ReadString();
+							break;
+						case 3:
+							parameters = formatterResolver.GetFormatter<Dictionary<string, object>>()
+								.Deserialize(ref reader, formatterResolver);
+							break;
+					}
+				}
 			}
 
-			if (scriptCondition == null) return null;
+			if (scriptCondition == null)
+				return null;
 
-			if (dict.ContainsKey("lang"))
-				scriptCondition.Lang = dict["lang"].ToString();
-			if (dict.ContainsKey("params"))
-				scriptCondition.Params = dict["params"].ToObject<Dictionary<string, object>>();
-
+			scriptCondition.Lang = language;
+			scriptCondition.Params = parameters;
 			return scriptCondition;
 		}
 
-		public override bool CanConvert(Type objectType) => true;
+		public void Serialize(ref JsonWriter writer, IScriptCondition value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null)
+			{
+				writer.WriteNull();
+				return;
+			}
+
+			writer.WriteBeginObject();
+			var written = false;
+
+			switch (value)
+			{
+				case IIndexedScriptCondition indexedScriptCondition:
+					writer.WritePropertyName("id");
+					writer.WriteString(indexedScriptCondition.Id);
+					written = true;
+					break;
+				case IInlineScriptCondition inlineScriptCondition:
+					writer.WritePropertyName("source");
+					writer.WriteString(inlineScriptCondition.Source);
+					written = true;
+					break;
+			}
+
+			if (value.Lang != null)
+			{
+				if (written)
+					writer.WriteValueSeparator();
+
+				writer.WritePropertyName("lang");
+				writer.WriteString(value.Lang);
+				written = true;
+			}
+
+			if (value.Params != null)
+			{
+				if (written)
+					writer.WriteValueSeparator();
+
+				writer.WritePropertyName("params");
+				var formatter = formatterResolver.GetFormatter<IDictionary<string, object>>();
+				formatter.Serialize(ref writer, value.Params, formatterResolver);
+			}
+
+			writer.WriteEndObject();
+		}
 	}
 }

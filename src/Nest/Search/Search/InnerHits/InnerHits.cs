@@ -1,112 +1,131 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<InnerHits>))]
+	[ReadAs(typeof(InnerHits))]
 	public interface IInnerHits
 	{
-		[JsonProperty("name")]
-		string Name { get; set; }
+		/// <summary>
+		/// Provides a second level of collapsing, NOTE: Elasticsearch only supports collapsing up to two levels.
+		/// </summary>
+		[DataMember(Name ="collapse")]
+		IFieldCollapse Collapse { get; set; }
 
-		[JsonProperty("from")]
-		int? From { get; set; }
+		[DataMember(Name ="docvalue_fields")]
+		Fields DocValueFields { get; set; }
 
-		[JsonProperty("size")]
-		int? Size { get; set; }
-
-		[JsonProperty(PropertyName = "sort")]
-		IList<ISort> Sort { get; set; }
-
-		[JsonProperty(PropertyName = "highlight")]
-		IHighlight Highlight { get; set; }
-
-		[JsonProperty(PropertyName = "explain")]
+		[DataMember(Name ="explain")]
 		bool? Explain { get; set; }
 
-		[JsonProperty(PropertyName = "_source")]
+		[DataMember(Name ="from")]
+		int? From { get; set; }
+
+		[DataMember(Name ="highlight")]
+		IHighlight Highlight { get; set; }
+
+		[DataMember(Name ="ignore_unmapped")]
+		bool? IgnoreUnmapped { get; set; }
+
+		[DataMember(Name ="name")]
+		string Name { get; set; }
+
+		[DataMember(Name ="script_fields")]
+		IScriptFields ScriptFields { get; set; }
+
+		[DataMember(Name ="size")]
+		int? Size { get; set; }
+
+		[DataMember(Name ="sort")]
+		IList<ISort> Sort { get; set; }
+
+		[DataMember(Name ="_source")]
 		Union<bool, ISourceFilter> Source { get; set; }
 
-		[JsonProperty(PropertyName = "version")]
+		[DataMember(Name ="version")]
 		bool? Version { get; set; }
-
-		[JsonProperty(PropertyName = "fielddata_fields")]
-		IList<Field> FielddataFields { get; set; }
-
-		[JsonProperty(PropertyName = "script_fields")]
-		IScriptFields ScriptFields { get; set; }
 	}
 
 	public class InnerHits : IInnerHits
 	{
-		public string Name { get; set; }
+		/// <inheritdoc cref="IInnerHits.Collapse" />
+		public IFieldCollapse Collapse { get; set; }
+
+		public Fields DocValueFields { get; set; }
+
+		public bool? Explain { get; set; }
 
 		public int? From { get; set; }
+
+		public IHighlight Highlight { get; set; }
+
+		public bool? IgnoreUnmapped { get; set; }
+		public string Name { get; set; }
+
+		public IScriptFields ScriptFields { get; set; }
 
 		public int? Size { get; set; }
 
 		public IList<ISort> Sort { get; set; }
 
-		public IHighlight Highlight { get; set; }
-
-		public bool? Explain { get; set; }
-
 		public Union<bool, ISourceFilter> Source { get; set; }
 
 		public bool? Version { get; set; }
-
-		public IList<Field> FielddataFields { get; set; }
-
-		public IScriptFields ScriptFields { get; set; }
 	}
 
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[DataContract]
 	public class InnerHitsDescriptor<T> : DescriptorBase<InnerHitsDescriptor<T>, IInnerHits>, IInnerHits where T : class
 	{
-		string IInnerHits.Name { get; set; }
+		IFieldCollapse IInnerHits.Collapse { get; set; }
+		Fields IInnerHits.DocValueFields { get; set; }
+		bool? IInnerHits.Explain { get; set; }
 		int? IInnerHits.From { get; set; }
+		IHighlight IInnerHits.Highlight { get; set; }
+		bool? IInnerHits.IgnoreUnmapped { get; set; }
+		string IInnerHits.Name { get; set; }
+		IScriptFields IInnerHits.ScriptFields { get; set; }
 		int? IInnerHits.Size { get; set; }
 		IList<ISort> IInnerHits.Sort { get; set; }
-		IHighlight IInnerHits.Highlight { get; set; }
-		bool? IInnerHits.Explain { get; set; }
 		Union<bool, ISourceFilter> IInnerHits.Source { get; set; }
 		bool? IInnerHits.Version { get; set; }
-		IList<Field> IInnerHits.FielddataFields { get; set; }
-		IScriptFields IInnerHits.ScriptFields { get; set; }
 
-		public InnerHitsDescriptor<T> From(int? from) => Assign(a => a.From = from);
+		public InnerHitsDescriptor<T> From(int? from) => Assign(from, (a, v) => a.From = v);
 
-		public InnerHitsDescriptor<T> Size(int? size) => Assign(a => a.Size = size);
+		public InnerHitsDescriptor<T> Size(int? size) => Assign(size, (a, v) => a.Size = v);
 
-		public InnerHitsDescriptor<T> Name(string name) => Assign(a => a.Name = name);
+		public InnerHitsDescriptor<T> Name(string name) => Assign(name, (a, v) => a.Name = v);
 
-		public InnerHitsDescriptor<T> FielddataFields(params Field[] fielddataFields) =>
-			Assign(a => a.FielddataFields = fielddataFields?.ToListOrNullIfEmpty());
+		public InnerHitsDescriptor<T> Explain(bool? explain = true) => Assign(explain, (a, v) => a.Explain = v);
 
-		public InnerHitsDescriptor<T> FielddataFields(params Expression<Func<T, object>>[] fielddataFields) =>
-			Assign(a => a.FielddataFields = fielddataFields?.Select(f => (Field)f).ToListOrNullIfEmpty());
+		public InnerHitsDescriptor<T> Version(bool? version = true) => Assign(version, (a, v) => a.Version = v);
 
-		public InnerHitsDescriptor<T> Explain(bool? explain = true) => Assign(a => a.Explain = explain);
-
-		public InnerHitsDescriptor<T> Version(bool? version = true) => Assign(a => a.Version = version);
-
-		public InnerHitsDescriptor<T> Sort(Func<SortDescriptor<T>, IPromise<IList<ISort>>> selector) => Assign(a => a.Sort = selector?.Invoke(new SortDescriptor<T>())?.Value);
+		public InnerHitsDescriptor<T> Sort(Func<SortDescriptor<T>, IPromise<IList<ISort>>> selector) =>
+			Assign(selector, (a, v) => a.Sort = v?.Invoke(new SortDescriptor<T>())?.Value);
 
 		/// <summary>
 		/// Allow to highlight search results on one or more fields. The implementation uses the either lucene fast-vector-highlighter or highlighter.
 		/// </summary>
 		public InnerHitsDescriptor<T> Highlight(Func<HighlightDescriptor<T>, IHighlight> selector) =>
-			Assign(a => a.Highlight = selector?.Invoke(new HighlightDescriptor<T>()));
+			Assign(selector, (a, v) => a.Highlight = v?.Invoke(new HighlightDescriptor<T>()));
 
-		public InnerHitsDescriptor<T> Source(bool enabled = true) => Assign(a => a.Source = enabled);
+		public InnerHitsDescriptor<T> Source(bool enabled = true) => Assign(enabled, (a, v) => a.Source = v);
 
 		public InnerHitsDescriptor<T> Source(Func<SourceFilterDescriptor<T>, ISourceFilter> selector) =>
-			Assign(a => a.Source = new Union<bool, ISourceFilter>(selector?.Invoke(new SourceFilterDescriptor<T>())));
+			Assign(selector, (a, v) => a.Source = new Union<bool, ISourceFilter>(v?.Invoke(new SourceFilterDescriptor<T>())));
 
 		public InnerHitsDescriptor<T> ScriptFields(Func<ScriptFieldsDescriptor, IPromise<IScriptFields>> selector) =>
-			Assign(a => a.ScriptFields = selector?.Invoke(new ScriptFieldsDescriptor())?.Value);
+			Assign(selector, (a, v) => a.ScriptFields = v?.Invoke(new ScriptFieldsDescriptor())?.Value);
+
+		public InnerHitsDescriptor<T> DocValueFields(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
+			Assign(fields, (a, v) => a.DocValueFields = v?.Invoke(new FieldsDescriptor<T>())?.Value);
+
+		public InnerHitsDescriptor<T> DocValueFields(Fields fields) => Assign(fields, (a, v) => a.DocValueFields = v);
+
+		public InnerHitsDescriptor<T> IgnoreUnmapped(bool? ignoreUnmapped = true) => Assign(ignoreUnmapped, (a, v) => a.IgnoreUnmapped = v);
+
+		/// <inheritdoc cref="IInnerHits.Collapse" />
+		public InnerHitsDescriptor<T> Collapse(Func<FieldCollapseDescriptor<T>, IFieldCollapse> collapseSelector) =>
+			Assign(collapseSelector, (a, v) => a.Collapse = v?.Invoke(new FieldCollapseDescriptor<T>()));
 	}
 }

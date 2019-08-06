@@ -1,82 +1,81 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof (FieldNameQueryJsonConverter<DateRangeQuery>))]
-	public interface IDateRangeQuery :  IRangeQuery
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(FieldNameQueryFormatter<DateRangeQuery, IDateRangeQuery>))]
+	public interface IDateRangeQuery : IRangeQuery
 	{
-		[JsonProperty("gte")]
-		DateMath GreaterThanOrEqualTo { get; set; }
-
-		[JsonProperty("lte")]
-		DateMath LessThanOrEqualTo { get; set; }
-
-		[JsonProperty("gt")]
-		DateMath GreaterThan { get; set; }
-
-		[JsonProperty("lt")]
-		DateMath LessThan { get; set; }
-
-		[JsonProperty("time_zone")]
-		string TimeZone { get; set; }
-
-		[JsonProperty("format")]
+		[DataMember(Name = "format")]
 		string Format { get; set; }
 
-		[JsonProperty("relation")]
+		[DataMember(Name = "gt")]
+		DateMath GreaterThan { get; set; }
+
+		[DataMember(Name = "gte")]
+		DateMath GreaterThanOrEqualTo { get; set; }
+
+		[DataMember(Name = "lt")]
+		DateMath LessThan { get; set; }
+
+		[DataMember(Name = "lte")]
+		DateMath LessThanOrEqualTo { get; set; }
+
+		[DataMember(Name = "relation")]
 		RangeRelation? Relation { get; set; }
+
+		[DataMember(Name = "time_zone")]
+		string TimeZone { get; set; }
 	}
 
 	public class DateRangeQuery : FieldNameQueryBase, IDateRangeQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
-		internal override void InternalWrapInContainer(IQueryContainer c) => c.Range = this;
+		public string Format { get; set; }
+		public DateMath GreaterThan { get; set; }
 
 		public DateMath GreaterThanOrEqualTo { get; set; }
-		public DateMath LessThanOrEqualTo { get; set; }
-		public DateMath GreaterThan { get; set; }
 		public DateMath LessThan { get; set; }
-		public string TimeZone { get; set; }
-		public string Format { get; set; }
+		public DateMath LessThanOrEqualTo { get; set; }
 		public RangeRelation? Relation { get; set; }
+		public string TimeZone { get; set; }
+		protected override bool Conditionless => IsConditionless(this);
 
-		internal static bool IsConditionless(IDateRangeQuery q)
-		{
-			return q.Field.IsConditionless()
-				|| (q.GreaterThanOrEqualTo == null
-				&& q.LessThanOrEqualTo == null
-				&& q.GreaterThan == null
-				&& q.LessThan == null);
-		}
+		internal override void InternalWrapInContainer(IQueryContainer c) => c.Range = this;
+
+		internal static bool IsConditionless(IDateRangeQuery q) => q.Field.IsConditionless()
+			|| ((q.GreaterThanOrEqualTo == null || !q.GreaterThanOrEqualTo.IsValid)
+			&& (q.LessThanOrEqualTo == null || !q.LessThanOrEqualTo.IsValid)
+			&& (q.GreaterThan == null || !q.GreaterThan.IsValid)
+			&& (q.LessThan == null || !q.LessThan.IsValid));
 	}
 
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[DataContract]
 	public class DateRangeQueryDescriptor<T>
 		: FieldNameQueryDescriptorBase<DateRangeQueryDescriptor<T>, IDateRangeQuery, T>
-		, IDateRangeQuery where T : class
+			, IDateRangeQuery where T : class
 	{
 		protected override bool Conditionless => DateRangeQuery.IsConditionless(this);
-		DateMath IDateRangeQuery.GreaterThanOrEqualTo { get; set; }
-		DateMath IDateRangeQuery.LessThanOrEqualTo { get; set; }
-		DateMath IDateRangeQuery.GreaterThan { get; set; }
-		DateMath IDateRangeQuery.LessThan { get; set; }
-		string IDateRangeQuery.TimeZone { get; set; }
 		string IDateRangeQuery.Format { get; set; }
+		DateMath IDateRangeQuery.GreaterThan { get; set; }
+		DateMath IDateRangeQuery.GreaterThanOrEqualTo { get; set; }
+		DateMath IDateRangeQuery.LessThan { get; set; }
+		DateMath IDateRangeQuery.LessThanOrEqualTo { get; set; }
 		RangeRelation? IDateRangeQuery.Relation { get; set; }
+		string IDateRangeQuery.TimeZone { get; set; }
 
-		public DateRangeQueryDescriptor<T> GreaterThan(DateMath from) => Assign(a => a.GreaterThan = from);
+		public DateRangeQueryDescriptor<T> GreaterThan(DateMath from) => Assign(from, (a, v) => a.GreaterThan = v);
 
-		public DateRangeQueryDescriptor<T> GreaterThanOrEquals(DateMath from) => Assign(a => a.GreaterThanOrEqualTo = from);
+		public DateRangeQueryDescriptor<T> GreaterThanOrEquals(DateMath from) => Assign(from, (a, v) => a.GreaterThanOrEqualTo = v);
 
-		public DateRangeQueryDescriptor<T> LessThan(DateMath to) => Assign(a => a.LessThan = to);
+		public DateRangeQueryDescriptor<T> LessThan(DateMath to) => Assign(to, (a, v) => a.LessThan = v);
 
-		public DateRangeQueryDescriptor<T> LessThanOrEquals(DateMath to) => Assign(a => a.LessThanOrEqualTo = to);
+		public DateRangeQueryDescriptor<T> LessThanOrEquals(DateMath to) => Assign(to, (a, v) => a.LessThanOrEqualTo = v);
 
-		public DateRangeQueryDescriptor<T> TimeZone(string timeZone) => Assign(a => a.TimeZone = timeZone);
+		public DateRangeQueryDescriptor<T> TimeZone(string timeZone) => Assign(timeZone, (a, v) => a.TimeZone = v);
 
-		public DateRangeQueryDescriptor<T> Format(string format) => Assign(a => a.Format = format);
+		public DateRangeQueryDescriptor<T> Format(string format) => Assign(format, (a, v) => a.Format = v);
 
-		public DateRangeQueryDescriptor<T> Relation(RangeRelation? relation) => Assign(a => a.Relation = relation);
+		public DateRangeQueryDescriptor<T> Relation(RangeRelation? relation) => Assign(relation, (a, v) => a.Relation = v);
 	}
 }

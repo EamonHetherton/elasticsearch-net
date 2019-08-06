@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -14,80 +11,81 @@ namespace Nest
 	public interface IFingerprintAnalyzer : IAnalyzer
 	{
 		/// <summary>
-		/// The character that separates the tokens after concatenation. Defaults to a space.
-		/// </summary>
-		[JsonProperty("separator")]
-		string Separator { get; set; }
-
-		/// <summary>
 		/// The maximum token size to emit. Defaults to 255.
 		/// </summary>
-		[JsonProperty("max_output_size")]
+		[DataMember(Name ="max_output_size")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? MaxOutputSize { get; set; }
 
 		/// <summary>
 		/// If true, emits both the original and folded version of tokens
 		/// that contain extended characters. Defaults to false
 		/// </summary>
-		[JsonProperty("preserve_original")]
+		[DataMember(Name ="preserve_original")]
+		[JsonFormatter(typeof(NullableStringBooleanFormatter))]
 		bool? PreserveOriginal { get; set; }
+
+		/// <summary>
+		/// The character that separates the tokens after concatenation. Defaults to a space.
+		/// </summary>
+		[DataMember(Name ="separator")]
+		string Separator { get; set; }
 
 		/// <summary>
 		/// A list of stop words to use. Defaults to an empty list
 		/// </summary>
-		[JsonProperty("stopwords")]
+		[DataMember(Name ="stopwords")]
 		StopWords StopWords { get; set; }
 
 		/// <summary>
 		/// A path(either relative to config location, or absolute) to a stopwords
 		/// file configuration.Each stop word should be in its own "line"
 		/// (separated by a line break). The file must be UTF-8 encoded.
-	    /// </summary>
-		[JsonProperty("stopwords_path")]
+		/// </summary>
+		[DataMember(Name ="stopwords_path")]
 		string StopWordsPath { get; set; }
 	}
 
 	/// <inheritdoc />
 	public class FingerprintAnalyzer : AnalyzerBase, IFingerprintAnalyzer
 	{
-		public FingerprintAnalyzer() : base("fingerprint") {}
-
-		public string Separator { get; set; }
+		public FingerprintAnalyzer() : base("fingerprint") { }
 
 		public int? MaxOutputSize { get; set; }
 
 		public bool? PreserveOriginal { get; set; }
+
+		public string Separator { get; set; }
 
 		public StopWords StopWords { get; set; }
 
 		public string StopWordsPath { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class FingerprintAnalyzerDescriptor :
-		AnalyzerDescriptorBase<FingerprintAnalyzerDescriptor, IFingerprintAnalyzer>, IFingerprintAnalyzer
+	/// <inheritdoc />
+	public class FingerprintAnalyzerDescriptor : AnalyzerDescriptorBase<FingerprintAnalyzerDescriptor, IFingerprintAnalyzer>, IFingerprintAnalyzer
 	{
 		protected override string Type => "fingerprint";
-
-		string IFingerprintAnalyzer.Separator { get; set; }
 		int? IFingerprintAnalyzer.MaxOutputSize { get; set; }
 		bool? IFingerprintAnalyzer.PreserveOriginal { get; set; }
+
+		string IFingerprintAnalyzer.Separator { get; set; }
 		StopWords IFingerprintAnalyzer.StopWords { get; set; }
 		string IFingerprintAnalyzer.StopWordsPath { get; set; }
 
-		public FingerprintAnalyzerDescriptor Separator(string separator) => Assign(a => a.Separator = separator);
+		public FingerprintAnalyzerDescriptor Separator(string separator) => Assign(separator, (a, v) => a.Separator = v);
 
-		public FingerprintAnalyzerDescriptor MaxOutputSize(int? maxOutputSize) => Assign(a => a.MaxOutputSize = maxOutputSize);
+		public FingerprintAnalyzerDescriptor MaxOutputSize(int? maxOutputSize) => Assign(maxOutputSize, (a, v) => a.MaxOutputSize = v);
 
-		public FingerprintAnalyzerDescriptor PreserveOriginal(bool preserveOriginal = true) => Assign(a => a.PreserveOriginal = preserveOriginal);
+		public FingerprintAnalyzerDescriptor PreserveOriginal(bool? preserveOriginal = true) => Assign(preserveOriginal, (a, v) => a.PreserveOriginal = v);
 
-		public FingerprintAnalyzerDescriptor StopWords(params string[] stopWords) => Assign(a => a.StopWords = stopWords);
+		public FingerprintAnalyzerDescriptor StopWords(params string[] stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
 		public FingerprintAnalyzerDescriptor StopWords(IEnumerable<string> stopWords) =>
-			Assign(a => a.StopWords = stopWords.ToListOrNullIfEmpty());
+			Assign(stopWords.ToListOrNullIfEmpty(), (a, v) => a.StopWords = v);
 
-		public FingerprintAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(a => a.StopWords = stopWords);
+		public FingerprintAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
-		public FingerprintAnalyzerDescriptor StopWordsPath(string stopWordsPath) => Assign(a => a.StopWordsPath = stopWordsPath);
+		public FingerprintAnalyzerDescriptor StopWordsPath(string stopWordsPath) => Assign(stopWordsPath, (a, v) => a.StopWordsPath = v);
 	}
 }

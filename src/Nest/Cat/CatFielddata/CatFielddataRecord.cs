@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(CatFielddataRecordJsonConverter))]
+	[DataContract]
+	[JsonFormatter(typeof(CatFielddataRecordFormatter))]
 	public class CatFielddataRecord : ICatRecord
 	{
-		public string Id { get; set; }
+		public string Field { get; set; }
 		public string Host { get; set; }
+		public string Id { get; set; }
 		public string Ip { get; set; }
 		public string Node { get; set; }
-		public string Field { get; set; }
 		public string Size { get; set; }
 	}
 }

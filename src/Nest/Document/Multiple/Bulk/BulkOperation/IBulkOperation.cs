@@ -1,51 +1,39 @@
 ﻿using System;
+using System.Runtime.Serialization;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IBulkOperation
 	{
-		string Operation { get; }
 		Type ClrType { get; }
 
-		[JsonProperty("_index")]
-		IndexName Index { get; set; }
-
-		[JsonProperty("_type")]
-		TypeName Type { get; set; }
-
-		[JsonProperty("_id")]
+		[DataMember(Name = "_id")]
 		Id Id { get; set; }
 
-		[JsonProperty("_version")]
+		[DataMember(Name = "_index")]
+		IndexName Index { get; set; }
+
+		string Operation { get; }
+
+		[DataMember(Name = "retry_on_conflict")]
+		int? RetriesOnConflict { get; set; }
+
+		[DataMember(Name = "routing")]
+		Routing Routing { get; set; }
+
+		[DataMember(Name = "version")]
 		long? Version { get; set; }
 
-		[JsonProperty("_version_type")]
-		[JsonConverter(typeof(StringEnumConverter))]
+		[DataMember(Name = "version_type")]
 		VersionType? VersionType { get; set; }
-
-		[JsonProperty("_routing")]
-		string Routing { get; set; }
-
-		[JsonProperty("_parent")]
-		Id Parent { get; set; }
-
-		[JsonProperty("_timestamp")]
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.0.0 and up")]
-		long? Timestamp { get; set; }
-
-		[JsonProperty("_ttl")]
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.0.0 and up")]
-		Time Ttl { get; set; }
-
-		[JsonProperty("_retry_on_conflict")]
-		int? RetriesOnConflict { get; set; }
 
 		object GetBody();
 
 		Id GetIdForOperation(Inferrer inferrer);
+
+		Routing GetRoutingForOperation(Inferrer settingsInferrer);
 	}
 }

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,7 +7,7 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Search/Request/SearchAfterUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Search/Request/SearchAfterUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
@@ -15,7 +15,8 @@ please modify the original csharp file found at the link and submit the PR with 
 [[search-after-usage]]
 == Search After Usage
 
-=== Fluent DSL Example
+[float]
+=== Fluent DSL example
 
 [source,csharp]
 ----
@@ -25,12 +26,13 @@ s => s
     .Descending(p => p.Name)
 )
 .SearchAfter(
-    Project.Projects.FirstOrDefault().NumberOfCommits,
-    Project.Projects.FirstOrDefault().Name
+    Project.First.NumberOfCommits,
+    Project.First.Name
 )
 ----
 
-=== Object Initializer Syntax Example
+[float]
+=== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -38,13 +40,13 @@ new SearchRequest<Project>
 {
     Sort = new List<ISort>
     {
-        new SortField { Field = Field<Project>(p => p.NumberOfCommits), Order = SortOrder.Descending },
-        new SortField { Field = Field<Project>(p => p.Name), Order = SortOrder.Descending }
+        new FieldSort { Field = Field<Project>(p => p.NumberOfCommits), Order = SortOrder.Descending },
+        new FieldSort { Field = Field<Project>(p => p.Name), Order = SortOrder.Descending }
     },
     SearchAfter = new List<object>
     {
-        Project.Projects.FirstOrDefault().NumberOfCommits,
-        Project.Projects.FirstOrDefault().Name,
+        Project.First.NumberOfCommits,
+        Project.First.Name,
     }
 }
 ----
@@ -67,7 +69,7 @@ new SearchRequest<Project>
   ],
   "search_after": [
     775,
-    "Dickinson - Beier"
+    "Lesch Group"
   ]
 }
 ----

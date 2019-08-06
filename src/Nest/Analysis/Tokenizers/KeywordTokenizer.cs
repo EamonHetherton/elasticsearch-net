@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -10,26 +11,29 @@ namespace Nest
 		/// <summary>
 		/// The term buffer size. Defaults to 256.
 		/// </summary>
-		[JsonProperty("buffer_size")]
+		[DataMember(Name ="buffer_size")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? BufferSize { get; set; }
 	}
-	/// <inheritdoc/>
-	public class KeywordTokenizer : TokenizerBase, IKeywordTokenizer
-    {
-		public KeywordTokenizer() { Type = "keyword"; }
 
-		/// <inheritdoc/>
+	/// <inheritdoc />
+	public class KeywordTokenizer : TokenizerBase, IKeywordTokenizer
+	{
+		public KeywordTokenizer() => Type = "keyword";
+
+		/// <inheritdoc />
 		public int? BufferSize { get; set; }
-    }
-	/// <inheritdoc/>
-	public class KeywordTokenizerDescriptor 
+	}
+
+	/// <inheritdoc />
+	public class KeywordTokenizerDescriptor
 		: TokenizerDescriptorBase<KeywordTokenizerDescriptor, IKeywordTokenizer>, IKeywordTokenizer
 	{
 		protected override string Type => "keyword";
 
 		int? IKeywordTokenizer.BufferSize { get; set; }
 
-		/// <inheritdoc/>
-		public KeywordTokenizerDescriptor BufferSize(int? size) => Assign(a => a.BufferSize = size);
+		/// <inheritdoc />
+		public KeywordTokenizerDescriptor BufferSize(int? size) => Assign(size, (a, v) => a.BufferSize = v);
 	}
 }

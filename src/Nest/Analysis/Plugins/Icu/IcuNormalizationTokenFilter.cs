@@ -1,32 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
 	/// <summary>
 	/// Normalizes as defined here: http://userguide.icu-project.org/transforms/normalization
-	/// Part of the `analysis-icu` plugin: https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-icu.html
 	/// </summary>
+	/// <remarks>
+	/// Requires analysis-icu plugin to be installed
+	/// </remarks>
 	public interface IIcuNormalizationTokenFilter : ITokenFilter
 	{
 		/// <summary>
 		/// The type of normalization
 		/// </summary>
-		[JsonProperty("name")]
+		[DataMember(Name ="name")]
 		IcuNormalizationType? Name { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class IcuNormalizationTokenFilter : TokenFilterBase, IIcuNormalizationTokenFilter
 	{
 		public IcuNormalizationTokenFilter() : base("icu_normalizer") { }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public IcuNormalizationType? Name { get; set; }
 	}
 
-	///<inheritdoc/>
+	/// <inheritdoc />
 	public class IcuNormalizationTokenFilterDescriptor
 		: TokenFilterDescriptorBase<IcuNormalizationTokenFilterDescriptor, IIcuNormalizationTokenFilter>, IIcuNormalizationTokenFilter
 	{
@@ -34,7 +34,7 @@ namespace Nest
 
 		IcuNormalizationType? IIcuNormalizationTokenFilter.Name { get; set; }
 
-		///<inheritdoc/>
-		public IcuNormalizationTokenFilterDescriptor Name(IcuNormalizationType? name) => Assign(a => a.Name = name);
+		/// <inheritdoc />
+		public IcuNormalizationTokenFilterDescriptor Name(IcuNormalizationType? name) => Assign(name, (a, v) => a.Name = v);
 	}
 }

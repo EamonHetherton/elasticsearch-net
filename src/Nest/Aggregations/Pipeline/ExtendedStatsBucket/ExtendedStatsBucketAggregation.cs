@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<ExtendedStatsBucketAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(ExtendedStatsBucketAggregation))]
 	public interface IExtendedStatsBucketAggregation : IPipelineAggregation
 	{
-		[JsonProperty("sigma")]
+		[DataMember(Name ="sigma")]
 		double? Sigma { get; set; }
 	}
 
@@ -17,8 +17,7 @@ namespace Nest
 		internal ExtendedStatsBucketAggregation() { }
 
 		public ExtendedStatsBucketAggregation(string name, SingleBucketsPath bucketsPath)
-			: base(name, bucketsPath)
-		{ }
+			: base(name, bucketsPath) { }
 
 		public double? Sigma { get; set; }
 
@@ -27,12 +26,10 @@ namespace Nest
 
 	public class ExtendedStatsBucketAggregationDescriptor
 		: PipelineAggregationDescriptorBase<ExtendedStatsBucketAggregationDescriptor, IExtendedStatsBucketAggregation, SingleBucketsPath>
-		, IExtendedStatsBucketAggregation
+			, IExtendedStatsBucketAggregation
 	{
-
 		double? IExtendedStatsBucketAggregation.Sigma { get; set; }
 
-		public ExtendedStatsBucketAggregationDescriptor Sigma(double sigma) => Assign(a => a.Sigma = sigma);
-
+		public ExtendedStatsBucketAggregationDescriptor Sigma(double? sigma) => Assign(sigma, (a, v) => a.Sigma = v);
 	}
 }

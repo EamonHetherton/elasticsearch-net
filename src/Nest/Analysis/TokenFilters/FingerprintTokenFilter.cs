@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -16,46 +12,48 @@ namespace Nest
 	public interface IFingerprintTokenFilter : ITokenFilter
 	{
 		/// <summary>
+		/// The maximum token size to emit. Defaults to 255.
+		/// </summary>
+		[DataMember(Name ="max_output_size")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
+		int? MaxOutputSize { get; set; }
+
+		/// <summary>
 		/// The character that separates the tokens after concatenation.
 		/// Defaults to a space.
 		/// </summary>
-		[JsonProperty("separator")]
+		[DataMember(Name ="separator")]
 		string Separator { get; set; }
+	}
+
+	/// <inheritdoc />
+	public class FingerprintTokenFilter : TokenFilterBase, IFingerprintTokenFilter
+	{
+		public FingerprintTokenFilter() : base("fingerprint") { }
 
 		/// <summary>
 		/// The maximum token size to emit. Defaults to 255.
 		/// </summary>
-		[JsonProperty("max_output_size")]
-		int? MaxOutputSize { get; set; }
-	}
-
-	/// <inheritdoc/>
-	public class FingerprintTokenFilter : TokenFilterBase, IFingerprintTokenFilter
-	{
-		public FingerprintTokenFilter() : base("fingerprint") { }
+		public int? MaxOutputSize { get; set; }
 
 		/// <summary>
 		/// The character that separates the tokens after concatenation.
 		/// Defaults to a space.
 		/// </summary>
 		public string Separator { get; set; }
-
-		/// <summary>
-		/// The maximum token size to emit. Defaults to 255.
-		/// </summary>
-		public int? MaxOutputSize { get; set; }
 	}
-	///<inheritdoc/>
+
+	/// <inheritdoc />
 	public class FingerprintTokenFilterDescriptor
 		: TokenFilterDescriptorBase<FingerprintTokenFilterDescriptor, IFingerprintTokenFilter>, IFingerprintTokenFilter
 	{
 		protected override string Type => "fingerprint";
-
-		string IFingerprintTokenFilter.Separator { get; set; }
 		int? IFingerprintTokenFilter.MaxOutputSize { get; set; }
 
-		public FingerprintTokenFilterDescriptor Separator(string separator) => Assign(a => a.Separator = separator);
+		string IFingerprintTokenFilter.Separator { get; set; }
 
-		public FingerprintTokenFilterDescriptor MaxOutputSize(int? maxOutputSize) => Assign(a => a.MaxOutputSize = maxOutputSize);
+		public FingerprintTokenFilterDescriptor Separator(string separator) => Assign(separator, (a, v) => a.Separator = v);
+
+		public FingerprintTokenFilterDescriptor MaxOutputSize(int? maxOutputSize) => Assign(maxOutputSize, (a, v) => a.MaxOutputSize = v);
 	}
 }

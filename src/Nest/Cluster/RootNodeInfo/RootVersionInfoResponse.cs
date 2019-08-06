@@ -1,25 +1,24 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IRootNodeInfoResponse : IResponse
+	[DataContract]
+	public class RootNodeInfoResponse : ResponseBase
 	{
-		string Name { get; }
-		string Tagline { get;  }
-		ElasticsearchVersionInfo Version { get;  }
-	}
-
-	[JsonObject]
-	public class RootNodeInfoResponse : ResponseBase, IRootNodeInfoResponse
-	{
-		[JsonProperty(PropertyName = "name")]
+		[DataMember(Name ="name")]
 		public string Name { get; internal set; }
-
-		[JsonProperty(PropertyName = "tagline")]
-		public string Tagline { get; internal set; }
 		
-		[JsonProperty(PropertyName = "version")]
+		[DataMember(Name ="cluster_name")]
+		public string ClusterName { get; internal set; }
+
+		[DataMember(Name ="cluster_uuid")]
+		public string ClusterUUID { get; internal set; }
+
+		[DataMember(Name ="version")]
 		public ElasticsearchVersionInfo Version { get; internal set; }
+		
+		[DataMember(Name ="tagline")]
+		public string Tagline { get; internal set; }
 
 	}
 }

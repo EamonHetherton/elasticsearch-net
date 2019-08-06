@@ -1,42 +1,38 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(TokenFilterJsonConverter))]
+	[JsonFormatter(typeof(TokenFilterFormatter))]
 	public interface ITokenFilter
 	{
-		[JsonProperty("version")]
-		string Version { get; set; }
-
-		[JsonProperty("type")]
+		[DataMember(Name = "type")]
 		string Type { get; }
 
+		[DataMember(Name = "version")]
+		string Version { get; set; }
 	}
 
 	public abstract class TokenFilterBase : ITokenFilter
 	{
-		protected TokenFilterBase(string type)
-		{
-			this.Type = type;
-		}
+		protected TokenFilterBase(string type) => Type = type;
 
-		[JsonProperty("version")]
-		public string Version { get; set; }
-
-		[JsonProperty("type")]
+		[DataMember(Name = "type")]
 		public string Type { get; protected set; }
+
+		[DataMember(Name = "version")]
+		public string Version { get; set; }
 	}
 
-	public abstract class TokenFilterDescriptorBase<TTokenFilter, TTokenFilterInterface> 
+	public abstract class TokenFilterDescriptorBase<TTokenFilter, TTokenFilterInterface>
 		: DescriptorBase<TTokenFilter, TTokenFilterInterface>, ITokenFilter
 		where TTokenFilter : TokenFilterDescriptorBase<TTokenFilter, TTokenFilterInterface>, TTokenFilterInterface
 		where TTokenFilterInterface : class, ITokenFilter
 	{
-		string ITokenFilter.Version { get; set; }
-		string ITokenFilter.Type => this.Type;
 		protected abstract string Type { get; }
+		string ITokenFilter.Type => Type;
+		string ITokenFilter.Version { get; set; }
 
-		public TTokenFilter Version(string version) => Assign(a => a.Version = version);
+		public TTokenFilter Version(string version) => Assign(version, (a, v) => a.Version = v);
 	}
-
 }

@@ -1,25 +1,51 @@
 ﻿namespace Nest
 {
+	/// <inheritdoc cref="IGeoShapeProperty" />
 	public class GeoShapeAttribute : ElasticsearchDocValuesPropertyAttributeBase, IGeoShapeProperty
 	{
-		private IGeoShapeProperty Self => this;
-
 		public GeoShapeAttribute() : base(FieldType.GeoShape) { }
-
-		GeoTree? IGeoShapeProperty.Tree { get; set; }
-		Distance IGeoShapeProperty.Precision { get; set; }
+		
+		bool? IGeoShapeProperty.IgnoreMalformed { get; set; }
+		bool? IGeoShapeProperty.IgnoreZValue { get; set; }
 		GeoOrientation? IGeoShapeProperty.Orientation { get; set; }
-		int? IGeoShapeProperty.TreeLevels { get; set; }
+		private IGeoShapeProperty Self => this;
 		GeoStrategy? IGeoShapeProperty.Strategy { get; set; }
-		double? IGeoShapeProperty.DistanceErrorPercentage { get; set; }
-		bool? IGeoShapeProperty.PointsOnly { get; set; }
+		bool? IGeoShapeProperty.Coerce { get; set; }
 
-		public GeoTree Tree { get { return Self.Tree.GetValueOrDefault(GeoTree.Geohash); } set { Self.Tree = value; } }
-		public GeoOrientation Orientation { get { return Self.Orientation.GetValueOrDefault(GeoOrientation.CounterClockWise); } set { Self.Orientation = value; } }
-		public int TreeLevels { get { return Self.TreeLevels.GetValueOrDefault(50); } set { Self.TreeLevels = value; } }
-		public GeoStrategy Strategy {  get { return Self.Strategy.GetValueOrDefault(GeoStrategy.Recursive); } set { Self.Strategy = value; } }
-		public double DistanceErrorPercentage { get { return Self.DistanceErrorPercentage.GetValueOrDefault(); } set { Self.DistanceErrorPercentage = value; } }
-		public bool PointsOnly { get { return Self.PointsOnly.GetValueOrDefault(); } set { Self.PointsOnly = value; } }
+		/// <inheritdoc cref="IGeoShapeProperty.IgnoreMalformed" />
+		public bool IgnoreMalformed
+		{
+			get => Self.IgnoreMalformed.GetValueOrDefault(false);
+			set => Self.IgnoreMalformed = value;
+		}
+
+		/// <inheritdoc cref="IGeoShapeProperty.IgnoreZValue" />
+		public bool IgnoreZValue
+		{
+			get => Self.IgnoreZValue.GetValueOrDefault(true);
+			set => Self.IgnoreZValue = value;
+		}
+
+		/// <inheritdoc cref="IGeoShapeProperty.Orientation" />
+		public GeoOrientation Orientation
+		{
+			get => Self.Orientation.GetValueOrDefault(GeoOrientation.CounterClockWise);
+			set => Self.Orientation = value;
+		}
+
+		/// <inheritdoc cref="IGeoShapeProperty.Strategy" />
+		public GeoStrategy Strategy
+		{
+			get => Self.Strategy.GetValueOrDefault(GeoStrategy.Recursive);
+			set => Self.Strategy = value;
+		}
+
+		/// <inheritdoc cref="IGeoShapeProperty.Coerce" />
+		public bool Coerce
+		{
+			get => Self.Coerce.GetValueOrDefault(true);
+			set => Self.Coerce = value;
+		}
 
 	}
 }

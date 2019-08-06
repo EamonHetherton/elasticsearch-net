@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -8,7 +8,7 @@ namespace Nest
 	/// input to submit a request to an HTTP endpoint and load the response
 	/// into the watch execution context when a watch is triggered.
 	/// </summary>
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<HttpInput>))]
+	[ReadAs(typeof(HttpInput))]
 	public interface IHttpInput : IInput
 	{
 		/// <summary>
@@ -16,21 +16,21 @@ namespace Nest
 		/// In cases when an input generates a large response this can be used to filter
 		/// the relevant piece of the response to be used as payload.
 		/// </summary>
-		[JsonProperty("extract")]
+		[DataMember(Name ="extract")]
 		IEnumerable<string> Extract { get; set; }
 
 		/// <summary>
 		/// The HTTP input request details
 		/// </summary>
-		[JsonProperty("request")]
+		[DataMember(Name ="request")]
 		IHttpInputRequest Request { get; set; }
 
 		/// <summary>
 		/// The expected content type the response body will contain.
-		/// If the format is text, <see cref="HttpInput.Extract"/> cannot exist.
+		/// If the format is text, <see cref="HttpInput.Extract" /> cannot exist.
 		/// Note that this overrides the header that is returned in the HTTP response.
 		/// </summary>
-		[JsonProperty("response_content_type")]
+		[DataMember(Name ="response_content_type")]
 		ResponseContentType? ResponseContentType { get; set; }
 	}
 
@@ -58,18 +58,18 @@ namespace Nest
 
 		/// <inheritdoc />
 		public HttpInputDescriptor Request(Func<HttpInputRequestDescriptor, IHttpInputRequest> httpRequestSelector) =>
-			Assign(a => a.Request = httpRequestSelector(new HttpInputRequestDescriptor()));
+			Assign(httpRequestSelector(new HttpInputRequestDescriptor()), (a, v) => a.Request = v);
 
 		/// <inheritdoc />
 		public HttpInputDescriptor Extract(IEnumerable<string> extract) =>
-			Assign(a => a.Extract = extract);
+			Assign(extract, (a, v) => a.Extract = v);
 
 		/// <inheritdoc />
 		public HttpInputDescriptor Extract(params string[] extract) =>
-			Assign(a => a.Extract = extract);
+			Assign(extract, (a, v) => a.Extract = v);
 
 		/// <inheritdoc />
-		public HttpInputDescriptor ResponseContentType(ResponseContentType responseContentType) =>
-			Assign(a => a.ResponseContentType = responseContentType);
+		public HttpInputDescriptor ResponseContentType(ResponseContentType? responseContentType) =>
+			Assign(responseContentType, (a, v) => a.ResponseContentType = v);
 	}
 }

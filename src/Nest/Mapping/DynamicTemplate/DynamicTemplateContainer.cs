@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(DynamicTemplatesJsonConverter))]
+	[JsonFormatter(typeof(DynamicTemplatesInterfaceFormatter))]
 	public interface IDynamicTemplateContainer : IIsADictionary<string, IDynamicTemplate> { }
 
+	[JsonFormatter(typeof(DynamicTemplatesFormatter))]
 	public class DynamicTemplateContainer : IsADictionaryBase<string, IDynamicTemplate>, IDynamicTemplateContainer
 	{
-		public DynamicTemplateContainer() : base() { }
+		public DynamicTemplateContainer() { }
+
 		public DynamicTemplateContainer(IDictionary<string, IDynamicTemplate> container) : base(container) { }
-		public DynamicTemplateContainer(Dictionary<string, IDynamicTemplate> container)
-			: base(container.Select(kv => kv).ToDictionary(kv => kv.Key, kv => kv.Value))
-		{ }
+
+		public DynamicTemplateContainer(Dictionary<string, IDynamicTemplate> container) : base(container) { }
 
 		/// <summary>
 		/// Add any setting to the index
@@ -22,11 +22,13 @@ namespace Nest
 		public void Add(string name, IDynamicTemplate dynamicTemplate) => BackingDictionary.Add(name, dynamicTemplate);
 	}
 
-	public class DynamicTemplateContainerDescriptor<T> : IsADictionaryDescriptorBase<DynamicTemplateContainerDescriptor<T>, IDynamicTemplateContainer, string, IDynamicTemplate>
+	public class DynamicTemplateContainerDescriptor<T>
+		: IsADictionaryDescriptorBase<DynamicTemplateContainerDescriptor<T>, IDynamicTemplateContainer, string, IDynamicTemplate>
 		where T : class
 	{
 		public DynamicTemplateContainerDescriptor() : base(new DynamicTemplateContainer()) { }
 
-		public DynamicTemplateContainerDescriptor<T> DynamicTemplate(string name, Func<DynamicTemplateDescriptor<T>, IDynamicTemplate> selector) => Assign(name, selector?.Invoke(new DynamicTemplateDescriptor<T>()));
+		public DynamicTemplateContainerDescriptor<T> DynamicTemplate(string name, Func<DynamicTemplateDescriptor<T>, IDynamicTemplate> selector) =>
+			Assign(name, selector?.Invoke(new DynamicTemplateDescriptor<T>()));
 	}
 }

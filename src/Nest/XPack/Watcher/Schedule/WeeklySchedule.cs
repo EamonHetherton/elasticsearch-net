@@ -1,45 +1,33 @@
 ﻿using System;
 using System.Collections;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ScheduleJsonConverter<IWeeklySchedule, WeeklySchedule, ITimeOfWeek>))]
-	public interface IWeeklySchedule : ISchedule, IEnumerable<ITimeOfWeek> {}
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(ScheduleFormatter<IWeeklySchedule, WeeklySchedule, ITimeOfWeek>))]
+	public interface IWeeklySchedule : ISchedule, IEnumerable<ITimeOfWeek> { }
 
 	public class WeeklySchedule : ScheduleBase, IWeeklySchedule
 	{
 		private List<ITimeOfWeek> _times;
 
-		public WeeklySchedule(IEnumerable<ITimeOfWeek> times)
-		{
-			this._times = times?.ToList();
-		}
+		public WeeklySchedule(IEnumerable<ITimeOfWeek> times) => _times = times?.ToList();
 
-		public WeeklySchedule(params ITimeOfWeek[] times)
-		{
-			this._times = times?.ToList();
-		}
+		public WeeklySchedule(params ITimeOfWeek[] times) => _times = times?.ToList();
 
-		public WeeklySchedule() {}
+		public WeeklySchedule() { }
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+		public IEnumerator<ITimeOfWeek> GetEnumerator() => _times?.GetEnumerator() ?? Enumerable.Empty<ITimeOfWeek>().GetEnumerator();
 
 		public void Add(ITimeOfWeek time)
 		{
 			if (_times == null) _times = new List<ITimeOfWeek>();
 			_times.Add(time);
-		}
-
-		public IEnumerator<ITimeOfWeek> GetEnumerator()
-		{
-			return _times?.GetEnumerator() ?? Enumerable.Empty<ITimeOfWeek>().GetEnumerator();
-		}
-
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
 		}
 
 		internal override void WrapInContainer(IScheduleContainer container) => container.Weekly = this;
@@ -48,41 +36,48 @@ namespace Nest
 			new WeeklySchedule(timesOfWeek);
 	}
 
-	public class WeeklyScheduleDescriptor : DescriptorPromiseBase<WeeklyScheduleDescriptor,WeeklySchedule>
+	public class WeeklyScheduleDescriptor : DescriptorPromiseBase<WeeklyScheduleDescriptor, WeeklySchedule>
 	{
-		public WeeklyScheduleDescriptor Add(Func<TimeOfWeekDescriptor, ITimeOfWeek> selector) =>
-			Assign(a => a.Add(selector.InvokeOrDefault(new TimeOfWeekDescriptor())));
+		public WeeklyScheduleDescriptor() : base(new WeeklySchedule()) { }
 
-		public WeeklyScheduleDescriptor() : base(new WeeklySchedule()) {}
+		public WeeklyScheduleDescriptor Add(Func<TimeOfWeekDescriptor, ITimeOfWeek> selector) =>
+			Assign(selector, (a, v) => a.Add(v.InvokeOrDefault(new TimeOfWeekDescriptor())));
 	}
 
-	internal class ScheduleJsonConverter<TSchedule, TReadAsSchedule, TTime> : ReadSingleOrEnumerableJsonConverter<TTime>
+	internal class ScheduleFormatter<TSchedule, TReadAsSchedule, TTime> : IJsonFormatter<TSchedule>
 		where TSchedule : class, IEnumerable<TTime>
 		where TReadAsSchedule : class, TSchedule
 	{
-		public override bool CanWrite => true;
-
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		public TSchedule Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
 		{
-			var schedule = value as TSchedule;
-			if (schedule == null)
+			var token = reader.GetCurrentJsonToken();
+
+			var times = token == JsonToken.BeginArray
+				? formatterResolver.GetFormatter<IEnumerable<TTime>>().Deserialize(ref reader, formatterResolver)
+				: new[] { formatterResolver.GetFormatter<TTime>().Deserialize(ref reader, formatterResolver) };
+
+			var schedule = (TSchedule)typeof(TReadAsSchedule).CreateInstance(times);
+			return schedule;
+		}
+
+		public void Serialize(ref JsonWriter writer, TSchedule value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null)
 			{
 				writer.WriteNull();
 				return;
 			}
 
-			var times = schedule.ToList();
-			if (times.Count == 1) serializer.Serialize(writer, times[0]);
-			else serializer.Serialize(writer, times);
+			if (value.Count() == 1)
+			{
+				var formatter = formatterResolver.GetFormatter<TTime>();
+				formatter.Serialize(ref writer, value.First(), formatterResolver);
+			}
+			else
+			{
+				var formatter = formatterResolver.GetFormatter<IEnumerable<TTime>>();
+				formatter.Serialize(ref writer, value, formatterResolver);
+			}
 		}
-
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-		{
-			var times = (TTime[])base.ReadJson(reader, objectType, existingValue, serializer);
-			var schedule = typeof(TReadAsSchedule).CreateInstance(times);
-			return schedule;
-		}
-
-		public override bool CanConvert(Type objectType) => true;
 	}
 }

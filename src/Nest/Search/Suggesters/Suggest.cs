@@ -1,18 +1,36 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public class Suggest<T> where T : class
+	[InterfaceDataContract]
+	[ReadAs(typeof(Suggest<>))]
+	public interface ISuggest<out T> where T : class
 	{
-		[JsonProperty("length")]
+		[DataMember(Name = "length")]
+		int Length { get; }
+
+		[DataMember(Name = "offset")]
+		int Offset { get; }
+
+		[DataMember(Name = "options")]
+		IReadOnlyCollection<ISuggestOption<T>> Options { get; }
+
+		[DataMember(Name = "text")]
+		string Text { get; }
+
+	}
+	public class Suggest<T> : ISuggest<T>
+		where T : class
+	{
 		public int Length { get; internal set; }
-		[JsonProperty("offset")]
+
 		public int Offset { get; internal set; }
-		[JsonProperty("text")]
+
+		public IReadOnlyCollection<ISuggestOption<T>> Options { get; internal set; } = EmptyReadOnly<ISuggestOption<T>>.Collection;
+
 		public string Text { get; internal set; }
-		[JsonProperty("options")]
-		public IReadOnlyCollection<SuggestOption<T>> Options { get; internal set; } = EmptyReadOnly<SuggestOption<T>>.Collection;
 	}
 }

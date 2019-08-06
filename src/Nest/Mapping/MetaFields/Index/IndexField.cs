@@ -1,24 +1,28 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<IndexField>))]
+	[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
+	[ReadAs(typeof(IndexField))]
 	public interface IIndexField : IFieldMapping
 	{
-		[JsonProperty("enabled")]
+		[DataMember(Name ="enabled")]
 		bool? Enabled { get; set; }
 	}
 
+	[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
 	public class IndexField : IIndexField
 	{
 		public bool? Enabled { get; set; }
 	}
 
-	public class IndexFieldDescriptor 
+	[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
+	public class IndexFieldDescriptor
 		: DescriptorBase<IndexFieldDescriptor, IIndexField>, IIndexField
 	{
 		bool? IIndexField.Enabled { get; set; }
 
-		public IndexFieldDescriptor Enabled(bool enabled = true) => Assign(a => a.Enabled = enabled);
+		public IndexFieldDescriptor Enabled(bool? enabled = true) => Assign(enabled, (a, v) => a.Enabled = v);
 	}
 }

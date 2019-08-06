@@ -1,65 +1,46 @@
 ﻿using System;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-
 	public class MultiGetOperation<T> : IMultiGetOperation
 	{
 		public MultiGetOperation(Id id)
 		{
-			this.Id = id;
-			this.Index = typeof(T);
-			this.Type = typeof(T);
+			Id = id;
+			Index = typeof(T);
 		}
-
-		Type IMultiGetOperation.ClrType => typeof(T);
-
-		public IndexName Index { get; set; }
-
-		public TypeName Type { get; set; }
-
-		public Id Id { get; set; }
-
-		public Fields StoredFields { get; set; }
-
-		public Union<bool, ISourceFilter> Source { get; set; }
-
-		public string Routing { get; set; }
-
-		bool IMultiGetOperation.CanBeFlattened =>
-			this.Index == null
-			&& this.Type == null
-			&& this.Routing == null
-			&& this.Source == null
-			&& this.StoredFields == null;
 
 
 		public object Document { get; set; }
+
+		public Id Id { get; set; }
+
+		public IndexName Index { get; set; }
+
+		public string Routing { get; set; }
+
+		public Union<bool, ISourceFilter> Source { get; set; }
+
+		public Fields StoredFields { get; set; }
+
+		public long? Version { get; set; }
+
+		public VersionType? VersionType { get; set; }
+
+		bool IMultiGetOperation.CanBeFlattened =>
+			Index == null
+			&& Routing == null
+			&& Source == null
+			&& StoredFields == null;
+
+		Type IMultiGetOperation.ClrType => typeof(T);
 	}
 
 	public class MultiGetOperationDescriptor<T> : DescriptorBase<MultiGetOperationDescriptor<T>, IMultiGetOperation>, IMultiGetOperation
 		where T : class
 	{
-		IndexName IMultiGetOperation.Index { get; set; }
-		TypeName IMultiGetOperation.Type { get; set; }
-		Id IMultiGetOperation.Id { get; set; }
-		string IMultiGetOperation.Routing { get; set; }
-		Union<bool, ISourceFilter> IMultiGetOperation.Source { get; set; }
-		Fields IMultiGetOperation.StoredFields { get; set; }
-		Type IMultiGetOperation.ClrType => typeof(T);
-
-		bool IMultiGetOperation.CanBeFlattened =>
-			Self.Index == null
-			&& Self.Type == null
-			&& Self.Routing == null
-			&& Self.Source == null
-			&& Self.StoredFields == null;
-
-		public MultiGetOperationDescriptor()
-		{
-			Self.Index = Self.ClrType;
-			Self.Type = Self.ClrType;
-		}
+		public MultiGetOperationDescriptor() => Self.Index = Self.ClrType;
 
 		/// <summary>
 		/// when rest.action.multi.allow_explicit_index is set to false you can use this constructor to generate a multiget operation
@@ -72,46 +53,59 @@ namespace Nest
 			: this()
 		{
 			if (allowExplicitIndex) return;
+
 			Self.Index = null;
 		}
+
+		bool IMultiGetOperation.CanBeFlattened =>
+			Self.Index == null
+			&& Self.Routing == null
+			&& Self.Source == null
+			&& Self.StoredFields == null;
+
+		Type IMultiGetOperation.ClrType => typeof(T);
+		Id IMultiGetOperation.Id { get; set; }
+		IndexName IMultiGetOperation.Index { get; set; }
+		string IMultiGetOperation.Routing { get; set; }
+		Union<bool, ISourceFilter> IMultiGetOperation.Source { get; set; }
+		Fields IMultiGetOperation.StoredFields { get; set; }
+		long? IMultiGetOperation.Version { get; set; }
+		VersionType? IMultiGetOperation.VersionType { get; set; }
 
 		/// <summary>
 		/// Manually set the index, default to the default index or the index set for the type on the connectionsettings.
 		/// </summary>
-		public MultiGetOperationDescriptor<T> Index(IndexName index) => Assign(a => a.Index = index);
+		public MultiGetOperationDescriptor<T> Index(IndexName index) => Assign(index, (a, v) => a.Index = v);
 
-		/// <summary>
-		/// Manualy set the type to get the object from, default to whatever
-		/// T will be inferred to if not passed.
-		/// </summary>
-		public MultiGetOperationDescriptor<T> Type(TypeName type) => Assign(a=> a.Type = type);
-
-		public MultiGetOperationDescriptor<T> Id(Id id) => Assign(a => a.Id = id);
+		public MultiGetOperationDescriptor<T> Id(Id id) => Assign(id, (a, v) => a.Id = v);
 
 		/// <summary>
 		/// Control how the document's source is loaded
 		/// </summary>
-		public MultiGetOperationDescriptor<T> Source(bool? sourceEnabled = true) => Assign(a => a.Source = sourceEnabled);
+		public MultiGetOperationDescriptor<T> Source(bool? sourceEnabled = true) => Assign(sourceEnabled, (a, v) => a.Source = v);
 
 		/// <summary>
 		/// Control how the document's source is loaded
 		/// </summary>
 		public MultiGetOperationDescriptor<T> Source(Func<SourceFilterDescriptor<T>, ISourceFilter> source) =>
-			Assign(a => a.Source = new Union<bool, ISourceFilter>(source(new SourceFilterDescriptor<T>())));
+			Assign(new Union<bool, ISourceFilter>(source(new SourceFilterDescriptor<T>())), (a, v) => a.Source = v);
 
 		/// <summary>
 		/// Set the routing for the get operation
 		/// </summary>
-		public MultiGetOperationDescriptor<T> Routing(string routing) => Assign(a => a.Routing = routing);
+		public MultiGetOperationDescriptor<T> Routing(string routing) => Assign(routing, (a, v) => a.Routing = v);
 
 		/// <summary>
 		/// Allows to selectively load specific fields for each document
 		/// represented by a search hit. Defaults to load the internal _source field.
 		/// </summary>
 		public MultiGetOperationDescriptor<T> StoredFields(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
-			Assign(a => a.StoredFields = fields?.Invoke(new FieldsDescriptor<T>())?.Value);
+			Assign(fields, (a, v) => a.StoredFields = v?.Invoke(new FieldsDescriptor<T>())?.Value);
 
-		public MultiGetOperationDescriptor<T> StoredFields(Fields fields) => Assign(a => a.StoredFields = fields);
+		public MultiGetOperationDescriptor<T> StoredFields(Fields fields) => Assign(fields, (a, v) => a.StoredFields = v);
 
+		public MultiGetOperationDescriptor<T> Version(long? version) => Assign(version, (a, v) => a.Version = v);
+
+		public MultiGetOperationDescriptor<T> VersionType(VersionType? versionType) => Assign(versionType, (a, v) => a.VersionType = v);
 	}
 }

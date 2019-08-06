@@ -1,17 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class CatCountRecord : ICatRecord
 	{
-		[JsonProperty("epoch")]
+		[DataMember(Name ="count")]
+		public string Count { get; set; }
+
+		[DataMember(Name ="epoch")]
 		public string Epoch { get; set; }
 
-		[JsonProperty("timestamp")]
+		[DataMember(Name ="timestamp")]
 		public string Timestamp { get; set; }
-
-		[JsonProperty("count")]
-		public string Count { get; set; }
 	}
 }

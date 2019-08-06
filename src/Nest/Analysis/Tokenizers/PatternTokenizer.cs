@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -8,57 +9,57 @@ namespace Nest
 	public interface IPatternTokenizer : ITokenizer
 	{
 		/// <summary>
-		/// The regular expression pattern, defaults to \W+.
-		/// </summary>
-		[JsonProperty("pattern")]
-		string Pattern { get; set; }
-
-		/// <summary>
 		/// The regular expression flags.
 		/// </summary>
-		[JsonProperty("flags")]
+		[DataMember(Name = "flags")]
 		string Flags { get; set; }
 
 		/// <summary>
 		/// Which group to extract into tokens. Defaults to -1 (split).
 		/// </summary>
-		[JsonProperty("group")]
+		[DataMember(Name = "group")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? Group { get; set; }
 
+		/// <summary>
+		/// The regular expression pattern, defaults to \W+.
+		/// </summary>
+		[DataMember(Name = "pattern")]
+		string Pattern { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class PatternTokenizer : TokenizerBase, IPatternTokenizer
-    {
-		public PatternTokenizer() { Type = "pattern"; }
+	{
+		public PatternTokenizer() => Type = "pattern";
 
-		/// <inheritdoc/>
-		public string Pattern { get; set; }
-
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public string Flags { get; set; }
 
-		/// <summary/>
+		/// <summary />
 		public int? Group { get; set; }
-    }
-	/// <inheritdoc/>
+
+		/// <inheritdoc />
+		public string Pattern { get; set; }
+	}
+
+	/// <inheritdoc />
 	public class PatternTokenizerDescriptor
 		: TokenizerDescriptorBase<PatternTokenizerDescriptor, IPatternTokenizer>, IPatternTokenizer
 	{
 		protected override string Type => "pattern";
+		string IPatternTokenizer.Flags { get; set; }
 
 		int? IPatternTokenizer.Group { get; set; }
 		string IPatternTokenizer.Pattern { get; set; }
-		string IPatternTokenizer.Flags { get; set; }
 
-		/// <inheritdoc/>
-		public PatternTokenizerDescriptor Group(int? group) => Assign(a => a.Group = group);
+		/// <inheritdoc />
+		public PatternTokenizerDescriptor Group(int? group) => Assign(group, (a, v) => a.Group = v);
 
-		/// <inheritdoc/>
-		public PatternTokenizerDescriptor Pattern(string pattern) => Assign(a => a.Pattern = pattern);
+		/// <inheritdoc />
+		public PatternTokenizerDescriptor Pattern(string pattern) => Assign(pattern, (a, v) => a.Pattern = v);
 
-		/// <inheritdoc/>
-		public PatternTokenizerDescriptor Flags(string flags) => Assign(a => a.Flags = flags);
-
+		/// <inheritdoc />
+		public PatternTokenizerDescriptor Flags(string flags) => Assign(flags, (a, v) => a.Flags = v);
 	}
 }

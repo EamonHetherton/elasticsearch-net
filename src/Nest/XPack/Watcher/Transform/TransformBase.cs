@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public interface ITransform {}
+	[InterfaceDataContract]
+	public interface ITransform { }
 
 	public abstract class TransformBase
 	{

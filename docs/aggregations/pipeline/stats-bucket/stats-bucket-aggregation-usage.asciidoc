@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,91 +7,83 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Pipeline/StatsBucket/StatsBucketAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Pipeline/StatsBucket/StatsBucketAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[stats-bucket-aggregation-usage]]
-== Stats Bucket Aggregation Usage
+=== Stats Bucket Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Size(0)
-.Aggregations(a => a
-    .DateHistogram("projects_started_per_month", dh => dh
-        .Field(p => p.StartedOn)
-        .Interval(DateInterval.Month)
-        .Aggregations(aa => aa
-            .Sum("commits", sm => sm
-                .Field(p => p.NumberOfCommits)
-            )
+a => a
+.DateHistogram("projects_started_per_month", dh => dh
+    .Field(p => p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa => aa
+        .Sum("commits", sm => sm
+            .Field(p => p.NumberOfCommits)
         )
     )
-    .StatsBucket("stats_commits_per_month", aaa => aaa
-        .BucketsPath("projects_started_per_month>commits")
-    )
+)
+.StatsBucket("stats_commits_per_month", aaa => aaa
+    .BucketsPath("projects_started_per_month>commits")
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>()
+new DateHistogramAggregation("projects_started_per_month")
 {
-    Size = 0,
-    Aggregations = new DateHistogramAggregation("projects_started_per_month")
-    {
-        Field = "startedOn",
-        Interval = DateInterval.Month,
-        Aggregations = new SumAggregation("commits", "numberOfCommits")
-    }
-    && new StatsBucketAggregation("stats_commits_per_month", "projects_started_per_month>commits")
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations = new SumAggregation("commits", "numberOfCommits")
 }
+&& new StatsBucketAggregation("stats_commits_per_month", "projects_started_per_month>commits")
 ----
 
 [source,javascript]
 .Example json output
 ----
 {
-  "size": 0,
-  "aggs": {
-    "projects_started_per_month": {
-      "date_histogram": {
-        "field": "startedOn",
-        "interval": "month"
-      },
-      "aggs": {
-        "commits": {
-          "sum": {
-            "field": "numberOfCommits"
-          }
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
         }
       }
-    },
-    "stats_commits_per_month": {
-      "stats_bucket": {
-        "buckets_path": "projects_started_per_month>commits"
-      }
+    }
+  },
+  "stats_commits_per_month": {
+    "stats_bucket": {
+      "buckets_path": "projects_started_per_month>commits"
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var projectsPerMonth = response.Aggs.DateHistogram("projects_started_per_month");
+
+var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
 projectsPerMonth.Should().NotBeNull();
 projectsPerMonth.Buckets.Should().NotBeNull();
 projectsPerMonth.Buckets.Count.Should().BeGreaterThan(0);
-var commitsStats = response.Aggs.StatsBucket("stats_commits_per_month");
+
+var commitsStats = response.Aggregations.StatsBucket("stats_commits_per_month");
 commitsStats.Should().NotBeNull();
 commitsStats.Average.Should().BeGreaterThan(0);
 commitsStats.Max.Should().BeGreaterThan(0);

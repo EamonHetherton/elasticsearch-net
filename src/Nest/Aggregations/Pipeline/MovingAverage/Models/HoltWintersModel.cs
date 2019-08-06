@@ -1,73 +1,74 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum HoltWintersType
 	{
 		[EnumMember(Value = "add")]
 		Additive,
+
 		[EnumMember(Value = "mult")]
 		Multiplicative
 	}
 
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HoltWintersModel))]
 	public interface IHoltWintersModel : IMovingAverageModel
 	{
-		[JsonProperty("alpha")]
+		[DataMember(Name = "alpha")]
 		float? Alpha { get; set; }
 
-		[JsonProperty("beta")]
+		[DataMember(Name = "beta")]
 		float? Beta { get; set; }
 
-		[JsonProperty("gamma")]
+		[DataMember(Name = "gamma")]
 		float? Gamma { get; set; }
 
-		[JsonProperty("period")]
+		[DataMember(Name = "pad")]
+		bool? Pad { get; set; }
+
+		[DataMember(Name = "period")]
 		int? Period { get; set; }
 
-		[JsonProperty("type")]
+		[DataMember(Name = "type")]
 		HoltWintersType? Type { get; set; }
-		
-		[JsonProperty("pad")]
-		bool? Pad { get; set; }
 	}
 
 	public class HoltWintersModel : IHoltWintersModel
 	{
-		string IMovingAverageModel.Name { get; } = "holt_winters";
-
 		public float? Alpha { get; set; }
 		public float? Beta { get; set; }
 		public float? Gamma { get; set; }
+		public bool? Pad { get; set; }
 		public int? Period { get; set; }
 		public HoltWintersType? Type { get; set; }
-		public bool? Pad { get; set; }
+		string IMovingAverageModel.Name { get; } = "holt_winters";
 	}
 
 	public class HoltWintersModelDescriptor
 		: DescriptorBase<HoltWintersModelDescriptor, IHoltWintersModel>, IHoltWintersModel
 	{
-		string IMovingAverageModel.Name { get; } = "holt_winters";
 		float? IHoltWintersModel.Alpha { get; set; }
 		float? IHoltWintersModel.Beta { get; set; }
 		float? IHoltWintersModel.Gamma { get; set; }
+		string IMovingAverageModel.Name { get; } = "holt_winters";
 		bool? IHoltWintersModel.Pad { get; set; }
 		int? IHoltWintersModel.Period { get; set; }
 		HoltWintersType? IHoltWintersModel.Type { get; set; }
 
-		public HoltWintersModelDescriptor Alpha(float alpha) => Assign(a => a.Alpha = alpha);
+		public HoltWintersModelDescriptor Alpha(float? alpha) => Assign(alpha, (a, v) => a.Alpha = v);
 
-		public HoltWintersModelDescriptor Beta(float beta) => Assign(a => a.Beta = beta);
+		public HoltWintersModelDescriptor Beta(float? beta) => Assign(beta, (a, v) => a.Beta = v);
 
-		public HoltWintersModelDescriptor Gamma(float gamma) => Assign(a => a.Gamma = gamma);
+		public HoltWintersModelDescriptor Gamma(float? gamma) => Assign(gamma, (a, v) => a.Gamma = v);
 
-		public HoltWintersModelDescriptor Pad(bool pad) => Assign(a => a.Pad = pad);
+		public HoltWintersModelDescriptor Pad(bool? pad = true) => Assign(pad, (a, v) => a.Pad = v);
 
-		public HoltWintersModelDescriptor Period(int period) => Assign(a => a.Period = period);
+		public HoltWintersModelDescriptor Period(int? period) => Assign(period, (a, v) => a.Period = v);
 
-		public HoltWintersModelDescriptor Type(HoltWintersType type) => Assign(a => a.Type = type);
+		public HoltWintersModelDescriptor Type(HoltWintersType? type) => Assign(type, (a, v) => a.Type = v);
 	}
 }

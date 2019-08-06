@@ -1,81 +1,57 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IDeleteByQueryResponse : IResponse
+	public class DeleteByQueryResponse : ResponseBase
 	{
-		[JsonProperty("took")]
-		long Took { get; }
+		public override bool IsValid => ApiCall?.HttpStatusCode == 200 || !Failures.HasAny();
+
+		[DataMember(Name ="batches")]
+		public long Batches { get; internal set; }
+
+		[DataMember(Name ="deleted")]
+		public long Deleted { get; internal set; }
+
+		[DataMember(Name ="failures")]
+		public IReadOnlyCollection<BulkIndexByScrollFailure> Failures { get; internal set; }
+			= EmptyReadOnly<BulkIndexByScrollFailure>.Collection;
+
+		[DataMember(Name ="noops")]
+		public long Noops { get; internal set; }
+
+		[DataMember(Name ="requests_per_second")]
+		public float RequestsPerSecond { get; internal set; }
+
+		[DataMember(Name ="retries")]
+		public Retries Retries { get; internal set; }
+
+		[DataMember(Name ="slice_id")]
+		public int? SliceId { get; internal set; }
 
 		/// <summary>
 		/// Only has a value if WaitForCompletion is set to false on the request
 		/// </summary>
-		[JsonProperty("task")]
-		TaskId Task { get; }
-
-		[JsonProperty("timed_out")]
-		bool TimedOut { get; }
-
-		[JsonProperty("deleted")]
-		long Deleted { get; }
-
-		[JsonProperty("batches")]
-		long Batches { get; }
-
-		[JsonProperty("version_conflicts")]
-		long VersionConflicts { get; }
-
-		[JsonProperty("noops")]
-		long Noops { get; }
-
-		[JsonProperty("retries")]
-		Retries Retries { get; }
-
-		[JsonProperty("throttled_millis")]
-		long ThrottledMilliseconds { get; }
-
-		[JsonProperty("requests_per_second")]
-		float RequestsPerSecond { get; }
-
-		[JsonProperty("throttled_until_millis")]
-		long ThrottledUntilMilliseconds { get; }
-
-		[JsonProperty("total")]
-		long Total { get; }
-
-		[JsonProperty("failures")]
-		IReadOnlyCollection<BulkIndexByScrollFailure> Failures { get; }
-	}
-
-	public class DeleteByQueryResponse : ResponseBase, IDeleteByQueryResponse
-	{
-		public override bool IsValid => this.ApiCall?.HttpStatusCode == 200 || !this.Failures.HasAny();
-
-		public long Took { get; internal set; }
-
+		[DataMember(Name ="task")]
 		public TaskId Task { get; internal set; }
 
-		public bool TimedOut { get; internal set; }
-
-		public long Deleted { get; internal set; }
-
-		public long Batches { get; internal set; }
-
-		public long VersionConflicts { get; internal set; }
-
-		public long Noops { get; internal set; }
-
-		public Retries Retries { get; internal set; }
-
+		[DataMember(Name ="throttled_millis")]
 		public long ThrottledMilliseconds { get; internal set; }
 
-		public float RequestsPerSecond { get; internal set; }
-
+		[DataMember(Name ="throttled_until_millis")]
 		public long ThrottledUntilMilliseconds { get; internal set; }
 
+		[DataMember(Name ="timed_out")]
+		public bool TimedOut { get; internal set; }
+
+		[DataMember(Name ="took")]
+		public long Took { get; internal set; }
+
+		[DataMember(Name ="total")]
 		public long Total { get; internal set; }
 
-		public IReadOnlyCollection<BulkIndexByScrollFailure> Failures { get; internal set; } = EmptyReadOnly<BulkIndexByScrollFailure>.Collection;
+		[DataMember(Name ="version_conflicts")]
+		public long VersionConflicts { get; internal set; }
 	}
 }

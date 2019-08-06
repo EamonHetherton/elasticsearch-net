@@ -1,18 +1,21 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(BulkResponseItemJsonConverter))]
+	[DataContract]
+	[JsonFormatter(typeof(ConcreteBulkIndexResponseItemFormatter<BulkIndexResponseItem>))]
 	public class BulkIndexResponseItem : BulkResponseItemBase
 	{
-		public override string Operation { get; internal set; }
+		/// <summary>
+		/// The _ids that matched (if any) for the Percolate API.
+		/// Will be null if the operation is not in response to Percolate API.
+		/// </summary>
+		[DataMember(Name = "matches")]
+		public IEnumerable<string> Matches { get; internal set; }
 
-        /// <summary>
-        /// Null if Percolation was not requested while indexing this doc, otherwise returns the percolator _ids that matched (if any)
-        /// </summary>
-        [JsonProperty(PropertyName = "matches")]
-        public IEnumerable<string> Matches { get; internal set; }
+		public override string Operation { get; } = "index";
 	}
 }

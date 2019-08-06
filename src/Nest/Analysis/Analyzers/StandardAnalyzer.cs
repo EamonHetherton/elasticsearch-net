@@ -1,57 +1,58 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	/// <summary>
-	/// An analyzer of type standard that is built of using Standard Tokenizer, with Standard Token Filter, Lower Case Token Filter, and Stop Token Filter.
+	/// An analyzer of type standard that is built of using Standard Tokenizer, with Standard Token Filter, Lower Case Token Filter, and Stop Token
+	/// Filter.
 	/// </summary>
 	public interface IStandardAnalyzer : IAnalyzer
 	{
 		/// <summary>
-		/// A list of stopword to initialize the stop filter with. Defaults to the english stop words.
-		/// </summary>
-		[JsonProperty("stopwords")]
-		StopWords StopWords { get; set; }
-
-		/// <summary>
 		/// The maximum token length. If a token is seen that exceeds this length then it is discarded. Defaults to 255.
 		/// </summary>
-		[JsonProperty("max_token_length")]
+		[DataMember(Name ="max_token_length")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? MaxTokenLength { get; set; }
+
+		/// <summary>
+		/// A list of stopword to initialize the stop filter with. Defaults to the english stop words.
+		/// </summary>
+		[DataMember(Name ="stopwords")]
+		StopWords StopWords { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class StandardAnalyzer : AnalyzerBase, IStandardAnalyzer
 	{
-		public StandardAnalyzer() : base("standard") {}
+		public StandardAnalyzer() : base("standard") { }
 
-		/// <inheritdoc/>
-		public StopWords StopWords { get; set; }
-
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public int? MaxTokenLength { get; set; }
+
+		/// <inheritdoc />
+		public StopWords StopWords { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class StandardAnalyzerDescriptor :
-		AnalyzerDescriptorBase<StandardAnalyzerDescriptor, IStandardAnalyzer>, IStandardAnalyzer
+	/// <inheritdoc />
+	public class StandardAnalyzerDescriptor : AnalyzerDescriptorBase<StandardAnalyzerDescriptor, IStandardAnalyzer>, IStandardAnalyzer
 	{
 		protected override string Type => "standard";
-
-		StopWords IStandardAnalyzer.StopWords { get; set; }
 		int? IStandardAnalyzer.MaxTokenLength { get; set; }
 
+		StopWords IStandardAnalyzer.StopWords { get; set; }
+
 		public StandardAnalyzerDescriptor StopWords(params string[] stopWords) =>
-			Assign(a => a.StopWords = stopWords);
+			Assign(stopWords, (a, v) => a.StopWords = v);
 
 		public StandardAnalyzerDescriptor StopWords(IEnumerable<string> stopWords) =>
-			Assign(a => a.StopWords = stopWords.ToListOrNullIfEmpty());
+			Assign(stopWords.ToListOrNullIfEmpty(), (a, v) => a.StopWords = v);
 
-		public StandardAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(a => a.StopWords = stopWords);
+		public StandardAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
 		public StandardAnalyzerDescriptor MaxTokenLength(int? maxTokenLength) =>
-			Assign(a => a.MaxTokenLength = maxTokenLength);
-
+			Assign(maxTokenLength, (a, v) => a.MaxTokenLength = v);
 	}
 }

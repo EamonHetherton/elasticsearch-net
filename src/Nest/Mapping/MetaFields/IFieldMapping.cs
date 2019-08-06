@@ -1,6 +1,7 @@
 ﻿namespace Nest
 {
-	public interface IFieldMapping
-	{
-	}
+	/// <summary>
+	/// A document field mapping in Elasticsearch
+	/// </summary>
+	public interface IFieldMapping { }
 }

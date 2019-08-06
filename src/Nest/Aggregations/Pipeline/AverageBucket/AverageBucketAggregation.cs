@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<AverageBucketAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(AverageBucketAggregation))]
 	public interface IAverageBucketAggregation : IPipelineAggregation { }
 
 	public class AverageBucketAggregation
 		: PipelineAggregationBase, IAverageBucketAggregation
 	{
-		internal AverageBucketAggregation () { }
+		internal AverageBucketAggregation() { }
 
 		public AverageBucketAggregation(string name, SingleBucketsPath bucketsPath)
 			: base(name, bucketsPath) { }
@@ -19,7 +19,5 @@ namespace Nest
 
 	public class AverageBucketAggregationDescriptor
 		: PipelineAggregationDescriptorBase<AverageBucketAggregationDescriptor, IAverageBucketAggregation, SingleBucketsPath>
-		, IAverageBucketAggregation
-	{
-	}
+			, IAverageBucketAggregation { }
 }

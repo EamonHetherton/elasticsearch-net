@@ -1,39 +1,34 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net.Utf8Json.Internal;
+
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ArrayCompareConditionConverter))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(ArrayCompareConditionFormatter))]
 	public interface IArrayCompareCondition
 	{
 		string ArrayPath { get; set; }
-		string Path { get; set; }
 		string Comparison { get; }
-		object Value { get; set; }
+		string Path { get; set; }
 		Quantifier? Quantifier { get; set; }
+		object Value { get; set; }
 	}
 
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum Quantifier
 	{
 		[EnumMember(Value = "some")]
 		Some,
+
 		[EnumMember(Value = "all")]
 		All
 	}
 
 	public abstract class ArrayCompareConditionBase : ConditionBase, IArrayCompareCondition
 	{
-		private IArrayCompareCondition Self => this;
-
-		string IArrayCompareCondition.Path { get; set; }
-		object IArrayCompareCondition.Value { get; set; }
-		string IArrayCompareCondition.ArrayPath { get; set; }
-		string IArrayCompareCondition.Comparison => this.Comparison;
-
 		protected ArrayCompareConditionBase(string arrayPath, string path, object value)
 		{
 			Self.ArrayPath = arrayPath;
@@ -44,6 +39,12 @@ namespace Nest
 		public Quantifier? Quantifier { get; set; }
 
 		protected abstract string Comparison { get; }
+		string IArrayCompareCondition.ArrayPath { get; set; }
+		string IArrayCompareCondition.Comparison => Comparison;
+
+		string IArrayCompareCondition.Path { get; set; }
+		private IArrayCompareCondition Self => this;
+		object IArrayCompareCondition.Value { get; set; }
 
 		internal override void WrapInContainer(IConditionContainer container) => container.ArrayCompare = this;
 	}
@@ -51,7 +52,7 @@ namespace Nest
 	public class ArrayCompareConditionDescriptor : IDescriptor
 	{
 		public IArrayCompareCondition EqualTo(string arrayPath, string path, object value, Quantifier? quantifier = null) =>
-			new EqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier};
+			new EqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
 
 		public IArrayCompareCondition NotEqualTo(string arrayPath, string path, object value, Quantifier? quantifier = null) =>
 			new NotEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
@@ -71,137 +72,162 @@ namespace Nest
 
 	public class EqualArrayCondition : ArrayCompareConditionBase
 	{
-		protected override string Comparison => "eq";
-
 		public EqualArrayCondition(string arrayPath, string path, object value)
 			: base(arrayPath, path, value) { }
+
+		protected override string Comparison => "eq";
 	}
 
 	public class NotEqualArrayCondition : ArrayCompareConditionBase
 	{
-		protected override string Comparison => "not_eq";
-
 		public NotEqualArrayCondition(string arrayPath, string path, object value)
 			: base(arrayPath, path, value) { }
+
+		protected override string Comparison => "not_eq";
 	}
 
 	public class GreaterThanArrayCondition : ArrayCompareConditionBase
 	{
-		protected override string Comparison => "gt";
-
 		public GreaterThanArrayCondition(string arrayPath, string path, object value)
 			: base(arrayPath, path, value) { }
+
+		protected override string Comparison => "gt";
 	}
 
 	public class GreaterThanOrEqualArrayCondition : ArrayCompareConditionBase
 	{
-		protected override string Comparison => "gte";
-
 		public GreaterThanOrEqualArrayCondition(string arrayPath, string path, object value)
 			: base(arrayPath, path, value) { }
+
+		protected override string Comparison => "gte";
 	}
 
 	public class LowerThanArrayCondition : ArrayCompareConditionBase
 	{
-		protected override string Comparison => "lt";
-
 		public LowerThanArrayCondition(string arrayPath, string path, object value)
 			: base(arrayPath, path, value) { }
+
+		protected override string Comparison => "lt";
 	}
 
 	public class LowerThanOrEqualArrayCondition : ArrayCompareConditionBase
 	{
-		protected override string Comparison => "lte";
-
 		public LowerThanOrEqualArrayCondition(string arrayPath, string path, object value)
 			: base(arrayPath, path, value) { }
+
+		protected override string Comparison => "lte";
 	}
 
-	internal class ArrayCompareConditionConverter : JsonConverter
+	internal class ArrayCompareConditionFormatter : IJsonFormatter<IArrayCompareCondition>
 	{
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		private static readonly AutomataDictionary ComparisonProperties = new AutomataDictionary
 		{
-			var s = value as IArrayCompareCondition;
-			if (s == null || s.ArrayPath.IsNullOrEmpty()) return;
+			{ "quantifier", 0 },
+			{ "value", 1 }
+		};
 
-			writer.WriteStartObject();
-			writer.WritePropertyName(s.ArrayPath);
-			writer.WriteStartObject();
-			writer.WritePropertyName("path");
-			writer.WriteValue(s.Path);
-			writer.WritePropertyName(s.Comparison);
-			writer.WriteStartObject();
+		private static readonly AutomataDictionary Comparisons = new AutomataDictionary
+		{
+			{ "eq", 0 },
+			{ "not_eq", 1 },
+			{ "gt", 2 },
+			{ "gte", 3 },
+			{ "lt", 4 },
+			{ "lte", 5 },
+		};
 
-			if (s.Quantifier.HasValue)
+		public IArrayCompareCondition Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
+		{
+			if (reader.GetCurrentJsonToken() != JsonToken.BeginObject)
 			{
-				writer.WritePropertyName("quantifier");
-				writer.WriteValue(s.Quantifier.Value);
+				reader.ReadNextBlock();
+				return null;
 			}
 
-			writer.WritePropertyName("value");
-			writer.WriteValue(s.Value);
-			writer.WriteEndObject();
-			writer.WriteEndObject();
-			writer.WriteEndObject();
-		}
-
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-		{
-			if (reader.TokenType != JsonToken.StartObject) return null;
-
-			var arrayPath = reader.ReadAsString();
+			var count = 0;
+			string arrayPath = null;
 			string path = null;
+			var comparisonValue = -1;
 			Quantifier? quantifier = null;
-			string comparison = null;
 			object value = null;
 
-			while (reader.Read())
+			while (reader.ReadIsInObject(ref count))
 			{
-				if (reader.TokenType == JsonToken.EndObject) break;
-				if (reader.TokenType != JsonToken.PropertyName) continue;
+				arrayPath = reader.ReadPropertyName();
 
-				var property = (string)reader.Value;
-
-				if (property == "path")
+				var innerCount = 0;
+				while (reader.ReadIsInObject(ref innerCount))
 				{
-					path = reader.ReadAsString();
-				}
-				else
-				{
-					comparison = property;
-
-					while (reader.Read())
+					var property = reader.ReadPropertyNameSegmentRaw();
+					if (Comparisons.TryGetValue(property, out comparisonValue))
 					{
-						if (reader.TokenType == JsonToken.EndObject) break;
-						if (reader.TokenType != JsonToken.PropertyName) continue;
-
-						var innerProperty = (string)reader.Value;
-						switch (innerProperty)
+						var comparisonPropCount = 0;
+						while (reader.ReadIsInObject(ref comparisonPropCount))
 						{
-							case "quantifier":
-								quantifier = reader.ReadAsString().ToEnum<Quantifier>();
-								break;
-							case "value":
-								reader.Read();
-								value = reader.Value;
-								break;
+							var comparisonProperty = reader.ReadPropertyNameSegmentRaw();
+							if (ComparisonProperties.TryGetValue(comparisonProperty, out var propValue))
+							{
+								switch (propValue)
+								{
+									case 0:
+										quantifier = formatterResolver.GetFormatter<Quantifier>()
+											.Deserialize(ref reader, formatterResolver);
+										break;
+									case 1:
+										value = formatterResolver.GetFormatter<object>()
+											.Deserialize(ref reader, formatterResolver);
+										break;
+								}
+							}
+							else
+								reader.ReadNextBlock();
 						}
 					}
-				}				
+					else
+						path = reader.ReadString();
+				}
 			}
 
-			switch (comparison)
+			switch (comparisonValue)
 			{
-				case "eq": return new EqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
-				case "not_eq": return new NotEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
-				case "gt": return new GreaterThanArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
-				case "gte": return new GreaterThanOrEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
-				case "lt": return new LowerThanArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
-				case "lte": return new LowerThanOrEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
+				case 0: return new EqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
+				case 1: return new NotEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
+				case 2: return new GreaterThanArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
+				case 3: return new GreaterThanOrEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
+				case 4: return new LowerThanArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
+				case 5: return new LowerThanOrEqualArrayCondition(arrayPath, path, value) { Quantifier = quantifier };
 				default: return null;
 			}
 		}
 
-		public override bool CanConvert(Type objectType) => typeof(IArrayCompareCondition).IsAssignableFrom(objectType);
+		public void Serialize(ref JsonWriter writer, IArrayCompareCondition value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null || value.ArrayPath.IsNullOrEmpty())
+				return;
+
+			writer.WriteBeginObject();
+			writer.WritePropertyName(value.ArrayPath);
+			writer.WriteBeginObject();
+			writer.WritePropertyName("path");
+			writer.WriteString(value.Path);
+			writer.WriteValueSeparator();
+			writer.WritePropertyName(value.Comparison);
+			writer.WriteBeginObject();
+
+			if (value.Quantifier.HasValue)
+			{
+				writer.WritePropertyName("quantifier");
+				var formatter = formatterResolver.GetFormatter<Quantifier>();
+				formatter.Serialize(ref writer, value.Quantifier.Value, formatterResolver);
+			}
+
+			writer.WritePropertyName("value");
+			var comparisonFormatter = formatterResolver.GetFormatter<object>();
+			comparisonFormatter.Serialize(ref writer, value.Value, formatterResolver);
+
+			writer.WriteEndObject();
+			writer.WriteEndObject();
+			writer.WriteEndObject();
+		}
 	}
 }

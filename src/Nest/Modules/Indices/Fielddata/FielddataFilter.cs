@@ -1,16 +1,17 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<FielddataFilter>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(FielddataFilter))]
 	public interface IFielddataFilter
 	{
-		[JsonProperty("frequency")]
+		[DataMember(Name ="frequency")]
 		IFielddataFrequencyFilter Frequency { get; set; }
 
-		[JsonProperty("regex")]
+		[DataMember(Name ="regex")]
 		IFielddataRegexFilter Regex { get; set; }
 	}
 
@@ -27,11 +28,13 @@ namespace Nest
 		IFielddataRegexFilter IFielddataFilter.Regex { get; set; }
 
 		public FielddataFilterDescriptor Frequency(
-			Func<FielddataFrequencyFilterDescriptor, IFielddataFrequencyFilter> frequencyFilterSelector) =>
-			Assign(a => a.Frequency = frequencyFilterSelector(new FielddataFrequencyFilterDescriptor()));
+			Func<FielddataFrequencyFilterDescriptor, IFielddataFrequencyFilter> frequencyFilterSelector
+		) =>
+			Assign(frequencyFilterSelector(new FielddataFrequencyFilterDescriptor()), (a, v) => a.Frequency = v);
 
 		public FielddataFilterDescriptor Regex(
-			Func<FielddataRegexFilterDescriptor, IFielddataRegexFilter> regexFilterSelector) =>
-			Assign(a => a.Regex = regexFilterSelector(new FielddataRegexFilterDescriptor()));
+			Func<FielddataRegexFilterDescriptor, IFielddataRegexFilter> regexFilterSelector
+		) =>
+			Assign(regexFilterSelector(new FielddataRegexFilterDescriptor()), (a, v) => a.Regex = v);
 	}
 }

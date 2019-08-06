@@ -1,18 +1,20 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	/// <summary>
 	/// The Authentication mechanism for a request to a HTTP endpoint
 	/// </summary>
-	[JsonObject]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HttpInputAuthentication))]
 	public interface IHttpInputAuthentication
 	{
 		/// <summary>
 		/// Basic Authentication credentials
 		/// </summary>
-		[JsonProperty("basic")]
+		[DataMember(Name ="basic")]
 		IHttpInputBasicAuthentication Basic { get; set; }
 	}
 
@@ -31,52 +33,53 @@ namespace Nest
 
 		/// <inheritdoc />
 		public HttpInputAuthenticationDescriptor Basic(Func<HttpInputBasicAuthenticationDescriptor, IHttpInputBasicAuthentication> selector) =>
-			Assign(a => a.Basic = selector.Invoke(new HttpInputBasicAuthenticationDescriptor()));
+			Assign(selector.Invoke(new HttpInputBasicAuthenticationDescriptor()), (a, v) => a.Basic = v);
 	}
 
 	/// <summary>
 	/// Basic Authentication credentials
 	/// </summary>
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<HttpInputBasicAuthentication>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HttpInputBasicAuthentication))]
 	public interface IHttpInputBasicAuthentication
 	{
 		/// <summary>
-		/// Username for Basic Authentication
-		/// </summary>
-		[JsonProperty("username")]
-		string Username { get; set; }
-
-		/// <summary>
 		/// Password for Basic Authentication
 		/// </summary>
-		[JsonProperty("password")]
+		[DataMember(Name ="password")]
 		string Password { get; set; }
+
+		/// <summary>
+		/// Username for Basic Authentication
+		/// </summary>
+		[DataMember(Name ="username")]
+		string Username { get; set; }
 	}
 
 	/// <inheritdoc />
-	[JsonObject]
+	[DataContract]
 	public class HttpInputBasicAuthentication : IHttpInputBasicAuthentication
 	{
 		/// <inheritdoc />
-		public string Username { get; set; }
-		/// <inheritdoc />
 		public string Password { get; set; }
+
+		/// <inheritdoc />
+		public string Username { get; set; }
 	}
 
 	/// <inheritdoc />
 	public class HttpInputBasicAuthenticationDescriptor
 		: DescriptorBase<HttpInputBasicAuthenticationDescriptor, IHttpInputBasicAuthentication>, IHttpInputBasicAuthentication
 	{
-		string IHttpInputBasicAuthentication.Username { get; set; }
 		string IHttpInputBasicAuthentication.Password { get; set; }
+		string IHttpInputBasicAuthentication.Username { get; set; }
 
 		/// <inheritdoc />
 		public HttpInputBasicAuthenticationDescriptor Username(string username) =>
-			Assign(a => a.Username = username);
+			Assign(username, (a, v) => a.Username = v);
 
 		/// <inheritdoc />
 		public HttpInputBasicAuthenticationDescriptor Password(string password) =>
-			Assign(a => a.Password = password);
+			Assign(password, (a, v) => a.Password = v);
 	}
 }

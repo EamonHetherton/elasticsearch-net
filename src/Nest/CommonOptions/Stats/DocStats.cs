@@ -1,14 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class DocStats
 	{
-		[JsonProperty(PropertyName = "count")]
+		[DataMember(Name ="count")]
 		public long Count { get; set; }
 
-		[JsonProperty(PropertyName = "deleted")]
+		[DataMember(Name ="deleted")]
 		public long Deleted { get; set; }
 	}
 }

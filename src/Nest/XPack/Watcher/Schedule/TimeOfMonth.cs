@@ -1,26 +1,25 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<TimeOfMonth>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(TimeOfMonth))]
 	public interface ITimeOfMonth
 	{
-		[JsonProperty("on")]
-		[JsonConverter(typeof(ReadSingleOrEnumerableJsonConverter<int>))]
-		IEnumerable<int> On { get; set; }
-
-		[JsonProperty("at")]
-		[JsonConverter(typeof(ReadSingleOrEnumerableJsonConverter<string>))]
+		[DataMember(Name ="at")]
+		[JsonFormatter(typeof(SingleOrEnumerableFormatter<string>))]
 		IEnumerable<string> At { get; set; }
+
+		[DataMember(Name ="on")]
+		[JsonFormatter(typeof(SingleOrEnumerableFormatter<int>))]
+		IEnumerable<int> On { get; set; }
 	}
 
 	public class TimeOfMonth : ITimeOfMonth
 	{
-		public TimeOfMonth()
-		{
-		}
+		public TimeOfMonth() { }
 
 		public TimeOfMonth(int on, string at)
 		{
@@ -28,22 +27,22 @@ namespace Nest
 			At = new[] { at };
 		}
 
-		public IEnumerable<int> On { get; set; }
-
 		public IEnumerable<string> At { get; set; }
+
+		public IEnumerable<int> On { get; set; }
 	}
 
 	public class TimeOfMonthDescriptor : DescriptorBase<TimeOfMonthDescriptor, ITimeOfMonth>, ITimeOfMonth
 	{
-		IEnumerable<int> ITimeOfMonth.On { get; set; }
 		IEnumerable<string> ITimeOfMonth.At { get; set; }
+		IEnumerable<int> ITimeOfMonth.On { get; set; }
 
-		public TimeOfMonthDescriptor On(IEnumerable<int> dates) => Assign(a => a.On = dates);
+		public TimeOfMonthDescriptor On(IEnumerable<int> dates) => Assign(dates, (a, v) => a.On = v);
 
-		public TimeOfMonthDescriptor On(params int[] dates) => Assign(a => a.On = dates);
+		public TimeOfMonthDescriptor On(params int[] dates) => Assign(dates, (a, v) => a.On = v);
 
-		public TimeOfMonthDescriptor At(IEnumerable<string> time) => Assign(a => a.At = time);
+		public TimeOfMonthDescriptor At(IEnumerable<string> time) => Assign(time, (a, v) => a.At = v);
 
-		public TimeOfMonthDescriptor At(params string[] time) => Assign(a => a.At = time);
+		public TimeOfMonthDescriptor At(params string[] time) => Assign(time, (a, v) => a.At = v);
 	}
 }

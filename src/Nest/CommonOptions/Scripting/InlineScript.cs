@@ -1,22 +1,20 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IInlineScript : IScript
 	{
-		[JsonProperty("inline")]
-		string Inline { get; set; }
+		[DataMember(Name ="source")]
+		string Source { get; set; }
 	}
 
 	public class InlineScript : ScriptBase, IInlineScript
 	{
-		public InlineScript(string script)
-		{
-			this.Inline = script;
-		}
+		public InlineScript(string script) => Source = script;
 
-		public string Inline { get; set; }
+		public string Source { get; set; }
 
 		public static implicit operator InlineScript(string script) => new InlineScript(script);
 	}
@@ -24,15 +22,12 @@ namespace Nest
 	public class InlineScriptDescriptor
 		: ScriptDescriptorBase<InlineScriptDescriptor, IInlineScript>, IInlineScript
 	{
-		string IInlineScript.Inline { get; set; }
+		public InlineScriptDescriptor() { }
 
-		public InlineScriptDescriptor() {}
+		public InlineScriptDescriptor(string script) => Self.Source = script;
 
-		public InlineScriptDescriptor(string script)
-		{
-			Self.Inline = script;
-		}
+		string IInlineScript.Source { get; set; }
 
-		public InlineScriptDescriptor Inline(string script) => Assign(a => a.Inline = script);
+		public InlineScriptDescriptor Source(string script) => Assign(script, (a, v) => a.Source = v);
 	}
 }

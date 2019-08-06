@@ -1,43 +1,68 @@
 ﻿using System;
+using Elasticsearch.Net.Extensions;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
+	[JsonFormatter(typeof(DateMathExpressionFormatter))]
 	public class DateMathExpression : DateMath
 	{
-		public DateMathExpression(string anchor) { this.Anchor = anchor; }
-		public DateMathExpression(DateTime anchor) { this.Anchor = anchor; }
+		public DateMathExpression(string anchor) => Anchor = anchor;
 
-		public DateMathExpression(Union<DateTime, string> anchor, Time range, DateMathOperation operation)
+		public DateMathExpression(DateTime anchor) => Anchor = anchor;
+
+		public DateMathExpression(Union<DateTime, string> anchor, DateMathTime range, DateMathOperation operation)
 		{
 			anchor.ThrowIfNull(nameof(anchor));
 			range.ThrowIfNull(nameof(range));
 			operation.ThrowIfNull(nameof(operation));
-			this.Anchor = anchor;
+			Anchor = anchor;
 			Self.Ranges.Add(Tuple.Create(operation, range));
 		}
 
-		public DateMathExpression Add(Time expression)
+		public DateMathExpression Add(DateMathTime expression)
 		{
 			Self.Ranges.Add(Tuple.Create(DateMathOperation.Add, expression));
 			return this;
 		}
 
-		public DateMathExpression Subtract(Time expression)
+		public DateMathExpression Subtract(DateMathTime expression)
 		{
 			Self.Ranges.Add(Tuple.Create(DateMathOperation.Subtract, expression));
 			return this;
 		}
 
-		public DateMathExpression Operation(Time expression, DateMathOperation operation)
+		public DateMathExpression Operation(DateMathTime expression, DateMathOperation operation)
 		{
 			Self.Ranges.Add(Tuple.Create(operation, expression));
 			return this;
 		}
 
-		public DateMath RoundTo(TimeUnit round)
+		public DateMath RoundTo(DateMathTimeUnit round)
 		{
-			this.Round = round;
+			Round = round;
 			return this;
 		}
+	}
+
+	internal class DateMathExpressionFormatter : IJsonFormatter<DateMathExpression>
+	{
+		public DateMathExpression Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
+		{
+			var token = reader.GetCurrentJsonToken();
+			if (token != JsonToken.String)
+				return null;
+
+			var segment = reader.ReadStringSegmentUnsafe();
+
+			if (!segment.ContainsDateMathSeparator() && segment.IsDateTime(formatterResolver, out var dateTime))
+				return new DateMathExpression(dateTime);
+
+			var value = segment.Utf8String();
+			return new DateMathExpression(value);
+		}
+
+		public void Serialize(ref JsonWriter writer, DateMathExpression value, IJsonFormatterResolver formatterResolver) =>
+			writer.WriteString(value.ToString());
 	}
 }

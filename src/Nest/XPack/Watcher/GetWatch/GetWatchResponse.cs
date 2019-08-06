@@ -1,28 +1,19 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
-	public interface IGetWatchResponse : IResponse
+	public class GetWatchResponse : ResponseBase
 	{
-		[JsonProperty("found")]
-		bool Found { get; }
-
-		[JsonProperty("_id")]
-		string Id { get; }
-
-		[JsonProperty("_status")]
-		WatchStatus Status { get; }
-
-		[JsonProperty("watch")]
-		Watch Watch { get; }
-	}
-
-	public class GetWatchResponse : ResponseBase, IGetWatchResponse
-	{
+		[DataMember(Name ="found")]
 		public bool Found { get; internal set; }
+
+		[DataMember(Name ="_id")]
 		public string Id { get; internal set; }
+
+		[DataMember(Name ="status")]
 		public WatchStatus Status { get; internal set; }
-		public Watch Watch { get; internal set; }
+
+		[DataMember(Name ="watch")]
+		public IWatch Watch { get; internal set; }
 	}
 }

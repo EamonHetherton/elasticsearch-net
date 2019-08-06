@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -9,35 +8,33 @@ namespace Nest
 	/// </summary>
 	public interface IKuromojiAnalyzer : IAnalyzer
 	{
-		[JsonProperty("mode")]
+		[DataMember(Name ="mode")]
 		KuromojiTokenizationMode? Mode { get; set; }
 
-		[JsonProperty("user_dictionary")]
+		[DataMember(Name ="user_dictionary")]
 		string UserDictionary { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class KuromojiAnalyzer : AnalyzerBase, IKuromojiAnalyzer
 	{
-		public KuromojiAnalyzer() : base("kuromoji") {}
+		public KuromojiAnalyzer() : base("kuromoji") { }
 
 		public KuromojiTokenizationMode? Mode { get; set; }
 
 		public string UserDictionary { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class KuromojiAnalyzerDescriptor :
-		AnalyzerDescriptorBase<KuromojiAnalyzerDescriptor, IKuromojiAnalyzer>, IKuromojiAnalyzer
+	/// <inheritdoc />
+	public class KuromojiAnalyzerDescriptor : AnalyzerDescriptorBase<KuromojiAnalyzerDescriptor, IKuromojiAnalyzer>, IKuromojiAnalyzer
 	{
 		protected override string Type => "kuromoji";
 
 		KuromojiTokenizationMode? IKuromojiAnalyzer.Mode { get; set; }
 		string IKuromojiAnalyzer.UserDictionary { get; set; }
 
-		public KuromojiAnalyzerDescriptor Mode(KuromojiTokenizationMode? mode) => Assign(a => a.Mode = mode);
+		public KuromojiAnalyzerDescriptor Mode(KuromojiTokenizationMode? mode) => Assign(mode, (a, v) => a.Mode = v);
 
-		public KuromojiAnalyzerDescriptor UserDictionary(string userDictionary) => Assign(a => a.UserDictionary = userDictionary);
-
+		public KuromojiAnalyzerDescriptor UserDictionary(string userDictionary) => Assign(userDictionary, (a, v) => a.UserDictionary = v);
 	}
 }

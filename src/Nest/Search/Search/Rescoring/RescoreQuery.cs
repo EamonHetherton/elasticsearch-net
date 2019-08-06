@@ -1,25 +1,26 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<RescoreQuery>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(RescoreQuery))]
 	public interface IRescoreQuery
 	{
-		[JsonProperty("rescore_query")]
+		[DataMember(Name = "rescore_query")]
 		QueryContainer Query { get; set; }
 
-		[JsonProperty("query_weight")]
+		[DataMember(Name = "query_weight")]
 		double? QueryWeight { get; set; }
 
-		[JsonProperty("rescore_query_weight")]
+		[DataMember(Name = "rescore_query_weight")]
 		double? RescoreQueryWeight { get; set; }
 
-		[JsonProperty("score_mode")]
+		[DataMember(Name = "score_mode")]
 		ScoreMode? ScoreMode { get; set; }
 	}
-	
+
 	public class RescoreQuery : IRescoreQuery
 	{
 		public QueryContainer Query { get; set; }
@@ -28,7 +29,7 @@ namespace Nest
 		public ScoreMode? ScoreMode { get; set; }
 	}
 
-	public class RescoreQueryDescriptor<T> :  DescriptorBase<RescoreQueryDescriptor<T>, IRescoreQuery>, IRescoreQuery 
+	public class RescoreQueryDescriptor<T> : DescriptorBase<RescoreQueryDescriptor<T>, IRescoreQuery>, IRescoreQuery
 		where T : class
 	{
 		QueryContainer IRescoreQuery.Query { get; set; }
@@ -36,15 +37,14 @@ namespace Nest
 		double? IRescoreQuery.RescoreQueryWeight { get; set; }
 		ScoreMode? IRescoreQuery.ScoreMode { get; set; }
 
-		public virtual RescoreQueryDescriptor<T> QueryWeight(double? queryWeight) => Assign(a => a.QueryWeight = queryWeight);
+		public virtual RescoreQueryDescriptor<T> QueryWeight(double? queryWeight) => Assign(queryWeight, (a, v) => a.QueryWeight = v);
 
 		public virtual RescoreQueryDescriptor<T> RescoreQueryWeight(double? rescoreQueryWeight) =>
-			Assign(a => a.RescoreQueryWeight = rescoreQueryWeight);
+			Assign(rescoreQueryWeight, (a, v) => a.RescoreQueryWeight = v);
 
-		public virtual RescoreQueryDescriptor<T> ScoreMode(ScoreMode? scoreMode) => Assign(a => a.ScoreMode = scoreMode);
+		public virtual RescoreQueryDescriptor<T> ScoreMode(ScoreMode? scoreMode) => Assign(scoreMode, (a, v) => a.ScoreMode = v);
 
 		public virtual RescoreQueryDescriptor<T> Query(Func<QueryContainerDescriptor<T>, QueryContainer> query) =>
-			Assign(a => a.Query = query?.Invoke(new QueryContainerDescriptor<T>()));
-		
+			Assign(query, (a, v) => a.Query = v?.Invoke(new QueryContainerDescriptor<T>()));
 	}
 }

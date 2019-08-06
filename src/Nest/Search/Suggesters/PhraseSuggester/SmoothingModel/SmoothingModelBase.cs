@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public interface ISmoothingModel {}
+	[InterfaceDataContract]
+	public interface ISmoothingModel { }
 
 	public abstract class SmoothingModelBase
 	{

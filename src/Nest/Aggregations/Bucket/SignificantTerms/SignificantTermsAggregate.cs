@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Nest
+﻿namespace Nest
 {
-	public class SignificantTermsAggregate : MultiBucketAggregate<SignificantTermsBucket>
+	public class SignificantTermsAggregate<TKey> : MultiBucketAggregate<SignificantTermsBucket<TKey>>
 	{
-		public SignificantTermsAggregate() { }
-		public SignificantTermsAggregate(IDictionary<string, IAggregate> aggregations) : base(aggregations) { }
+		/// <summary>
+		/// The background count
+		/// </summary>
+		public long? BgCount { get; set; }
 
+		/// <summary>
+		/// The document count
+		/// </summary>
 		public long DocCount { get; set; }
 	}
 }

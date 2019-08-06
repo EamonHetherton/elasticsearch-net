@@ -1,48 +1,61 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Nest
 {
-	public partial interface IPutIndexTemplateRequest : ITemplateMapping
-	{
-	}
+	[MapsApi("indices.put_template.json")]
+	public partial interface IPutIndexTemplateRequest : ITemplateMapping { }
 
 	public partial class PutIndexTemplateRequest
 	{
-		public string Template { get; set; }
+		public IAliases Aliases { get; set; }
+		public IReadOnlyCollection<string> IndexPatterns { get; set; }
+
+		public ITypeMapping Mappings { get; set; }
 
 		public int? Order { get; set; }
 
 		public IIndexSettings Settings { get; set; }
 
-		public IMappings Mappings { get; set; }
-
-		public IAliases Aliases { get; set; }
+		public int? Version { get; set; }
 	}
 
-	[DescriptorFor("IndicesPutTemplate")]
 	public partial class PutIndexTemplateDescriptor
 	{
-		string ITemplateMapping.Template { get; set; }
+		IAliases ITemplateMapping.Aliases { get; set; }
 
+		IReadOnlyCollection<string> ITemplateMapping.IndexPatterns { get; set; }
+
+		ITypeMapping ITemplateMapping.Mappings { get; set; }
 		int? ITemplateMapping.Order { get; set; }
 
 		IIndexSettings ITemplateMapping.Settings { get; set; }
 
-		IMappings ITemplateMapping.Mappings { get; set; }
+		int? ITemplateMapping.Version { get; set; }
 
-		IAliases ITemplateMapping.Aliases { get; set; }
+		public PutIndexTemplateDescriptor Order(int? order) => Assign(order, (a, v) => a.Order = v);
 
-		public PutIndexTemplateDescriptor Order(int order) => Assign(a => a.Order = order);
+		public PutIndexTemplateDescriptor Version(int? version) => Assign(version, (a, v) => a.Version = v);
 
-		public PutIndexTemplateDescriptor Template(string template)=> Assign(a => a.Template = template);
+		public PutIndexTemplateDescriptor IndexPatterns(params string[] patterns) => Assign(patterns, (a, v) => a.IndexPatterns = v);
+
+		public PutIndexTemplateDescriptor IndexPatterns(IEnumerable<string> patterns) => Assign(patterns?.ToArray(), (a, v) => a.IndexPatterns = v);
 
 		public PutIndexTemplateDescriptor Settings(Func<IndexSettingsDescriptor, IPromise<IIndexSettings>> settingsSelector) =>
-			Assign(a => a.Settings = settingsSelector?.Invoke(new IndexSettingsDescriptor())?.Value);
+			Assign(settingsSelector, (a, v) => a.Settings = v?.Invoke(new IndexSettingsDescriptor())?.Value);
 
-		public PutIndexTemplateDescriptor Mappings(Func<MappingsDescriptor, IPromise<IMappings>> mappingSelector) =>
-			Assign(a => a.Mappings = mappingSelector?.Invoke(new MappingsDescriptor())?.Value);
+		public PutIndexTemplateDescriptor Map<T>(Func<TypeMappingDescriptor<T>, ITypeMapping> selector) where T : class =>
+			Assign(selector, (a, v) => a.Mappings = v?.Invoke(new TypeMappingDescriptor<T>()));
+
+		public PutIndexTemplateDescriptor Map(Func<TypeMappingDescriptor<object>, ITypeMapping> selector) =>
+			Assign(selector, (a, v) => a.Mappings = v?.Invoke(new TypeMappingDescriptor<object>()));
+
+		[Obsolete("Mappings is no longer a dictionary in 7.x, please use the simplified Map() method on this descriptor instead")]
+		public PutIndexTemplateDescriptor Mappings(Func<MappingsDescriptor, ITypeMapping> mappingSelector) =>
+			Assign(mappingSelector, (a, v) => a.Mappings = v?.Invoke(new MappingsDescriptor()));
 
 		public PutIndexTemplateDescriptor Aliases(Func<AliasesDescriptor, IPromise<IAliases>> aliasDescriptor) =>
-			Assign(a => a.Aliases = aliasDescriptor?.Invoke(new AliasesDescriptor())?.Value);
+			Assign(aliasDescriptor, (a, v) => a.Aliases = v?.Invoke(new AliasesDescriptor())?.Value);
 	}
 }

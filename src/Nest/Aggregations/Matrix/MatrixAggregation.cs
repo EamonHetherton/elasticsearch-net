@@ -1,19 +1,15 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
 	public interface IMatrixAggregation : IAggregation
 	{
-		[JsonProperty("fields")]
+		[DataMember(Name ="fields")]
 		Fields Fields { get; set; }
 
-		[JsonProperty("missing")]
+		[DataMember(Name ="missing")]
 		IDictionary<Field, double> Missing { get; set; }
 	}
 
@@ -21,10 +17,7 @@ namespace Nest
 	{
 		internal MatrixAggregationBase() { }
 
-		protected MatrixAggregationBase(string name, Fields field) : base(name)
-		{
-			this.Fields = field;
-		}
+		protected MatrixAggregationBase(string name, Fields field) : base(name) => Fields = field;
 
 		public Fields Fields { get; set; }
 
@@ -46,15 +39,15 @@ namespace Nest
 
 		string IAggregation.Name { get; set; }
 
-		public TMatrixAggregation Field(Fields fields) => Assign(a => a.Fields = fields);
+		public TMatrixAggregation Field(Fields fields) => Assign(fields, (a, v) => a.Fields = v);
 
 		public TMatrixAggregation Fields(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
-			Assign(a => a.Fields = fields?.Invoke(new FieldsDescriptor<T>())?.Value);
+			Assign(fields, (a, v) => a.Fields = v?.Invoke(new FieldsDescriptor<T>())?.Value);
 
 		public TMatrixAggregation Missing(Func<FluentDictionary<Field, double>, FluentDictionary<Field, double>> selector) =>
-			Assign(a => a.Missing = selector?.Invoke(new FluentDictionary<Field, double>()));
+			Assign(selector, (a, v) => a.Missing = v?.Invoke(new FluentDictionary<Field, double>()));
 
 		public TMatrixAggregation Meta(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> selector) =>
-			Assign(a => a.Meta = selector?.Invoke(new FluentDictionary<string, object>()));
+			Assign(selector, (a, v) => a.Meta = v?.Invoke(new FluentDictionary<string, object>()));
 	}
 }

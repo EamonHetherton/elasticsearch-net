@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -8,8 +9,8 @@ namespace Nest
 	/// An input to load the results of an Elasticsearch search request into the execution
 	/// context when a watch is triggered.
 	/// </summary>
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<SearchInput>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(SearchInput))]
 	public interface ISearchInput : IInput
 	{
 		/// <summary>
@@ -17,13 +18,13 @@ namespace Nest
 		/// When a search generates a large response, you can use extract
 		/// to select the relevant fields instead of loading the entire response
 		/// </summary>
-		[JsonProperty("extract")]
+		[DataMember(Name ="extract")]
 		IEnumerable<string> Extract { get; set; }
 
 		/// <summary>
 		/// The search request details
 		/// </summary>
-		[JsonProperty("request")]
+		[DataMember(Name ="request")]
 		ISearchInputRequest Request { get; set; }
 
 		/// <summary>
@@ -31,11 +32,11 @@ namespace Nest
 		/// If no response is returned within this time, the search input times out and fails.
 		/// This setting overrides the default search operations timeouts.
 		/// </summary>
-		[JsonProperty("timeout")]
+		[DataMember(Name ="timeout")]
 		Time Timeout { get; set; }
 	}
 
-	/// <inheritdoc />
+	/// <inheritdoc cref="ISearchInput" />
 	public class SearchInput : InputBase, ISearchInput
 	{
 		/// <inheritdoc />
@@ -50,7 +51,7 @@ namespace Nest
 		internal override void WrapInContainer(IInputContainer container) => container.Search = this;
 	}
 
-	/// <inheritdoc />
+	/// <inheritdoc cref="ISearchInput" />
 	public class SearchInputDescriptor
 		: DescriptorBase<SearchInputDescriptor, ISearchInput>, ISearchInput
 	{
@@ -58,17 +59,17 @@ namespace Nest
 		ISearchInputRequest ISearchInput.Request { get; set; }
 		Time ISearchInput.Timeout { get; set; }
 
-		/// <inheritdoc />
+		/// <inheritdoc cref="ISearchInput.Request" />
 		public SearchInputDescriptor Request(Func<SearchInputRequestDescriptor, ISearchInputRequest> selector) =>
-			Assign(a => a.Request = selector?.InvokeOrDefault(new SearchInputRequestDescriptor()));
+			Assign(selector, (a, v) => a.Request = v?.InvokeOrDefault(new SearchInputRequestDescriptor()));
 
-		/// <inheritdoc />
-		public SearchInputDescriptor Extract(IEnumerable<string> extract) => Assign(a => a.Extract = extract);
+		/// <inheritdoc cref="ISearchInput.Extract" />
+		public SearchInputDescriptor Extract(IEnumerable<string> extract) => Assign(extract, (a, v) => a.Extract = v);
 
-		/// <inheritdoc />
-		public SearchInputDescriptor Extract(params string[] extract) => Assign(a => a.Extract = extract);
+		/// <inheritdoc cref="ISearchInput.Extract" />
+		public SearchInputDescriptor Extract(params string[] extract) => Assign(extract, (a, v) => a.Extract = v);
 
-		/// <inheritdoc />
-		public SearchInputDescriptor Timeout(Time timeout) => Assign(a => a.Timeout = timeout);
+		/// <inheritdoc cref="ISearchInput.Timeout" />
+		public SearchInputDescriptor Timeout(Time timeout) => Assign(timeout, (a, v) => a.Timeout = v);
 	}
 }

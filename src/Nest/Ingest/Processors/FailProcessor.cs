@@ -1,27 +1,31 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ProcessorJsonConverter<FailProcessor>))]
+	/// <summary>
+	/// Raises an exception. This is useful for when you expect a pipeline to
+	/// fail and want to relay a specific message to the requester.
+	/// </summary>
+	[InterfaceDataContract]
 	public interface IFailProcessor : IProcessor
 	{
-		[JsonProperty("message")]
+		/// <summary>
+		/// The error message thrown by the processor. Supports template snippets.
+		/// </summary>
+		[DataMember(Name ="message")]
 		string Message { get; set; }
 	}
 
+	/// <inheritdoc cref="IFailProcessor" />
 	public class FailProcessor : ProcessorBase, IFailProcessor
 	{
-		protected override string Name => "fail";
+		/// <inheritdoc />
 		public string Message { get; set; }
+		protected override string Name => "fail";
 	}
 
+	/// <inheritdoc cref="IFailProcessor" />
 	public class FailProcessorDescriptor
 		: ProcessorDescriptorBase<FailProcessorDescriptor, IFailProcessor>, IFailProcessor
 	{
@@ -29,6 +33,7 @@ namespace Nest
 
 		string IFailProcessor.Message { get; set; }
 
-		public FailProcessorDescriptor Message(string message) => Assign(a => a.Message = message);
+		/// <inheritdoc cref="IFailProcessor.Message" />
+		public FailProcessorDescriptor Message(string message) => Assign(message, (a, v) => a.Message = v);
 	}
 }

@@ -1,40 +1,38 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<FieldSecurity>))]
+	[ReadAs(typeof(FieldSecurity))]
 	public interface IFieldSecurity
 	{
-		[JsonProperty("grant")]
-		Fields Grant { get; set; }
-
-		[JsonProperty("except")]
+		[DataMember(Name = "except")]
 		Fields Except { get; set; }
+
+		[DataMember(Name = "grant")]
+		Fields Grant { get; set; }
 	}
+
 	public class FieldSecurity : IFieldSecurity
 	{
-		public Fields Grant { get; set; }
 		public Fields Except { get; set; }
+		public Fields Grant { get; set; }
 	}
 
-	public class FieldSecurityDescriptor<T>: DescriptorBase<FieldSecurityDescriptor<T>, IFieldSecurity>, IFieldSecurity
-		where T :class
+	public class FieldSecurityDescriptor<T> : DescriptorBase<FieldSecurityDescriptor<T>, IFieldSecurity>, IFieldSecurity
+		where T : class
 	{
-		Fields IFieldSecurity.Grant { get; set; }
 		Fields IFieldSecurity.Except { get; set; }
+		Fields IFieldSecurity.Grant { get; set; }
 
 		public FieldSecurityDescriptor<T> Grant(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
-			Assign(a => a.Grant = fields?.Invoke(new FieldsDescriptor<T>())?.Value);
+			Assign(fields, (a, v) => a.Grant = v?.Invoke(new FieldsDescriptor<T>())?.Value);
 
-		public FieldSecurityDescriptor<T> Grant(Fields fields) => Assign(a => a.Grant = fields);
+		public FieldSecurityDescriptor<T> Grant(Fields fields) => Assign(fields, (a, v) => a.Grant = v);
 
 		public FieldSecurityDescriptor<T> Except(Func<FieldsDescriptor<T>, IPromise<Fields>> fields) =>
-			Assign(a => a.Except = fields?.Invoke(new FieldsDescriptor<T>())?.Value);
+			Assign(fields, (a, v) => a.Except = v?.Invoke(new FieldsDescriptor<T>())?.Value);
 
-		public FieldSecurityDescriptor<T> Except(Fields fields) => Assign(a => a.Except = fields);
-
+		public FieldSecurityDescriptor<T> Except(Fields fields) => Assign(fields, (a, v) => a.Except = v);
 	}
 }

@@ -1,20 +1,24 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum EmailPriority
 	{
 		[EnumMember(Value = "lowest")]
 		Lowest,
+
 		[EnumMember(Value = "low")]
 		Low,
+
 		[EnumMember(Value = "normal")]
 		Normal,
+
 		[EnumMember(Value = "high")]
 		High,
+
 		[EnumMember(Value = "highest")]
 		Highest
 	}

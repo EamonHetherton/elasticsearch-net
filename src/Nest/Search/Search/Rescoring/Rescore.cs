@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<Rescore>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(Rescore))]
 	public interface IRescore
 	{
-		[JsonProperty("window_size")]
-		int? WindowSize { get; set; }
-
-		[JsonProperty("query")]
+		[DataMember(Name ="query")]
 		IRescoreQuery Query { get; set; }
+
+		[DataMember(Name ="window_size")]
+		int? WindowSize { get; set; }
 	}
 
 	public class Rescore : IRescore
 	{
-		public int? WindowSize { get; set; }
 		public IRescoreQuery Query { get; set; }
+		public int? WindowSize { get; set; }
 	}
 
 	public class RescoringDescriptor<T> : DescriptorPromiseBase<RescoringDescriptor<T>, IList<IRescore>>
@@ -29,20 +30,18 @@ namespace Nest
 		public RescoringDescriptor<T> Rescore(Func<RescoreDescriptor<T>, IRescore> selector) =>
 			AddRescore(selector?.Invoke(new RescoreDescriptor<T>()));
 
-		private RescoringDescriptor<T> AddRescore(IRescore rescore) => rescore == null ? this : this.Assign(a => a.Add(rescore));
+		private RescoringDescriptor<T> AddRescore(IRescore rescore) => rescore == null ? this : Assign(rescore, (a, v) => a.Add(v));
 	}
 
 	public class RescoreDescriptor<T> : DescriptorBase<RescoreDescriptor<T>, IRescore>, IRescore
 		where T : class
 	{
+		IRescoreQuery IRescore.Query { get; set; }
 		int? IRescore.WindowSize { get; set; }
 
-		IRescoreQuery IRescore.Query { get; set; }
-
 		public virtual RescoreDescriptor<T> RescoreQuery(Func<RescoreQueryDescriptor<T>, IRescoreQuery> rescoreQuerySelector) =>
-			Assign(a => a.Query = rescoreQuerySelector?.Invoke(new RescoreQueryDescriptor<T>()));
+			Assign(rescoreQuerySelector, (a, v) => a.Query = v?.Invoke(new RescoreQueryDescriptor<T>()));
 
-		public virtual RescoreDescriptor<T> WindowSize(int? windowSize) => Assign(a => a.WindowSize = windowSize);
-
+		public virtual RescoreDescriptor<T> WindowSize(int? windowSize) => Assign(windowSize, (a, v) => a.WindowSize = v);
 	}
 }

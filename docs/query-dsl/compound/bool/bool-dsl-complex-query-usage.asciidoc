@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,46 +7,42 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/Compound/Bool/BoolDslComplexQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/Compound/Bool/BoolDslComplexQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[bool-dsl-complex-query-usage]]
-== Bool Dsl Complex Query Usage
+=== Bool Dsl Complex Query Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
 q.Query() && q.Query()
 //second bool
-|| (
-    //complex nested bool
-    (+q.Query() || +q.Query() || !q.Query() && (!q.Query() && !q.ConditionlessQuery()))
-    // simple nested or
-    && (q.Query() || q.Query() || q.Query())
-    //all conditionless bool
-    && (q.NullQuery() || +q.ConditionlessQuery() || !q.ConditionlessQuery())
-    // actual bool query
-    && (base.QueryFluent(q)))
+|| (+q.Query() || +q.Query() || !q.Query() && (!q.Query() && !q.ConditionlessQuery()))
+// simple nested or
+&& (q.Query() || q.Query() || q.Query())
+//all conditionless bool
+&& (q.NullQuery() || +q.ConditionlessQuery() || !q.ConditionlessQuery())
+// actual bool query
+&& base.QueryFluent(q)
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
 Query && Query
 //second bool
-|| (
-    //complex nested bool
-    (+Query || +Query || !Query && (!Query && !ConditionlessQuery))
-    // simple nested or
-    && (Query || Query || Query)
-    //all conditionless bool
-    && (NullQuery || +ConditionlessQuery || !ConditionlessQuery)
-    // actual bool query
-    && (base.QueryInitializer))
+|| (+Query || +Query || !Query && (!Query && !ConditionlessQuery))
+// simple nested or
+&& (Query || Query || Query)
+//all conditionless bool
+&& (NullQuery || +ConditionlessQuery || !ConditionlessQuery)
+// actual bool query
+&& base.QueryInitializer
 ----
 
 [source,javascript]

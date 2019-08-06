@@ -1,20 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IGetRoleResponse : IResponse
+	[DataContract]
+	[JsonFormatter(typeof(DictionaryResponseFormatter<GetRoleResponse, string, XPackRole>))]
+	public class GetRoleResponse : DictionaryResponseBase<string, XPackRole>
 	{
-		IReadOnlyDictionary<string, XPackRole> Roles { get; }
-	}
-
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(DictionaryResponseJsonConverter<GetRoleResponse, string, XPackRole>))]
-	public class GetRoleResponse : DictionaryResponseBase<string, XPackRole>, IGetRoleResponse
-	{
-		[JsonIgnore]
+		[IgnoreDataMember]
 		public IReadOnlyDictionary<string, XPackRole> Roles => Self.BackingDictionary;
 	}
 }

@@ -1,44 +1,40 @@
 ﻿using System;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof (FieldNameQueryJsonConverter<WildcardQuery>))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(FieldNameQueryFormatter<WildcardQuery, IWildcardQuery>))]
 	public interface IWildcardQuery : ITermQuery
 	{
-		[JsonProperty(PropertyName = "rewrite")]
-		[JsonConverter(typeof (StringEnumConverter))]
-		RewriteMultiTerm? Rewrite { get; set; }
+		[DataMember(Name = "rewrite")]
+		MultiTermQueryRewrite Rewrite { get; set; }
 	}
 
-	public class WildcardQuery<T> : WildcardQuery
+	public class WildcardQuery<T, TValue> : WildcardQuery
 		where T : class
 	{
-		public WildcardQuery(Expression<Func<T, object>> field) { this.Field = field; }
+		public WildcardQuery(Expression<Func<T, TValue>> field) => Field = field;
 	}
 
 	public class WildcardQuery : FieldNameQueryBase, IWildcardQuery
 	{
-		protected override bool Conditionless => TermQuery.IsConditionless(this);
+		public MultiTermQueryRewrite Rewrite { get; set; }
 		public object Value { get; set; }
-		public RewriteMultiTerm? Rewrite { get; set; }
+		protected override bool Conditionless => TermQuery.IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.Wildcard = this;
 	}
 
-	public class WildcardQueryDescriptor<T> : TermQueryDescriptorBase<WildcardQueryDescriptor<T>, T>,
-		IWildcardQuery
+	public class WildcardQueryDescriptor<T>
+		: TermQueryDescriptorBase<WildcardQueryDescriptor<T>, IWildcardQuery, T>,
+			IWildcardQuery
 		where T : class
 	{
-		RewriteMultiTerm? IWildcardQuery.Rewrite { get; set; }
+		MultiTermQueryRewrite IWildcardQuery.Rewrite { get; set; }
 
-		public WildcardQueryDescriptor<T> Rewrite(RewriteMultiTerm? rewrite)
-		{
-			((IWildcardQuery)this).Rewrite = rewrite;
-			return this;
-		}
+		public WildcardQueryDescriptor<T> Rewrite(MultiTermQueryRewrite rewrite) => Assign(rewrite, (a, v) => a.Rewrite = v);
 	}
 }

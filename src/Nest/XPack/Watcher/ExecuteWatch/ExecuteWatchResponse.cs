@@ -1,168 +1,169 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	public interface IExecuteWatchResponse : IResponse
+	public class ExecuteWatchResponse : ResponseBase
 	{
-		[JsonProperty("_id")]
-		string Id { get; set; }
-
-		[JsonProperty("watch_record")]
-		WatchRecord WatchRecord { get; set; }
-	}
-
-	public class ExecuteWatchResponse : ResponseBase, IExecuteWatchResponse
-	{
+		[DataMember(Name = "_id")]
 		public string Id { get; set; }
 
+		[DataMember(Name = "watch_record")]
 		public WatchRecord WatchRecord { get; set; }
 	}
 
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum ActionExecutionState
 	{
 		[EnumMember(Value = "awaits_execution")]
 		AwaitsExecution,
+
 		[EnumMember(Value = "checking")]
 		Checking,
+
 		[EnumMember(Value = "execution_not_needed")]
 		ExecutionNotNeeded,
+
 		[EnumMember(Value = "throttled")]
 		Throttled,
+
 		[EnumMember(Value = "executed")]
 		Executed,
+
 		[EnumMember(Value = "failed")]
 		Failed,
+
 		[EnumMember(Value = "deleted_while_queued")]
 		DeletedWhileQueued,
+
 		[EnumMember(Value = "not_executed_already_queued")]
 		NotExecutedAlreadyQueued
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class WatchRecord
 	{
-		[JsonProperty("watch_id")]
-		public string WatchId { get; set; }
-
-		[JsonProperty("messages")]
-		public IReadOnlyCollection<string> Messages { get; set; }
-
-		[JsonProperty("state")]
-		public ActionExecutionState? State { get; set; }
-
-		[JsonProperty("trigger_event")]
-		public TriggerEventResult TriggerEvent { get; set; }
-
-		[JsonProperty("condition")]
+		[DataMember(Name = "condition")]
 		public ConditionContainer Condition { get; set; }
 
-		[JsonProperty("input")]
+		[DataMember(Name = "input")]
 		public InputContainer Input { get; set; }
 
-		[JsonProperty("metadata")]
+		[DataMember(Name = "messages")]
+		public IReadOnlyCollection<string> Messages { get; set; }
+
+		[DataMember(Name = "metadata")]
 		public IReadOnlyDictionary<string, object> Metadata { get; set; }
 
-		[JsonProperty("result")]
+		[DataMember(Name = "result")]
 		public ExecutionResult Result { get; set; }
+
+		[DataMember(Name = "state")]
+		public ActionExecutionState? State { get; set; }
+
+		[DataMember(Name = "trigger_event")]
+		public TriggerEventResult TriggerEvent { get; set; }
+
+		[DataMember(Name = "user")]
+		public string User { get; set; }
+
+		[DataMember(Name = "node")]
+		public string Node { get; set; }
+
+		[DataMember(Name = "watch_id")]
+		public string WatchId { get; set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class TriggerEventResult
 	{
-		[JsonProperty("type")]
-		public string Type { get; set; }
+		[DataMember(Name = "manual")]
+		public ITriggerEventContainer Manual { get; set; }
 
-		[JsonProperty("triggered_time")]
+		[DataMember(Name = "triggered_time")]
 		public DateTimeOffset? TriggeredTime { get; set; }
 
-		[JsonProperty("manual")]
-		public ITriggerEventContainer Manual { get; set; }
+		[DataMember(Name = "type")]
+		public string Type { get; set; }
 	}
 
 	public class ExecutionResult
 	{
-		[JsonProperty("execution_time")]
-		public DateTimeOffset? ExecutionTime { get; set; }
+		[DataMember(Name = "actions")]
+		public IReadOnlyCollection<ExecutionResultAction> Actions { get; set; }
 
-		[JsonProperty("execution_duration")]
-		public int? ExecutionDuration { get; set; }
-
-		[JsonProperty("input")]
-		public ExecutionResultInput Input { get; set; }
-
-		[JsonProperty("condition")]
+		[DataMember(Name = "condition")]
 		public ExecutionResultCondition Condition { get; set; }
 
-		[JsonProperty("actions")]
-		public IReadOnlyCollection<ExecutionResultAction> Actions { get; set; }
+		[DataMember(Name = "execution_duration")]
+		public int? ExecutionDuration { get; set; }
+
+		[DataMember(Name = "execution_time")]
+		public DateTimeOffset? ExecutionTime { get; set; }
+
+		[DataMember(Name = "input")]
+		public ExecutionResultInput Input { get; set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class ExecutionResultInput
 	{
-		[JsonProperty("type")]
-		public InputType Type { get; set; }
+		[DataMember(Name = "payload")]
+		public IReadOnlyDictionary<string, object> Payload { get; set; }
 
-		[JsonProperty("status")]
+		[DataMember(Name = "status")]
 		public Status Status { get; set; }
 
-		[JsonProperty("payload")]
-		public IReadOnlyDictionary<string, object> Payload { get; set; }
+		[DataMember(Name = "type")]
+		public InputType Type { get; set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class ExecutionResultCondition
 	{
-		[JsonProperty("type")]
-		public ConditionType Type { get; set; }
+		[DataMember(Name = "met")]
+		public bool? Met { get; set; }
 
-		[JsonProperty("status")]
+		[DataMember(Name = "status")]
 		public Status Status { get; set; }
 
-		[JsonProperty("met")]
-		public bool? Met { get; set; }
+		[DataMember(Name = "type")]
+		public ConditionType Type { get; set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class ExecutionResultAction
 	{
-		[JsonProperty("id")]
-		public string Id { get; set; }
-
-		[JsonProperty("type")]
-		public ActionType Type { get; set; }
-
-		[JsonProperty("status")]
-		public Status Status { get; set; }
-
-		[JsonProperty("email")]
+		[DataMember(Name = "email")]
 		public EmailActionResult Email { get; set; }
 
-		[JsonProperty("index")]
+		[DataMember(Name = "id")]
+		public string Id { get; set; }
+
+		[DataMember(Name = "index")]
 		public IndexActionResult Index { get; set; }
 
-		[JsonProperty("webhook")]
-		public WebhookActionResult Webhook { get; set; }
-
-		[JsonProperty("logging")]
+		[DataMember(Name = "logging")]
 		public LoggingActionResult Logging { get; set; }
 
-		[JsonProperty("pagerduty")]
+		[DataMember(Name = "pagerduty")]
 		public PagerDutyActionResult PagerDuty { get; set; }
 
-		[JsonProperty("hipchat")]
-		public HipChatActionResult HipChat { get; set; }
+		[DataMember(Name = "reason")]
+		public string Reason { get; set; }
 
-		[JsonProperty("slack")]
+		[DataMember(Name = "slack")]
 		public SlackActionResult Slack { get; set; }
 
-		[JsonProperty("reason")]
-		public string Reason { get; set; }
+		[DataMember(Name = "status")]
+		public Status Status { get; set; }
+
+		[DataMember(Name = "type")]
+		public ActionType Type { get; set; }
+
+		[DataMember(Name = "webhook")]
+		public WebhookActionResult Webhook { get; set; }
 	}
 }

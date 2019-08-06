@@ -1,21 +1,22 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class CatPendingTasksRecord : ICatRecord
 	{
-		[JsonProperty("insertOrder")]
+		[DataMember(Name ="insertOrder")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		public int? InsertOrder { get; set; }
 
-		[JsonProperty("timeInQueue")]
-		public string TimeInQueue { get; set; }
-
-		[JsonProperty("priority")]
+		[DataMember(Name ="priority")]
 		public string Priority { get; set; }
 
-		[JsonProperty("source")]
+		[DataMember(Name ="source")]
 		public string Source { get; set; }
 
+		[DataMember(Name ="timeInQueue")]
+		public string TimeInQueue { get; set; }
 	}
 }

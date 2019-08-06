@@ -1,28 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<PerFieldAnalyzer, Field, string>))]
+	[JsonFormatter(typeof(VerbatimDictionaryKeysFormatter<PerFieldAnalyzer, IPerFieldAnalyzer, Field, string>))]
 	public interface IPerFieldAnalyzer : IIsADictionary<Field, string> { }
 
 	public class PerFieldAnalyzer : IsADictionaryBase<Field, string>, IPerFieldAnalyzer
 	{
-		public PerFieldAnalyzer() {}
+		public PerFieldAnalyzer() { }
+
 		public PerFieldAnalyzer(IDictionary<Field, string> container) : base(container) { }
-		public PerFieldAnalyzer(Dictionary<Field, string> container)
-			: base(container.Select(kv => kv).ToDictionary(kv => kv.Key, kv => kv.Value))
-		{}
+
+		public PerFieldAnalyzer(Dictionary<Field, string> container) : base(container) { }
 
 		public void Add(Field field, string analyzer) => BackingDictionary.Add(field, analyzer);
 	}
 
 	public class PerFieldAnalyzer<T> : PerFieldAnalyzer where T : class
 	{
-		public void Add(Expression<Func<T, object>>  field, string analyzer) => BackingDictionary.Add(field, analyzer);
+		public void Add<TValue>(Expression<Func<T, TValue>> field, string analyzer) => BackingDictionary.Add(field, analyzer);
 	}
 
 	public class PerFieldAnalyzerDescriptor<T> : IsADictionaryDescriptorBase<PerFieldAnalyzerDescriptor<T>, IPerFieldAnalyzer, Field, string>
@@ -32,6 +31,6 @@ namespace Nest
 
 		public PerFieldAnalyzerDescriptor<T> Field(Field field, string analyzer) => Assign(field, analyzer);
 
-		public PerFieldAnalyzerDescriptor<T> Field(Expression<Func<T, object>> field, string analyzer) => Assign(field, analyzer);
+		public PerFieldAnalyzerDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field, string analyzer) => Assign(field, analyzer);
 	}
 }

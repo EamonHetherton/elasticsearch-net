@@ -1,25 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<Tokenizers, string, ITokenizer>))]
+	[JsonFormatter(typeof(VerbatimDictionaryKeysFormatter<Tokenizers, ITokenizers, string, ITokenizer>))]
 	public interface ITokenizers : IIsADictionary<string, ITokenizer> { }
 
 	public class Tokenizers : IsADictionaryBase<string, ITokenizer>, ITokenizers
 	{
-		public Tokenizers() {}
+		public Tokenizers() { }
+
 		public Tokenizers(IDictionary<string, ITokenizer> container) : base(container) { }
-		public Tokenizers(Dictionary<string, ITokenizer> container)
-			: base(container.Select(kv => kv).ToDictionary(kv => kv.Key, kv => kv.Value))
-		{}
+
+		public Tokenizers(Dictionary<string, ITokenizer> container) : base(container) { }
 
 		public void Add(string name, ITokenizer analyzer) => BackingDictionary.Add(name, analyzer);
 	}
 
-	public class TokenizersDescriptor :IsADictionaryDescriptorBase<TokenizersDescriptor, ITokenizers, string, ITokenizer>
+	public class TokenizersDescriptor : IsADictionaryDescriptorBase<TokenizersDescriptor, ITokenizers, string, ITokenizer>
 	{
 		public TokenizersDescriptor() : base(new Tokenizers()) { }
 
@@ -44,8 +43,13 @@ namespace Nest
 			Assign(name, selector?.Invoke(new KeywordTokenizerDescriptor()));
 
 		/// <summary>
-		/// A tokenizer of type letter that divides text at non-letters. That’s to say, it defines tokens as maximal strings of adjacent letters.
-		/// <para>Note, this does a decent job for most European languages, but does a terrible job for some Asian languages, where words are not separated by spaces.</para>
+		/// A tokenizer of type letter that divides text at non-letters. That’s to say, it defines tokens as maximal strings of
+		/// adjacent letters.
+		/// <para>
+		/// Note, this does a decent job for most European languages, but does a terrible job for some Asian languages, where words
+		/// are not
+		/// separated by spaces.
+		/// </para>
 		/// </summary>
 		public TokenizersDescriptor Letter(string name, Func<LetterTokenizerDescriptor, ILetterTokenizer> selector) =>
 			Assign(name, selector?.Invoke(new LetterTokenizerDescriptor()));
@@ -60,13 +64,13 @@ namespace Nest
 			Assign(name, selector?.Invoke(new LowercaseTokenizerDescriptor()));
 
 		/// <summary>
-		/// The path_hierarchy tokenizer takes something like this:
-		///<para>/something/something/else</para>
-		///<para>And produces tokens:</para>
-		///<para></para>
-		///<para>/something</para>
-		///<para>/something/something</para>
-		///<para>/something/something/else</para>
+		///  The path_hierarchy tokenizer takes something like this:
+		/// <para>/something/something/else</para>
+		/// <para>And produces tokens:</para>
+		/// <para></para>
+		/// <para>/something</para>
+		/// <para>/something/something</para>
+		/// <para>/something/something/else</para>
 		/// </summary>
 		public TokenizersDescriptor PathHierarchy(string name, Func<PathHierarchyTokenizerDescriptor, IPathHierarchyTokenizer> selector) =>
 			Assign(name, selector?.Invoke(new PathHierarchyTokenizerDescriptor()));
@@ -78,14 +82,16 @@ namespace Nest
 			Assign(name, selector?.Invoke(new PatternTokenizerDescriptor()));
 
 		/// <summary>
-		/// A tokenizer of type standard providing grammar based tokenizer that is a good tokenizer for most European language documents.
+		/// A tokenizer of type standard providing grammar based tokenizer that is a good tokenizer for most European language
+		/// documents.
 		/// <para>The tokenizer implements the Unicode Text Segmentation algorithm, as specified in Unicode Standard Annex #29.</para>
 		/// </summary>
 		public TokenizersDescriptor Standard(string name, Func<StandardTokenizerDescriptor, IStandardTokenizer> selector = null) =>
 			Assign(name, selector.InvokeOrDefault(new StandardTokenizerDescriptor()));
 
 		/// <summary>
-		/// A tokenizer of type uax_url_email which works exactly like the standard tokenizer, but tokenizes emails and urls as single tokens
+		/// A tokenizer of type uax_url_email which works exactly like the standard tokenizer, but tokenizes emails and urls as
+		/// single tokens
 		/// </summary>
 		public TokenizersDescriptor UaxEmailUrl(string name, Func<UaxEmailUrlTokenizerDescriptor, IUaxEmailUrlTokenizer> selector) =>
 			Assign(name, selector?.Invoke(new UaxEmailUrlTokenizerDescriptor()));
@@ -98,7 +104,8 @@ namespace Nest
 
 		/// <summary>
 		/// A tokenizer of type pattern that can flexibly separate text into terms via a regular expression.
-		/// Part of the `analysis-kuromoji` plugin: https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-kuromoji.html
+		/// Part of the `analysis-kuromoji` plugin:
+		/// https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-kuromoji.html
 		/// </summary>
 		public TokenizersDescriptor Kuromoji(string name, Func<KuromojiTokenizerDescriptor, IKuromojiTokenizer> selector) =>
 			Assign(name, selector?.Invoke(new KuromojiTokenizerDescriptor()));
@@ -112,5 +119,14 @@ namespace Nest
 		/// </summary>
 		public TokenizersDescriptor Icu(string name, Func<IcuTokenizerDescriptor, IIcuTokenizer> selector) =>
 			Assign(name, selector?.Invoke(new IcuTokenizerDescriptor()));
+
+		/// <inheritdoc cref="INoriTokenizer" />
+		public TokenizersDescriptor Nori(string name, Func<NoriTokenizerDescriptor, INoriTokenizer> selector) =>
+			Assign(name, selector?.Invoke(new NoriTokenizerDescriptor()));
+
+		/// <inheritdoc cref="ICharGroupTokenizer.TokenizeOnCharacters" />
+		/// >
+		public TokenizersDescriptor CharGroup(string name, Func<CharGroupTokenizerDescriptor, ICharGroupTokenizer> selector) =>
+			Assign(name, selector?.Invoke(new CharGroupTokenizerDescriptor()));
 	}
 }

@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	/// <summary>
-	/// Represents the result of an aggregation on the response
+	/// Aggregation response for an aggregation request
 	/// </summary>
-	[ExactContractJsonConverter(typeof(AggregateJsonConverter))]
+	[JsonFormatter(typeof(AggregateFormatter))]
 	public interface IAggregate
 	{
-		//TODO this public set is problematic
-		IReadOnlyDictionary<string, object> Meta { get; set; }
+		/// <summary>
+		/// Metadata for the aggregation
+		/// </summary>
+		IReadOnlyDictionary<string, object> Meta { get; }
 	}
 }

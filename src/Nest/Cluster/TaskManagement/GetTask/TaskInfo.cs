@@ -1,40 +1,43 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[DataContract]
 	public class TaskInfo
 	{
-		[JsonProperty("node")]
-		public string Node { get; internal set; }
-
-		[JsonProperty("id")]
-		public long Id { get; internal set; }
-
-		[JsonProperty("type")]
-		public string Type { get; internal set; }
-
-		[JsonProperty("action")]
+		[DataMember(Name ="action")]
 		public string Action { get; internal set; }
 
-		[JsonProperty("status")]
-		public TaskStatus Status { get; internal set; }
+		[DataMember(Name ="cancellable")]
+		public bool Cancellable { get; internal set; }
 
-		[JsonProperty("description")]
+		[DataMember(Name ="children")]
+		public IReadOnlyCollection<TaskInfo> Children { get; internal set; } = EmptyReadOnly<TaskInfo>.Collection;
+
+		[DataMember(Name ="description")]
 		public string Description { get; internal set; }
 
-		[JsonProperty("start_time_in_millis")]
-		public long StartTimeInMilliseconds  { get; internal set; }
+		[DataMember(Name ="headers")]
+		public IReadOnlyDictionary<string, string> Headers { get; internal set; } = EmptyReadOnly<string, string>.Dictionary;
 
-		[JsonProperty("running_time_in_nanos")]
+		[DataMember(Name ="id")]
+		public long Id { get; internal set; }
+
+		[DataMember(Name ="node")]
+		public string Node { get; internal set; }
+
+		[DataMember(Name ="running_time_in_nanos")]
 		public long RunningTimeInNanoseconds { get; internal set; }
 
-		[JsonProperty("cancellable")]
-		public bool Cancellable { get; internal set; }
+		[DataMember(Name ="start_time_in_millis")]
+		public long StartTimeInMilliseconds { get; internal set; }
+
+		[DataMember(Name ="status")]
+		public TaskStatus Status { get; internal set; }
+
+		[DataMember(Name ="type")]
+		public string Type { get; internal set; }
 	}
 }

@@ -1,35 +1,41 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public interface ITemplateMapping
 	{
-		[JsonProperty("template")]
-		string Template { get; set; }
+		[DataMember(Name ="aliases")]
+		IAliases Aliases { get; set; }
 
-		[JsonProperty("order")]
+		[DataMember(Name ="index_patterns")]
+		IReadOnlyCollection<string> IndexPatterns { get; set; }
+
+		[DataMember(Name = "mappings")]
+		ITypeMapping Mappings { get; set; }
+
+		[DataMember(Name ="order")]
 		int? Order { get; set; }
 
-		[JsonProperty("settings")]
+		[DataMember(Name ="settings")]
 		IIndexSettings Settings { get; set; }
 
-		[JsonProperty("mappings")]
-		IMappings Mappings { get; set; }
-
-		[JsonProperty("aliases")]
-		IAliases Aliases { get; set; }
+		[DataMember(Name ="version")]
+		int? Version { get; set; }
 	}
 
 	public class TemplateMapping : ITemplateMapping
 	{
-		public string Template { get; set; }
+		public IAliases Aliases { get; set; }
+		public IReadOnlyCollection<string> IndexPatterns { get; set; } = EmptyReadOnly<string>.Collection;
+
+		public ITypeMapping Mappings { get; set; }
 
 		public int? Order { get; set; }
 
 		public IIndexSettings Settings { get; set; }
 
-		public IMappings Mappings { get; set; }
-
-		public IAliases Aliases { get; set; }
+		public int? Version { get; set; }
 	}
 }

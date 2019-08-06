@@ -6,88 +6,125 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(FieldsJsonConverter))]
+	[JsonFormatter(typeof(FieldsFormatter))]
 	[DebuggerDisplay("{DebugDisplay,nq}")]
-	public class Fields : IUrlParameter, IEnumerable<Field>
+	public class Fields : IUrlParameter, IEnumerable<Field>, IEquatable<Fields>
 	{
 		internal readonly List<Field> ListOfFields;
 
-		string IUrlParameter.GetString(IConnectionConfigurationValues settings) =>
-			string.Join(",", ListOfFields.Select(f => ((IUrlParameter)f).GetString(settings)));
+		internal Fields() => ListOfFields = new List<Field>();
+
+		internal Fields(IEnumerable<Field> fieldNames) => ListOfFields = fieldNames.ToList();
 
 		private string DebugDisplay =>
-			$"Count: {ListOfFields.Count} [" + string.Join(",", ListOfFields.Select((t, i) => $"({i + 1}: {t.DebugDisplay})")) + "]";
+			$"Count: {ListOfFields.Count} [" + string.Join(",", ListOfFields.Select((t, i) => $"({i + 1}: {t?.DebugDisplay ?? "NULL"})")) + "]";
 
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-		internal Fields() { this.ListOfFields = new List<Field>(); }
-		internal Fields(IEnumerable<Field> fieldNames) { this.ListOfFields = fieldNames.ToList(); }
+		public IEnumerator<Field> GetEnumerator() => ListOfFields.GetEnumerator();
 
-		public static implicit operator Fields(string[] fields) => new Fields(fields.Select(f => (Field)f));
+		public bool Equals(Fields other) => EqualsAllFields(ListOfFields, other.ListOfFields);
 
-		public static implicit operator Fields(string field) =>
-			new Fields(field.Split(new [] {','}, StringSplitOptions.RemoveEmptyEntries).Select(f=>(Field)f));
-
-		public static implicit operator Fields(Expression[] fields) => new Fields(fields.Select(f => (Field)f));
-
-		public static implicit operator Fields(Expression field) => new Fields(new [] { (Field)field });
-
-		public static implicit operator Fields(Field field) => new Fields(new[] { field });
-
-		public static implicit operator Fields(Field[] fields) => new Fields(fields);
-
-		public Fields And<T>(Expression<Func<T, object>> field, double? boost = null) where T : class
+		string IUrlParameter.GetString(IConnectionConfigurationValues settings)
 		{
-			this.ListOfFields.Add(new Field(field, boost));
+			if (!(settings is IConnectionSettingsValues nestSettings))
+				throw new ArgumentNullException(nameof(settings),
+					$"Can not resolve {nameof(Fields)} if no {nameof(IConnectionSettingsValues)} is provided");
+
+			return string.Join(",", ListOfFields.Where(f => f != null).Select(f => ((IUrlParameter)f).GetString(nestSettings)));
+		}
+
+		public static implicit operator Fields(string[] fields) => fields.IsEmpty() ? null : new Fields(fields.Select(f => new Field(f)));
+
+		public static implicit operator Fields(string field) => field.IsNullOrEmptyCommaSeparatedList(out var split)
+			? null
+			: new Fields(split.Select(f => new Field(f)));
+
+		public static implicit operator Fields(Expression[] fields) => fields.IsEmpty() ? null : new Fields(fields.Select(f => new Field(f)));
+
+		public static implicit operator Fields(Expression field) => field == null ? null : new Fields(new[] { new Field(field) });
+
+		public static implicit operator Fields(Field field) => field == null ? null : new Fields(new[] { field });
+
+		public static implicit operator Fields(PropertyInfo field) => field == null ? null : new Fields(new Field[] { field });
+
+		public static implicit operator Fields(PropertyInfo[] fields) => fields.IsEmpty() ? null : new Fields(fields.Select(f => new Field(f)));
+
+		public static implicit operator Fields(Field[] fields) => fields.IsEmpty() ? null : new Fields(fields);
+
+		public Fields And<T, TValue>(Expression<Func<T, TValue>> field, double? boost = null, string format = null) where T : class
+		{
+			ListOfFields.Add(new Field(field, boost, format));
 			return this;
 		}
 
-		public Fields And(string field, double? boost = null)
+		public Fields And(string field, double? boost = null, string format = null)
 		{
-			this.ListOfFields.Add(new Field(field, boost));
+			ListOfFields.Add(new Field(field, boost, format));
 			return this;
 		}
 
 		public Fields And(PropertyInfo property, double? boost = null)
 		{
-			this.ListOfFields.Add(new Field(property, boost));
+			ListOfFields.Add(new Field(property, boost));
 			return this;
 		}
 
 		public Fields And<T>(params Expression<Func<T, object>>[] fields) where T : class
 		{
-			this.ListOfFields.AddRange(fields.Select(f => (Field)f));
+			ListOfFields.AddRange(fields.Select(f => new Field(f)));
 			return this;
 		}
 
 		public Fields And(params string[] fields)
 		{
-			this.ListOfFields.AddRange(fields.Select(f => (Field)f));
+			ListOfFields.AddRange(fields.Select(f => new Field(f)));
 			return this;
 		}
 
 		public Fields And(params PropertyInfo[] properties)
 		{
-			this.ListOfFields.AddRange(properties.Select(f => (Field)f));
+			ListOfFields.AddRange(properties.Select(f => new Field(f)));
 			return this;
 		}
 
 		public Fields And(params Field[] fields)
 		{
-			this.ListOfFields.AddRange(fields);
+			ListOfFields.AddRange(fields);
 			return this;
 		}
 
-		public IEnumerator<Field> GetEnumerator()
+		public static bool operator ==(Fields left, Fields right) => Equals(left, right);
+
+		public static bool operator !=(Fields left, Fields right) => !Equals(left, right);
+
+		public override bool Equals(object obj)
 		{
-			return this.ListOfFields.GetEnumerator();
+			switch (obj)
+			{
+				case Fields f: return Equals(f);
+				case string s: return Equals(s);
+				case Field fn: return Equals(fn);
+				case Field[] fns: return Equals(fns);
+				case Expression e: return Equals(e);
+				case Expression[] es: return Equals(es);
+				default: return false;
+			}
 		}
 
-		IEnumerator IEnumerable.GetEnumerator()
+		private static bool EqualsAllFields(IReadOnlyList<Field> thisTypes, IReadOnlyList<Field> otherTypes)
 		{
-			return this.GetEnumerator();
+			if (thisTypes == null && otherTypes == null) return true;
+			if (thisTypes == null || otherTypes == null) return false;
+			if (thisTypes.Count != otherTypes.Count) return false;
+
+			return thisTypes.Count == otherTypes.Count && !thisTypes.Except(otherTypes).Any();
 		}
+
+		public override int GetHashCode() => ListOfFields.GetHashCode();
 	}
 }

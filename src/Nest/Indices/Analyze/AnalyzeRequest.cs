@@ -2,103 +2,155 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<AnalyzeRequest>))]
+	[MapsApi("indices.analyze.json")]
+	[ReadAs(typeof(AnalyzeRequest))]
 	public partial interface IAnalyzeRequest
 	{
 		///<summary>The name of the analyzer to use</summary>
-		[JsonProperty("analyzer")]
+		[DataMember(Name ="analyzer")]
 		string Analyzer { get; set; }
 
-		///<summary>A collection of character filters to use for the analysis</summary>
-		[JsonProperty("char_filter")]
-		string[] CharFilter { get; set; }
+		///<summary>Filter only certain token attributes to be returned</summary>
+		[DataMember(Name ="attributes")]
+		IEnumerable<string> Attributes { get; set; }
 
-		///<summary>A collection of filters to use for the analysis</summary>
-		[JsonProperty("filter")]
-		string[] Filter { get; set; }
+		///<summary>A collection of character filters to use for the analysis</summary>
+		[DataMember(Name ="char_filter")]
+		AnalyzeCharFilters CharFilter { get; set; }
+
+		///<summary>Return more details, and output the analyzer chain per step in the process</summary>
+		[DataMember(Name ="explain")]
+		bool? Explain { get; set; }
 
 		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
-		[JsonProperty("field")]
+		[DataMember(Name ="field")]
 		Field Field { get; set; }
 
+		///<summary>A collection of filters to use for the analysis</summary>
+		[DataMember(Name ="filter")]
+		AnalyzeTokenFilters Filter { get; set; }
+
+		///<summary>The name of the normalizer to use</summary>
+		[DataMember(Name ="normalizer")]
+		string Normalizer { get; set; }
+
 		///<summary>The text on which the analysis should be performed (when request body is not used)</summary>
-		[JsonProperty("text")]
-		string[] Text { get; set; }
+		[DataMember(Name ="text")]
+		IEnumerable<string> Text { get; set; }
 
 		///<summary>The name of the tokenizer to use for the analysis</summary>
-		[JsonProperty("tokenizer")]
-		string Tokenizer { get; set; }
+		[DataMember(Name ="tokenizer")]
+		Union<string, ITokenizer> Tokenizer { get; set; }
 	}
 
 	public partial class AnalyzeRequest
 	{
 		public AnalyzeRequest(IndexName indices, string textToAnalyze)
-			: this(indices)
-		{
-			this.Text = new[] { textToAnalyze };
-		}
+			: this(indices) => Text = new[] { textToAnalyze };
 
-		///<summary>The name of the analyzer to use</summary>
+		/// <inheritdoc />
 		public string Analyzer { get; set; }
 
-		///<summary>A collection of character filters to use for the analysis</summary>
-		public string[] CharFilter { get; set; }
+		/// <inheritdoc />
+		public IEnumerable<string> Attributes { get; set; }
 
-		///<summary>A collection of filters to use for the analysis</summary>
-		public string[] Filter { get; set; }
+		/// <inheritdoc />
+		public AnalyzeCharFilters CharFilter { get; set; }
 
-		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
+		/// <inheritdoc />
+		public bool? Explain { get; set; }
+
+		/// <inheritdoc />
 		public Field Field { get; set; }
 
-		///<summary>The text on which the analysis should be performed</summary>
-		public string[] Text { get; set; }
+		/// <inheritdoc />
+		public AnalyzeTokenFilters Filter { get; set; }
 
-		///<summary>The name of the tokenizer to use for the analysis</summary>
-		public string Tokenizer { get; set; }
+		/// <inheritdoc />
+		public string Normalizer { get; set; }
+
+		/// <inheritdoc />
+		public IEnumerable<string> Text { get; set; }
+
+		/// <inheritdoc />
+		public Union<string, ITokenizer> Tokenizer { get; set; }
 	}
 
-	[DescriptorFor("IndicesAnalyze")]
 	public partial class AnalyzeDescriptor
 	{
 		string IAnalyzeRequest.Analyzer { get; set; }
-		string[] IAnalyzeRequest.CharFilter { get; set; }
-		string[] IAnalyzeRequest.Filter { get; set; }
+		IEnumerable<string> IAnalyzeRequest.Attributes { get; set; }
+		AnalyzeCharFilters IAnalyzeRequest.CharFilter { get; set; }
+		bool? IAnalyzeRequest.Explain { get; set; }
 		Field IAnalyzeRequest.Field { get; set; }
-		string[] IAnalyzeRequest.Text { get; set; }
-		string IAnalyzeRequest.Tokenizer { get; set; }
-
-		///<summary>The name of the analyzer to use</summary>
-		public AnalyzeDescriptor Analyzer(string analyser) => Assign(a => a.Analyzer = analyser);
-
-		///<summary>A collection of character filters to use for the analysis</summary>
-		public AnalyzeDescriptor CharFilter(params string[] charFilter) => Assign(a => a.CharFilter = charFilter);
-
-		///<summary>A collection of character filters to use for the analysis</summary>
-		public AnalyzeDescriptor CharFilter(IEnumerable<string> charFilter) => Assign(a => a.CharFilter = charFilter.ToArray());
-
-		///<summary>A collection of filters to use for the analysis</summary>
-		public AnalyzeDescriptor Filter(params string[] filter) => Assign(a => a.Filter = filter);
-
-		///<summary>A collection of filters to use for the analysis</summary>
-		public AnalyzeDescriptor Filter(IEnumerable<string> filter) => Assign(a => a.Filter = filter.ToArray());
-
-		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
-		public AnalyzeDescriptor Field(Field field) => Assign(a => a.Field = field);
-
-		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
-		public AnalyzeDescriptor Field<T>(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
-
-		///<summary>The text on which the analysis should be performed</summary>
-		public AnalyzeDescriptor Text(params string[] text) => Assign(a => a.Text = text);
-
-		///<summary>The text on which the analysis should be performed</summary>
-		public AnalyzeDescriptor Text(IEnumerable<string> text) => Assign(a => a.Text = text.ToArray());
+		AnalyzeTokenFilters IAnalyzeRequest.Filter { get; set; }
+		string IAnalyzeRequest.Normalizer { get; set; }
+		IEnumerable<string> IAnalyzeRequest.Text { get; set; }
+		Union<string, ITokenizer> IAnalyzeRequest.Tokenizer { get; set; }
 
 		///<summary>The name of the tokenizer to use for the analysis</summary>
-		public AnalyzeDescriptor Tokenizer(string tokenizer) => Assign(a => a.Tokenizer = tokenizer);
+		public AnalyzeDescriptor Tokenizer(string tokenizer) => Assign(tokenizer, (a, v) => a.Tokenizer = v);
+
+		///<summary>An inline definition of a tokenizer</summary>
+		public AnalyzeDescriptor Tokenizer(Func<AnalyzeTokenizersSelector, ITokenizer> tokenizer) =>
+			Assign(tokenizer, (a, v) =>
+			{
+				var u = v?.Invoke(new AnalyzeTokenizersSelector());
+				if (u != null) a.Tokenizer = new Union<string, ITokenizer>(u);
+			});
+
+		///<summary>The name of the analyzer to use</summary>
+		public AnalyzeDescriptor Analyzer(string analyser) => Assign(analyser, (a, v) => a.Analyzer = v);
+
+		///<summary>A collection of character filters to use for the analysis</summary>
+		public AnalyzeDescriptor CharFilter(params string[] charFilter) => Assign(charFilter, (a, v) => a.CharFilter = v);
+
+		///<summary>A collection of character filters to use for the analysis</summary>
+		public AnalyzeDescriptor CharFilter(IEnumerable<string> charFilter) => Assign(charFilter.ToArray(), (a, v) => a.CharFilter = v);
+
+		///<summary>A collection of character filters to use for the analysis</summary>
+		public AnalyzeDescriptor CharFilter(Func<AnalyzeCharFiltersDescriptor, IPromise<AnalyzeCharFilters>> charFilters) =>
+			Assign(charFilters, (a, v) => a.CharFilter = v?.Invoke(new AnalyzeCharFiltersDescriptor())?.Value);
+
+		///<summary>A collection of filters to use for the analysis</summary>
+		public AnalyzeDescriptor Filter(params string[] filter) => Assign(filter, (a, v) => a.Filter = v);
+
+		///<summary>A collection of filters to use for the analysis</summary>
+		public AnalyzeDescriptor Filter(IEnumerable<string> filter) => Assign(filter.ToArray(), (a, v) => a.Filter = v);
+
+		///<summary>A collection of filters to use for the analysis</summary>
+		public AnalyzeDescriptor Filter(Func<AnalyzeTokenFiltersDescriptor, IPromise<AnalyzeTokenFilters>> tokenFilters) =>
+			Assign(tokenFilters, (a, v) => a.Filter = v?.Invoke(new AnalyzeTokenFiltersDescriptor())?.Value);
+
+		///<summary>The name of the normalizer to use</summary>
+		public AnalyzeDescriptor Normalizer(string normalizer) => Assign(normalizer, (a, v) => a.Normalizer = v);
+
+		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
+		public AnalyzeDescriptor Field(Field field) => Assign(field, (a, v) => a.Field = v);
+
+		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
+		public AnalyzeDescriptor Field<T, TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
+
+		///<summary>Use the analyzer configured for this field (instead of passing the analyzer name)</summary>
+		public AnalyzeDescriptor Field<T>(Expression<Func<T, object>> field) => Assign(field, (a, v) => a.Field = v);
+
+		///<summary>The text on which the analysis should be performed</summary>
+		public AnalyzeDescriptor Text(params string[] text) => Assign(text, (a, v) => a.Text = v);
+
+		///<summary>The text on which the analysis should be performed</summary>
+		public AnalyzeDescriptor Text(IEnumerable<string> text) => Assign(text, (a, v) => a.Text = v);
+
+		///<summary>Return more details, and output the analyzer chain per step in the process</summary>
+		public AnalyzeDescriptor Explain(bool? explain = true) => Assign(explain, (a, v) => a.Explain = v);
+
+		///<summary>Filter only certain token attributes to be returned</summary>
+		public AnalyzeDescriptor Attributes(params string[] attributes) => Assign(attributes, (a, v) => a.Attributes = v);
+
+		///<summary>Filter only certain token attributes to be returned</summary>
+		public AnalyzeDescriptor Attributes(IEnumerable<string> attributes) => Assign(attributes.ToArray(), (a, v) => a.Attributes = v);
 	}
 }

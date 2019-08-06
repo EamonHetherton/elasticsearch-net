@@ -1,64 +1,46 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	/// <summary>
-	/// Range that defines a bucket for either the <see cref="RangeAggregation"/> or
-	/// <see cref="GeoDistanceAggregation"/>. If you are looking to store ranges as
+	/// Range that defines a bucket for either the <see cref="RangeAggregation" /> or
+	/// <see cref="GeoDistanceAggregation" />. If you are looking to store ranges as
 	/// part of your document please use explicit range class e.g DateRange, FloatRange etc
 	/// </summary>
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<Range>))]
-	[Obsolete("Renamed to IAggregationRange scheduled for removal in 6.0")]
-	public interface IRange
+	[InterfaceDataContract]
+	[ReadAs(typeof(AggregationRange))]
+	public interface IAggregationRange
 	{
-		[JsonProperty(PropertyName = "from")]
+		[DataMember(Name ="from")]
 		double? From { get; set; }
 
-		[JsonProperty(PropertyName = "to")]
-		double? To { get; set; }
-
-		[JsonProperty(PropertyName = "key")]
+		[DataMember(Name ="key")]
 		string Key { get; set; }
+
+		[DataMember(Name ="to")]
+		double? To { get; set; }
 	}
 
-	/// <summary>
-	/// Range that defines a bucket for either the <see cref="RangeAggregation"/> or
-	/// <see cref="GeoDistanceAggregation"/>. If you are looking to store ranges as
-	/// part of your document please use explicit range class e.g DateRange, FloatRange etc
-	/// </summary>
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<AggregationRange>))]
-#pragma warning disable 618
-	public interface IAggregationRange : IRange {}
-
-	/// <inheritdoc/>
-	[Obsolete("Renamed to AggregationRange, scheduled for removal in 6.0")]
-	public class Range : IRange
+	/// <inheritdoc />
+	public class AggregationRange : IAggregationRange
 	{
 		public double? From { get; set; }
-		public double? To { get; set; }
 		public string Key { get; set; }
+		public double? To { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class AggregationRange : Range, IAggregationRange { }
-
-	/// <inheritdoc/>
-	[Obsolete("Renamed to AggregationRangeDescriptor, scheduled for removal in 6.0")]
-	public class RangeDescriptor : DescriptorBase<RangeDescriptor, IRange>, IRange
+	/// <inheritdoc />
+	public class AggregationRangeDescriptor : DescriptorBase<AggregationRangeDescriptor, IAggregationRange>, IAggregationRange
 	{
-		double? IRange.From { get; set; }
-		string IRange.Key { get; set; }
-		double? IRange.To { get; set; }
+		double? IAggregationRange.From { get; set; }
+		string IAggregationRange.Key { get; set; }
+		double? IAggregationRange.To { get; set; }
 
-		public RangeDescriptor Key(string key) => Assign(a => a.Key = key);
-		public RangeDescriptor From(double from) => Assign(a => a.From = from);
-		public RangeDescriptor To(double to) => Assign(a => a.To = to);
+		public AggregationRangeDescriptor Key(string key) => Assign(key, (a, v) => a.Key = v);
+
+		public AggregationRangeDescriptor From(double? from) => Assign(from, (a, v) => a.From = v);
+
+		public AggregationRangeDescriptor To(double? to) => Assign(to, (a, v) => a.To = v);
 	}
-
-	/// <inheritdoc/>
-	public class AggregationRangeDescriptor : RangeDescriptor, IAggregationRange { }
-#pragma warning restore 618
 }

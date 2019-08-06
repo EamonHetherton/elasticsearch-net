@@ -1,26 +1,27 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReserializeJsonConverter<TransformContainer, ITransformContainer>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(TransformContainer))]
 	public interface ITransformContainer
 	{
-		[JsonProperty("search")]
-		ISearchTransform Search { get; set; }
+		[DataMember(Name ="chain")]
+		IChainTransform Chain { get; set; }
 
-		[JsonProperty("script")]
+		[DataMember(Name ="script")]
 		IScriptTransform Script { get; set; }
 
-		[JsonProperty("chain")]
-		IChainTransform Chain { get; set; }
+		[DataMember(Name ="search")]
+		ISearchTransform Search { get; set; }
 	}
 
-	[JsonObject(MemberSerialization.OptIn)]
+	[DataContract]
 	public class TransformContainer : ITransformContainer, IDescriptor
 	{
-		internal TransformContainer() {}
+		internal TransformContainer() { }
 
 		public TransformContainer(TransformBase transform)
 		{
@@ -28,22 +29,22 @@ namespace Nest
 			transform.WrapInContainer(this);
 		}
 
-		ISearchTransform ITransformContainer.Search { get; set; }
-		IScriptTransform ITransformContainer.Script { get; set; }
 		IChainTransform ITransformContainer.Chain { get; set; }
+		IScriptTransform ITransformContainer.Script { get; set; }
+		ISearchTransform ITransformContainer.Search { get; set; }
 	}
 
 	public class TransformDescriptor : TransformContainer
 	{
-		private TransformDescriptor Assign(Action<ITransformContainer> assigner) => Fluent.Assign(this, assigner);
+		private TransformDescriptor Assign<TValue>(TValue value, Action<ITransformContainer, TValue> assigner) => Fluent.Assign(this, value, assigner);
 
 		public TransformDescriptor Search(Func<SearchTransformDescriptor, ISearchTransform> selector) =>
-			Assign(a => a.Search = selector?.InvokeOrDefault(new SearchTransformDescriptor()));
+			Assign(selector,(a, v) => a.Search = v?.InvokeOrDefault(new SearchTransformDescriptor()));
 
 		public TransformDescriptor Script(Func<ScriptTransformDescriptor, IScriptTransform> selector) =>
-			Assign(a => a.Script = selector?.Invoke(new ScriptTransformDescriptor()));
+			Assign(selector,(a, v) => a.Script = v?.Invoke(new ScriptTransformDescriptor()));
 
 		public TransformDescriptor Chain(Func<ChainTransformDescriptor, IChainTransform> selector) =>
-			Assign(a => a.Chain = selector.Invoke(new ChainTransformDescriptor()));
+			Assign(selector,(a, v) => a.Chain = v?.Invoke(new ChainTransformDescriptor()));
 	}
 }

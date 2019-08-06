@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,13 +7,13 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/Joining/Nested/NestedQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/Joining/Nested/NestedQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[nested-query-usage]]
-== Nested Query Usage
+=== Nested Query Usage
 
 Nested query allows to query nested objects / docs (see {ref_current}/nested.html[nested mapping]).
 The query is executed against the nested objects / docs as if they were indexed as separate
@@ -21,7 +21,7 @@ docs (they are, internally) and resulting in the root parent doc (or parent nest
 
 See the Elasticsearch documentation on {ref_current}/query-dsl-nested-query.html[nested query] for more details.
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
@@ -29,11 +29,11 @@ q
 .Nested(c => c
     .Name("named_query")
     .Boost(1.1)
-    .InnerHits(i=>i.Explain())
-    .Path(p=>p.CuratedTags)
+    .InnerHits(i => i.Explain())
+    .Path(p => p.Tags)
     .Query(nq => nq
         .Terms(t => t
-            .Field(f => f.CuratedTags.First().Name)
+            .Field(f => f.Tags.First().Name)
             .Terms("lorem", "ipsum")
         )
     )
@@ -41,7 +41,7 @@ q
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -50,13 +50,13 @@ new NestedQuery
     Name = "named_query",
     Boost = 1.1,
     InnerHits = new InnerHits { Explain = true },
-    Path = Field<Project>(p => p.CuratedTags),
+    Path = Field<Project>(p => p.Tags),
     Query = new TermsQuery
     {
-        Field = Field<Project>(p => p.CuratedTags.First().Name),
+        Field = Field<Project>(p => p.Tags.First().Name),
         Terms = new[] { "lorem", "ipsum" }
     },
-    IgnoreUnmapped = false
+    IgnoreUnmapped = true
 }
 ----
 
@@ -69,14 +69,14 @@ new NestedQuery
     "boost": 1.1,
     "query": {
       "terms": {
-        "curatedTags.name": [
+        "tags.name": [
           "lorem",
           "ipsum"
         ]
       }
     },
-    "ignore_unmapped": false,
-    "path": "curatedTags",
+    "ignore_unmapped": true,
+    "path": "tags",
     "inner_hits": {
       "explain": true
     }

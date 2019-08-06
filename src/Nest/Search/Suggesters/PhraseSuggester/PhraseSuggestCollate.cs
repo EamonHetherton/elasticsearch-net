@@ -1,37 +1,72 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<PhraseSuggestCollate>))]
+	/// <summary>
+	/// Checks each suggestion against the specified query to prune suggestions
+	/// for which no matching docs exist in the index.
+	/// </summary>
+	[InterfaceDataContract]
+	[ReadAs(typeof(PhraseSuggestCollate))]
 	public interface IPhraseSuggestCollate
 	{
-		[JsonProperty(PropertyName = "query")]
-		ITemplateQuery Query { get; set; }
+		/// <summary>
+		/// The parameters for the query. the suggestion value will be added to the variables you specify.
+		/// </summary>
+		[DataMember(Name = "params")]
+		IDictionary<string, object> Params { get; set; }
 
-		[JsonProperty(PropertyName = "prune")]
+		/// <summary>
+		/// Controls if all phrase suggestions will be returned. When set to <c>true</c>, the suggestions will have
+		/// an additional option collate_match, which will be <c>true</c> if matching documents for the phrase was found,
+		/// <c>false</c> otherwise. The default value for <see cref="Prune" /> is <c>false</c>.
+		/// </summary>
+		[DataMember(Name = "prune")]
 		bool? Prune { get; set; }
+
+		/// <summary>
+		/// The collate query to run.
+		/// </summary>
+		[DataMember(Name = "query")]
+		IPhraseSuggestCollateQuery Query { get; set; }
 	}
 
+	/// <inheritdoc />
 	public class PhraseSuggestCollate : IPhraseSuggestCollate
 	{
-		public ITemplateQuery Query { get; set; }
+		/// <inheritdoc />
+		public IDictionary<string, object> Params { get; set; }
 
+		/// <inheritdoc />
 		public bool? Prune { get; set; }
+
+		/// <inheritdoc />
+		public IPhraseSuggestCollateQuery Query { get; set; }
 	}
 
+	/// <inheritdoc cref="IPhraseSuggestCollate" />
 	public class PhraseSuggestCollateDescriptor<T> : DescriptorBase<PhraseSuggestCollateDescriptor<T>, IPhraseSuggestCollate>, IPhraseSuggestCollate
 		where T : class
 	{
-		ITemplateQuery IPhraseSuggestCollate.Query { get; set; }
-
+		IDictionary<string, object> IPhraseSuggestCollate.Params { get; set; }
 		bool? IPhraseSuggestCollate.Prune { get; set; }
+		IPhraseSuggestCollateQuery IPhraseSuggestCollate.Query { get; set; }
 
-		public PhraseSuggestCollateDescriptor<T> Query(Func<TemplateQueryDescriptor<T>, ITemplateQuery> selector) =>
-			Assign(a => a.Query = selector?.Invoke(new TemplateQueryDescriptor<T>()));
+		/// <inheritdoc cref="IPhraseSuggestCollate.Query" />
+		public PhraseSuggestCollateDescriptor<T> Query(Func<PhraseSuggestCollateQueryDescriptor, IPhraseSuggestCollateQuery> selector) =>
+			Assign(selector, (a, v) => a.Query = v?.Invoke(new PhraseSuggestCollateQueryDescriptor()));
 
-		public PhraseSuggestCollateDescriptor<T> Prune(bool? prune = true) => Assign(a => a.Prune = prune);
+		/// <inheritdoc cref="IPhraseSuggestCollate.Prune" />
+		public PhraseSuggestCollateDescriptor<T> Prune(bool? prune = true) => Assign(prune, (a, v) => a.Prune = v);
+
+		/// <inheritdoc cref="IPhraseSuggestCollate.Params" />
+		public PhraseSuggestCollateDescriptor<T> Params(IDictionary<string, object> paramsDictionary) => Assign(paramsDictionary, (a, v) => a.Params = v);
+
+		/// <inheritdoc cref="IPhraseSuggestCollate.Params" />
+		public PhraseSuggestCollateDescriptor<T> Params(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> paramsDictionary) =>
+			Assign(paramsDictionary(new FluentDictionary<string, object>()), (a, v) => a.Params = v);
 	}
 }

@@ -1,32 +1,32 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<EmailBody>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(EmailBody))]
 	public interface IEmailBody
 	{
-		[JsonProperty("text")]
-		string Text { get; set; }
-
-		[JsonProperty("html")]
+		[DataMember(Name = "html")]
 		string Html { get; set; }
+
+		[DataMember(Name = "text")]
+		string Text { get; set; }
 	}
 
 	public class EmailBody : IEmailBody
 	{
-		public string Text { get; set; }
-
 		public string Html { get; set; }
+		public string Text { get; set; }
 	}
 
 	public class EmailBodyDescriptor : DescriptorBase<EmailBodyDescriptor, IEmailBody>, IEmailBody
 	{
-		string IEmailBody.Text { get; set; }
 		string IEmailBody.Html { get; set; }
+		string IEmailBody.Text { get; set; }
 
-		public EmailBodyDescriptor Text(string text) => Assign(a => a.Text = text);
+		public EmailBodyDescriptor Text(string text) => Assign(text, (a, v) => a.Text = v);
 
-		public EmailBodyDescriptor Html(string html) => Assign(a => a.Html = html);
+		public EmailBodyDescriptor Html(string html) => Assign(html, (a, v) => a.Html = v);
 	}
 }

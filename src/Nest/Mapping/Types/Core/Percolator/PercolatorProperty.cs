@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using System.Diagnostics;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IPercolatorProperty : IProperty { }
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -19,8 +14,8 @@ namespace Nest
 
 	[DebuggerDisplay("{DebugDisplay}")]
 	public class PercolatorPropertyDescriptor<T>
-	: PropertyDescriptorBase<PercolatorPropertyDescriptor<T>, IPercolatorProperty, T>, IPercolatorProperty
-	where T : class
+		: PropertyDescriptorBase<PercolatorPropertyDescriptor<T>, IPercolatorProperty, T>, IPercolatorProperty
+		where T : class
 	{
 		public PercolatorPropertyDescriptor() : base(FieldType.Percolator) { }
 	}

@@ -1,31 +1,20 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	/// <summary>
-	/// Notification for each bulk response, indicates the page its currently processing and how many retries it took to index this buffer
-	/// </summary>
-	public interface IBulkAllResponse
+	/// <inheritdoc />
+	[DataContract]
+	public class BulkAllResponse
 	{
 		/// <summary>This is the Nth buffer.</summary>
-		long Page { get; }
-
-		/// <summary>The number of back off retries were needed to store this document.</summary>
-		int Retries { get; }
-	}
-
-	/// <inheritdoc />
-	[JsonObject]
-	public class BulkAllResponse : IBulkAllResponse
-	{
-		/// <inheritdoc />
 		public long Page { get; internal set; }
 
-		/// <inheritdoc />
+		/// <summary>The number of back off retries were needed to store this document.</summary>
 		public int Retries { get; internal set; }
 
-		/// <inheritdoc />
-		public bool IsValid => true;
+		/// <summary>The items returned from the bulk response</summary>
+		public IReadOnlyCollection<BulkResponseItemBase> Items { get; internal set; } = EmptyReadOnly<BulkResponseItemBase>.Collection;
 	}
 }

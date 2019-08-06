@@ -1,29 +1,28 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(NormalizerJsonConverter))]
+	[JsonFormatter(typeof(NormalizerFormatter))]
 	public interface INormalizer
 	{
-		[JsonProperty(PropertyName = "version")]
-		string Version { get; set; }
-
-		[JsonProperty(PropertyName = "type")]
+		[DataMember(Name = "type")]
 		string Type { get; }
+
+		[DataMember(Name = "version")]
+		string Version { get; set; }
 	}
 
 	public abstract class NormalizerBase : INormalizer
 	{
 		internal NormalizerBase() { }
 
-		protected NormalizerBase(string type)
-		{
-			Type = type;
-		}
-
-		public string Version { get; set; }
+		// ReSharper disable once VirtualMemberCallInConstructor
+		protected NormalizerBase(string type) => Type = type;
 
 		public virtual string Type { get; protected set; }
+
+		public string Version { get; set; }
 	}
 
 	public abstract class NormalizerDescriptorBase<TNormalizer, TNormalizerInterface>
@@ -31,11 +30,10 @@ namespace Nest
 		where TNormalizer : NormalizerDescriptorBase<TNormalizer, TNormalizerInterface>, TNormalizerInterface
 		where TNormalizerInterface : class, INormalizer
 	{
-		string INormalizer.Version { get; set; }
-		string INormalizer.Type => this.Type;
 		protected abstract string Type { get; }
+		string INormalizer.Type => Type;
+		string INormalizer.Version { get; set; }
 
-		public TNormalizer Version(string version) => Assign(a => a.Version = version);
+		public TNormalizer Version(string version) => Assign(version, (a, v) => a.Version = v);
 	}
-
 }

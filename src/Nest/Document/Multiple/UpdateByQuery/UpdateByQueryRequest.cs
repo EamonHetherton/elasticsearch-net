@@ -1,48 +1,46 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
 	public partial interface IUpdateByQueryRequest
 	{
-		[JsonProperty("query")]
+		[DataMember(Name ="query")]
 		QueryContainer Query { get; set; }
 
-		[JsonProperty("script")]
+		[DataMember(Name ="script")]
 		IScript Script { get; set; }
 	}
 
-	public interface IUpdateByQueryRequest<T> : IUpdateByQueryRequest where T : class { }
+	// ReSharper disable once UnusedMember.Global
+	// ReSharper disable once UnusedTypeParameter
+	public partial interface IUpdateByQueryRequest<TDocument> where TDocument : class { }
 
 	public partial class UpdateByQueryRequest
 	{
 		public QueryContainer Query { get; set; }
 		public IScript Script { get; set; }
-
 	}
 
-	public partial class UpdateByQueryRequest<T> : IUpdateByQueryRequest<T>
-		where T : class
+	// ReSharper disable once UnusedTypeParameter
+	public partial class UpdateByQueryRequest<TDocument> where TDocument : class
 	{
-		public QueryContainer Query { get; set; }
-		public IScript Script { get; set; }
 	}
 
-	public partial class UpdateByQueryDescriptor<T> : IUpdateByQueryRequest<T>
-		where T : class
+	public partial class UpdateByQueryDescriptor<TDocument>
+		where TDocument : class
 	{
 		QueryContainer IUpdateByQueryRequest.Query { get; set; }
 		IScript IUpdateByQueryRequest.Script { get; set; }
 
-		public UpdateByQueryDescriptor<T> MatchAll() => Assign(a => a.Query = new QueryContainerDescriptor<T>().MatchAll());
+		public UpdateByQueryDescriptor<TDocument> MatchAll() => Assign(new QueryContainerDescriptor<TDocument>().MatchAll(), (a, v) => a.Query = v);
 
-		public UpdateByQueryDescriptor<T> Query(Func<QueryContainerDescriptor<T>, QueryContainer> querySelector) =>
-			Assign(a => a.Query = querySelector?.Invoke(new QueryContainerDescriptor<T>()));
+		public UpdateByQueryDescriptor<TDocument> Query(Func<QueryContainerDescriptor<TDocument>, QueryContainer> querySelector) =>
+			Assign(querySelector, (a, v) => a.Query = v?.Invoke(new QueryContainerDescriptor<TDocument>()));
 
-		public UpdateByQueryDescriptor<T> Script(string script) => Assign(a => a.Script = (InlineScript)script);
+		public UpdateByQueryDescriptor<TDocument> Script(string script) => Assign((InlineScript)script, (a, v) => a.Script = v);
 
-		public UpdateByQueryDescriptor<T> Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
-			Assign(a => a.Script = scriptSelector?.Invoke(new ScriptDescriptor()));
-
+		public UpdateByQueryDescriptor<TDocument> Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
+			Assign(scriptSelector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 	}
 }

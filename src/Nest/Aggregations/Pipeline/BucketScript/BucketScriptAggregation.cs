@@ -1,41 +1,42 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<BucketScriptAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(BucketScriptAggregation))]
 	public interface IBucketScriptAggregation : IPipelineAggregation
 	{
-		[JsonProperty("script")]
+		[DataMember(Name ="script")]
 		IScript Script { get; set; }
 	}
 
 	public class BucketScriptAggregation
 		: PipelineAggregationBase, IBucketScriptAggregation
 	{
-		public IScript Script { get; set; }
-
-		internal BucketScriptAggregation () { }
+		internal BucketScriptAggregation() { }
 
 		public BucketScriptAggregation(string name, MultiBucketsPath bucketsPath)
 			: base(name, bucketsPath) { }
+
+		public IScript Script { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.BucketScript = this;
 	}
 
 	public class BucketScriptAggregationDescriptor
 		: PipelineAggregationDescriptorBase<BucketScriptAggregationDescriptor, IBucketScriptAggregation, MultiBucketsPath>
-		, IBucketScriptAggregation
+			, IBucketScriptAggregation
 	{
 		IScript IBucketScriptAggregation.Script { get; set; }
 
-		public BucketScriptAggregationDescriptor Script(string script) => Assign(a => a.Script = (InlineScript)script);
+		public BucketScriptAggregationDescriptor Script(string script) => Assign((InlineScript)script, (a, v) => a.Script = v);
 
 		public BucketScriptAggregationDescriptor Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
-			Assign(a => a.Script = scriptSelector?.Invoke(new ScriptDescriptor()));
+			Assign(scriptSelector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 
 		public BucketScriptAggregationDescriptor BucketsPath(Func<MultiBucketsPathDescriptor, IPromise<IBucketsPath>> selector) =>
-			Assign(a => a.BucketsPath = selector?.Invoke(new MultiBucketsPathDescriptor())?.Value);
+			Assign(selector, (a, v) => a.BucketsPath = v?.Invoke(new MultiBucketsPathDescriptor())?.Value);
 	}
 }

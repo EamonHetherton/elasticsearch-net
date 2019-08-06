@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public interface ISchedule {}
+	[InterfaceDataContract]
+	public interface ISchedule { }
 
 	public abstract class ScheduleBase : ISchedule
 	{

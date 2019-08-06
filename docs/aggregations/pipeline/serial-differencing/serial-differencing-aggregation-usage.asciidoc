@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,55 +7,48 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Pipeline/SerialDifferencing/SerialDifferencingAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Pipeline/SerialDifferencing/SerialDifferencingAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[serial-differencing-aggregation-usage]]
-== Serial Differencing Aggregation Usage
+=== Serial Differencing Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Size(0)
-.Aggregations(a => a
-    .DateHistogram("projects_started_per_month", dh => dh
-        .Field(p => p.StartedOn)
-        .Interval(DateInterval.Month)
-        .Aggregations(aa => aa
-            .Sum("commits", sm => sm
-                .Field(p => p.NumberOfCommits)
-            )
-            .SerialDifferencing("thirtieth_difference", d => d
-                .BucketsPath("commits")
-                .Lag(30)
-            )
+a => a
+.DateHistogram("projects_started_per_month", dh => dh
+    .Field(p => p.StartedOn)
+    .Interval(DateInterval.Month)
+    .Aggregations(aa => aa
+        .Sum("commits", sm => sm
+            .Field(p => p.NumberOfCommits)
+        )
+        .SerialDifferencing("second_difference", d => d
+            .BucketsPath("commits")
+            .Lag(2)
         )
     )
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new DateHistogramAggregation("projects_started_per_month")
 {
-    Size = 0,
-    Aggregations = new DateHistogramAggregation("projects_started_per_month")
-    {
-        Field = "startedOn",
-        Interval = DateInterval.Month,
-        Aggregations =
-            new SumAggregation("commits", "numberOfCommits") &&
-            new SerialDifferencingAggregation("thirtieth_difference", "commits")
-            {
-                Lag = 30
-            }
-    }
+    Field = "startedOn",
+    Interval = DateInterval.Month,
+    Aggregations =
+        new SumAggregation("commits", "numberOfCommits")
+        && new SerialDifferencingAggregation("second_difference", "commits")
+        {
+            Lag = 2
+        }
 }
 ----
 
@@ -63,24 +56,21 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "size": 0,
-  "aggs": {
-    "projects_started_per_month": {
-      "date_histogram": {
-        "field": "startedOn",
-        "interval": "month"
+  "projects_started_per_month": {
+    "date_histogram": {
+      "field": "startedOn",
+      "interval": "month"
+    },
+    "aggs": {
+      "commits": {
+        "sum": {
+          "field": "numberOfCommits"
+        }
       },
-      "aggs": {
-        "commits": {
-          "sum": {
-            "field": "numberOfCommits"
-          }
-        },
-        "thirtieth_difference": {
-          "serial_diff": {
-            "buckets_path": "commits",
-            "lag": 30
-          }
+      "second_difference": {
+        "serial_diff": {
+          "buckets_path": "commits",
+          "lag": 2
         }
       }
     }
@@ -88,21 +78,37 @@ new SearchRequest<Project>
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var projectsPerMonth = response.Aggs.DateHistogram("projects_started_per_month");
+
+var projectsPerMonth = response.Aggregations.DateHistogram("projects_started_per_month");
 projectsPerMonth.Should().NotBeNull();
 projectsPerMonth.Buckets.Should().NotBeNull();
 projectsPerMonth.Buckets.Count.Should().BeGreaterThan(0);
 
+var differenceCount = 0;
+
 foreach (var item in projectsPerMonth.Buckets)
 {
+    differenceCount++;
     var commits = item.Sum("commits");
     commits.Should().NotBeNull();
     commits.Value.Should().NotBe(null);
+
+    var secondDifference = item.SerialDifferencing("second_difference");
+
+    // serial differencing specified a lag of 2, so
+    // only expect values from the 3rd bucket onwards
+    if (differenceCount <= 2)
+        secondDifference.Should().BeNull();
+    else
+    {
+        secondDifference.Should().NotBeNull();
+        secondDifference.Value.Should().NotBe(null);
+    }
 }
 ----
 

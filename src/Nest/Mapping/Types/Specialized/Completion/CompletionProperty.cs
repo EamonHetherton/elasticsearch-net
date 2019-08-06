@@ -1,45 +1,46 @@
 ﻿using System;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface ICompletionProperty : IDocValuesProperty
 	{
-		[JsonProperty("search_analyzer")]
-		string SearchAnalyzer { get; set; }
-
-		[JsonProperty("analyzer")]
+		[DataMember(Name ="analyzer")]
 		string Analyzer { get; set; }
 
-		[JsonProperty("preserve_separators")]
-		bool? PreserveSeparators { get; set; }
+		[DataMember(Name ="contexts")]
+		IList<ISuggestContext> Contexts { get; set; }
 
-		[JsonProperty("preserve_position_increments")]
-		bool? PreservePositionIncrements { get; set; }
-
-		[JsonProperty("max_input_length")]
+		[DataMember(Name ="max_input_length")]
 		int? MaxInputLength { get; set; }
 
-		[JsonProperty("contexts")]
-		IList<ISuggestContext> Contexts { get; set; }
+		[DataMember(Name ="preserve_position_increments")]
+		bool? PreservePositionIncrements { get; set; }
+
+		[DataMember(Name ="preserve_separators")]
+		bool? PreserveSeparators { get; set; }
+
+		[DataMember(Name ="search_analyzer")]
+		string SearchAnalyzer { get; set; }
 	}
 
-	[JsonObject(MemberSerialization.OptIn)]
+	[DataContract]
 	[DebuggerDisplay("{DebugDisplay}")]
 	public class CompletionProperty : DocValuesPropertyBase, ICompletionProperty
 	{
 		public CompletionProperty() : base(FieldType.Completion) { }
 
-		public string SearchAnalyzer { get; set; }
 		public string Analyzer { get; set; }
-		public bool? PreserveSeparators { get; set; }
-		public bool? PreservePositionIncrements { get; set; }
-		public int? MaxInputLength { get; set; }
 		public IList<ISuggestContext> Contexts { get; set; }
+		public int? MaxInputLength { get; set; }
+		public bool? PreservePositionIncrements { get; set; }
+		public bool? PreserveSeparators { get; set; }
+
+		public string SearchAnalyzer { get; set; }
 	}
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -47,29 +48,29 @@ namespace Nest
 		: DocValuesPropertyDescriptorBase<CompletionPropertyDescriptor<T>, ICompletionProperty, T>, ICompletionProperty
 		where T : class
 	{
-		string ICompletionProperty.SearchAnalyzer { get; set; }
-		string ICompletionProperty.Analyzer { get; set; }
-		bool? ICompletionProperty.PreserveSeparators { get; set; }
-		bool? ICompletionProperty.PreservePositionIncrements { get; set; }
-		int? ICompletionProperty.MaxInputLength { get; set; }
-		IList<ISuggestContext> ICompletionProperty.Contexts { get; set; }
-
 		public CompletionPropertyDescriptor() : base(FieldType.Completion) { }
 
+		string ICompletionProperty.Analyzer { get; set; }
+		IList<ISuggestContext> ICompletionProperty.Contexts { get; set; }
+		int? ICompletionProperty.MaxInputLength { get; set; }
+		bool? ICompletionProperty.PreservePositionIncrements { get; set; }
+		bool? ICompletionProperty.PreserveSeparators { get; set; }
+		string ICompletionProperty.SearchAnalyzer { get; set; }
+
 		public CompletionPropertyDescriptor<T> SearchAnalyzer(string searchAnalyzer) =>
-			Assign(a => a.SearchAnalyzer = searchAnalyzer);
+			Assign(searchAnalyzer, (a, v) => a.SearchAnalyzer = v);
 
-		public CompletionPropertyDescriptor<T> Analyzer(string analyzer) => Assign(a => a.Analyzer = analyzer);
+		public CompletionPropertyDescriptor<T> Analyzer(string analyzer) => Assign(analyzer, (a, v) => a.Analyzer = v);
 
-		public CompletionPropertyDescriptor<T> PreserveSeparators(bool preserveSeparators = true) =>
-			Assign(a => a.PreserveSeparators = preserveSeparators);
+		public CompletionPropertyDescriptor<T> PreserveSeparators(bool? preserveSeparators = true) =>
+			Assign(preserveSeparators, (a, v) => a.PreserveSeparators = v);
 
-		public CompletionPropertyDescriptor<T> PreservePositionIncrements(bool preservePositionIncrements = true) =>
-			Assign(a => a.PreservePositionIncrements = preservePositionIncrements);
+		public CompletionPropertyDescriptor<T> PreservePositionIncrements(bool? preservePositionIncrements = true) =>
+			Assign(preservePositionIncrements, (a, v) => a.PreservePositionIncrements = v);
 
-		public CompletionPropertyDescriptor<T> MaxInputLength(int maxInputLength) => Assign(a => a.MaxInputLength = maxInputLength);
+		public CompletionPropertyDescriptor<T> MaxInputLength(int? maxInputLength) => Assign(maxInputLength, (a, v) => a.MaxInputLength = v);
 
 		public CompletionPropertyDescriptor<T> Contexts(Func<SuggestContextsDescriptor<T>, IPromise<IList<ISuggestContext>>> contexts) =>
-			Assign(a => a.Contexts = contexts?.Invoke(new SuggestContextsDescriptor<T>()).Value);
+			Assign(contexts, (a, v) => a.Contexts = v?.Invoke(new SuggestContextsDescriptor<T>()).Value);
 	}
 }

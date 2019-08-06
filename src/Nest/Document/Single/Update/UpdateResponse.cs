@@ -1,42 +1,21 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IUpdateResponse<T> : IResponse
-		where T : class
+	public interface IUpdateResponse<out TDocument> : IResponse where TDocument : class
 	{
-		[JsonProperty(PropertyName = "_shards")]
-		ShardsMetaData ShardsHit { get; }
-
-		[JsonProperty(PropertyName = "_index")]
-		string Index { get; }
-
-		[JsonProperty(PropertyName = "_type")]
-		string Type { get; }
-
-		[JsonProperty(PropertyName = "_id")]
-		string Id { get; }
-
-		[JsonProperty(PropertyName = "_version")]
-		long Version { get; }
-
-		[JsonProperty(PropertyName = "get")]
-		InstantGet<T> Get { get; }
-
-		[JsonProperty("result")]
-		Result Result { get; }
+		IInlineGet<TDocument> Get { get; }
 	}
 
-	[JsonObject]
-	public class UpdateResponse<T> : ResponseBase, IUpdateResponse<T>
-		where T : class
+	[DataContract]
+	public class UpdateResponse<TDocument> : WriteResponseBase, IUpdateResponse<TDocument>
+		where TDocument : class
 	{
-		public ShardsMetaData ShardsHit { get; private set; }
-		public string Index { get; private set; }
-		public string Type { get; private set; }
-		public string Id { get; private set; }
-		public long Version { get; private set; }
-		public InstantGet<T> Get { get; private set; }
-		public Result Result { get; private set; }
+		public override bool IsValid => base.IsValid && 
+			(Result != Result.NotFound && Result != Result.Error);
+		
+		[DataMember(Name ="get")]
+		public IInlineGet<TDocument> Get { get; internal set; }
+
 	}
 }

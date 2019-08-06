@@ -1,17 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class ShardSegmentRouting
 	{
-		[JsonProperty(PropertyName = "state")]
-		public string State { get; internal set; }
+		[DataMember(Name ="node")]
+		public string Node { get; internal set; }
 
-		[JsonProperty(PropertyName = "primary")]
+		[DataMember(Name ="primary")]
 		public bool Primary { get; internal set; }
 
-		[JsonProperty(PropertyName = "node")]
-		public string Node { get; internal set; }
+		[DataMember(Name ="state")]
+		public string State { get; internal set; }
 	}
 }

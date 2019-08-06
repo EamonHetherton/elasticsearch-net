@@ -1,22 +1,18 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface INodesInfoResponse : IResponse
+	[DataContract]
+	public class NodesInfoResponse : NodesResponseBase
 	{
-		string ClusterName { get; }
-		IReadOnlyDictionary<string, NodeInfo> Nodes { get; }
-	}
-
-	[JsonObject]
-	public class NodesInfoResponse : ResponseBase, INodesInfoResponse
-	{
-		[JsonProperty(PropertyName = "cluster_name")]
+		[DataMember(Name ="cluster_name")]
 		public string ClusterName { get; internal set; }
 
-		[JsonProperty(PropertyName = "nodes")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, NodeInfo>))]
+		[DataMember(Name ="nodes")]
+		[JsonFormatter(typeof(VerbatimInterfaceReadOnlyDictionaryKeysFormatter<string, NodeInfo>))]
 		public IReadOnlyDictionary<string, NodeInfo> Nodes { get; internal set; } = EmptyReadOnly<string, NodeInfo>.Dictionary;
 	}
 }

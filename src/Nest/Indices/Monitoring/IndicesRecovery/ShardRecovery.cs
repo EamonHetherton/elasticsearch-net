@@ -1,44 +1,44 @@
 using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
 	public class ShardRecovery
 	{
-		[JsonProperty("id")]
+		[DataMember(Name ="id")]
 		public long Id { get; internal set; }
 
-		[JsonProperty("type")]
-		public string Type { get; internal set; }
-
-		[JsonProperty("stage")]
-		public string Stage { get; internal set; }
-
-		[JsonProperty("primary")]
-		public bool Primary { get; internal set; }
-
-		[JsonProperty("start_time")]
-		public DateTime? StartTime { get; internal set; }
-
-		[JsonProperty("stop_time")]
-		public DateTime? StopTime { get; internal set; }
-
-		[JsonProperty("total_time_in_millis")]
-		public long TotalTimeInMilliseconds { get; internal set; }
-
-		[JsonProperty("source")]
-		public RecoveryOrigin Source { get; internal set; }
-
-		[JsonProperty("target")]
-		public RecoveryOrigin Target { get; internal set; }
-
-		[JsonProperty("index")]
+		[DataMember(Name ="index")]
 		public RecoveryIndexStatus Index { get; internal set; }
 
-		[JsonProperty("translog")]
-		public RecoveryTranslogStatus Translog { get; internal set; }
-		
-		[JsonProperty("start")]
+		[DataMember(Name ="primary")]
+		public bool Primary { get; internal set; }
+
+		[DataMember(Name ="source")]
+		public RecoveryOrigin Source { get; internal set; }
+
+		[DataMember(Name ="stage")]
+		public string Stage { get; internal set; }
+
+		[DataMember(Name ="start")]
 		public RecoveryStartStatus Start { get; internal set; }
+
+		[DataMember(Name ="start_time")]
+		public DateTime? StartTime { get; internal set; }
+
+		[DataMember(Name ="stop_time")]
+		public DateTime? StopTime { get; internal set; }
+
+		[DataMember(Name ="target")]
+		public RecoveryOrigin Target { get; internal set; }
+
+		[DataMember(Name ="total_time_in_millis")]
+		public long TotalTimeInMilliseconds { get; internal set; }
+
+		[DataMember(Name ="translog")]
+		public RecoveryTranslogStatus Translog { get; internal set; }
+
+		[DataMember(Name ="type")]
+		public string Type { get; internal set; }
 	}
 }

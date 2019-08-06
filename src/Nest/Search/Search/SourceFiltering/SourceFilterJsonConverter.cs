@@ -1,41 +1,77 @@
-using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net.Utf8Json.Internal;
+using Elasticsearch.Net.Utf8Json.Resolvers;
+
 
 namespace Nest
 {
-	internal class SourceFilterJsonConverter : JsonConverter
+	internal class SourceFilterFormatter : IJsonFormatter<ISourceFilter>
 	{
-		public override bool CanRead => true;
-		public override bool CanWrite => false;
-		public override bool CanConvert(Type objectType) => true;
-
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		private static readonly AutomataDictionary Fields = new AutomataDictionary
 		{
-		}
+			{ "includes", 0 },
+			{ "excludes", 1 }
+		};
 
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+		public ISourceFilter Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
 		{
-			if (reader.TokenType == JsonToken.Null) return null;
+			var token = reader.GetCurrentJsonToken();
+			if (token == JsonToken.Null)
+			{
+				reader.ReadNext();
+				return null;
+			}
 
-			var filter =  new SourceFilter();
-			switch (reader.TokenType)
+			var filter = new SourceFilter();
+			switch (token)
 			{
 				case JsonToken.String:
-					filter.Includes = new [] { (string)reader.Value };
+					filter.Includes = new[] { reader.ReadString() };
 					break;
-				case JsonToken.StartArray:
-					var include = new List<string>();
-					while (reader.Read() && reader.TokenType != JsonToken.EndArray)
-						include.Add((string)reader.Value);
-					filter.Includes = include.ToArray();
+				case JsonToken.BeginArray:
+					var include = formatterResolver.GetFormatter<string[]>()
+						.Deserialize(ref reader, formatterResolver);
+					filter.Includes = include;
 					break;
 				default:
-					serializer.Populate(reader, filter);
+					var count = 0;
+					while (reader.ReadIsInObject(ref count))
+					{
+						var propertyName = reader.ReadPropertyNameSegmentRaw();
+						if (Fields.TryGetValue(propertyName, out var value))
+						{
+							var includeExclude = formatterResolver.GetFormatter<Fields>()
+								.Deserialize(ref reader, formatterResolver);
+
+							switch (value)
+							{
+								case 0:
+									filter.Includes = includeExclude;
+									break;
+								case 1:
+									filter.Excludes = includeExclude;
+									break;
+							}
+						}
+						else
+							reader.ReadNextBlock();
+					}
 					break;
 			}
 
 			return filter;
+		}
+
+		public void Serialize(ref JsonWriter writer, ISourceFilter value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null)
+			{
+				writer.WriteNull();
+				return;
+			}
+
+			DynamicObjectResolver.ExcludeNullCamelCase.GetFormatter<ISourceFilter>()
+				.Serialize(ref writer, value, formatterResolver);
 		}
 	}
 }

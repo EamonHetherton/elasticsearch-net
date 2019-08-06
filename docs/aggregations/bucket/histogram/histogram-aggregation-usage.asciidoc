@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,42 +7,39 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Bucket/Histogram/HistogramAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Bucket/Histogram/HistogramAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[histogram-aggregation-usage]]
-== Histogram Aggregation Usage
+=== Histogram Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Histogram("commits", h => h
-        .Field(p => p.NumberOfCommits)
-        .Interval(100)
-        .Missing(0)
-        .Order(HistogramOrder.KeyDescending)
-    )
+a => a
+.Histogram("commits", h => h
+    .Field(p => p.NumberOfCommits)
+    .Interval(100)
+    .Missing(0)
+    .Order(HistogramOrder.KeyDescending)
+    .Offset(1.1)
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new HistogramAggregation("commits")
 {
-    Aggregations = new HistogramAggregation("commits")
-    {
-        Field = Field<Project>(p => p.NumberOfCommits),
-        Interval = 100,
-        Missing = 0,
-        Order = HistogramOrder.KeyDescending
-    }
+    Field = Field<Project>(p => p.NumberOfCommits),
+    Interval = 100,
+    Missing = 0,
+    Order = HistogramOrder.KeyDescending,
+    Offset = 1.1
 }
 ----
 
@@ -50,31 +47,29 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "commits": {
-      "histogram": {
-        "field": "numberOfCommits",
-        "interval": 100.0,
-        "missing": 0.0,
-        "order": {
-          "_key": "desc"
-        }
-      }
+  "commits": {
+    "histogram": {
+      "field": "numberOfCommits",
+      "interval": 100.0,
+      "missing": 0.0,
+      "order": {
+        "_key": "desc"
+      },
+      "offset": 1.1
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var commits = response.Aggs.Histogram("commits");
+var commits = response.Aggregations.Histogram("commits");
 commits.Should().NotBeNull();
 commits.Buckets.Should().NotBeNull();
 commits.Buckets.Count.Should().BeGreaterThan(0);
-
 foreach (var item in commits.Buckets)
     item.DocCount.Should().BeGreaterThan(0);
 ----

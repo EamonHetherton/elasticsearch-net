@@ -1,57 +1,30 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IClusterStateResponse : IResponse
+	[JsonFormatter(typeof(DynamicResponseFormatter<ClusterStateResponse>))]
+	public class ClusterStateResponse : DynamicResponseBase
 	{
-		[JsonProperty("cluster_name")]
-		string ClusterName { get; }
+		public DynamicDictionary State => Self.BackingDictionary;
 
-		[JsonProperty("master_node")]
-		string MasterNode { get; }
+		[DataMember(Name = "cluster_name")]
+		public string ClusterName => State.Get<string>("cluster_name");
 
-		[JsonProperty("state_uuid")]
-		string StateUUID { get; }
+		/// <summary>The Universally Unique Identifier for the cluster.</summary>
+		/// <remarks>While the cluster is still forming, it is possible for the `cluster_uuid` to be `_na_`.</remarks>
+		[DataMember(Name = "cluster_uuid")]
+		public string ClusterUUID => State.Get<string>("cluster_uuid");
 
-		[JsonProperty("version")]
-		long Version { get; }
+		[DataMember(Name = "master_node")]
+		public string MasterNode => State.Get<string>("master_node");
 
-		[JsonProperty("nodes")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, NodeState>))]
-		IReadOnlyDictionary<string, NodeState> Nodes { get; }
+		[DataMember(Name = "state_uuid")]
+		public string StateUUID => State.Get<string>("state_uuid");
 
-		[JsonProperty("metadata")]
-		MetadataState Metadata { get; }
-
-		[JsonProperty("routing_table")]
-		RoutingTableState RoutingTable { get; }
-
-		[JsonProperty("routing_nodes")]
-		RoutingNodesState RoutingNodes { get; }
-
-		[JsonProperty("blocks")]
-		BlockState Blocks { get; }
-	}
-
-	public class ClusterStateResponse : ResponseBase, IClusterStateResponse
-	{
-		public string ClusterName { get; internal set; }
-
-		public string MasterNode { get; internal set; }
-
-		public string StateUUID { get; internal set; }
-
-		public long Version { get; internal set; }
-
-		public IReadOnlyDictionary<string, NodeState> Nodes { get; internal set; } = EmptyReadOnly<string, NodeState>.Dictionary;
-
-		public MetadataState Metadata { get; internal set; }
-
-		public RoutingTableState RoutingTable { get; internal set; }
-
-		public RoutingNodesState RoutingNodes { get; internal set; }
-
-		public BlockState Blocks { get; internal set; }
+		[DataMember(Name = "version")]
+		public long? Version => State.Get<long?>("version");
 	}
 }

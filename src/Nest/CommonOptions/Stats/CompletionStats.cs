@@ -1,14 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class CompletionStats
 	{
-		[JsonProperty("size")]
-		public string Size { get; set; }
-
-		[JsonProperty("size_in_bytes")]
+		[DataMember(Name ="size_in_bytes")]
 		public long SizeInBytes { get; set; }
 	}
 }

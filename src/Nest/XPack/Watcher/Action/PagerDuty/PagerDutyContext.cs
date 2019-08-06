@@ -1,56 +1,50 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<PagerDutyContext>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(PagerDutyContext))]
 	public interface IPagerDutyContext
 	{
-		[JsonProperty("type")]
-		PagerDutyContextType Type { get; set; }
-
-		[JsonProperty("href")]
+		[DataMember(Name = "href")]
 		string Href { get; set; }
 
-		[JsonProperty("src")]
+		[DataMember(Name = "src")]
 		string Src { get; set; }
+
+		[DataMember(Name = "type")]
+		PagerDutyContextType Type { get; set; }
 	}
 
 	public class PagerDutyContext : IPagerDutyContext
 	{
-		public PagerDutyContext(PagerDutyContextType type)
-		{
-			this.Type = type;
-		}
+		public PagerDutyContext(PagerDutyContextType type) => Type = type;
 
 		internal PagerDutyContext() { }
-
-		public PagerDutyContextType Type { get; set; }
 
 		public string Href { get; set; }
 
 		public string Src { get; set; }
+
+		public PagerDutyContextType Type { get; set; }
 	}
 
 	public class PagerDutyContextDescriptor : DescriptorBase<PagerDutyContextDescriptor, IPagerDutyContext>, IPagerDutyContext
 	{
-		PagerDutyContextType IPagerDutyContext.Type { get; set; }
+		public PagerDutyContextDescriptor(PagerDutyContextType type) => Self.Type = type;
+
 		string IPagerDutyContext.Href { get; set; }
 		string IPagerDutyContext.Src { get; set; }
+		PagerDutyContextType IPagerDutyContext.Type { get; set; }
 
-		public PagerDutyContextDescriptor(PagerDutyContextType type)
-		{
-			Self.Type = type;
-		}
+		public PagerDutyContextDescriptor Href(string href) => Assign(href, (a, v) => a.Href = v);
 
-		public PagerDutyContextDescriptor Href(string href) => Assign(a => a.Href = href);
-
-		public PagerDutyContextDescriptor Src(string src) => Assign(a => a.Src = src);
+		public PagerDutyContextDescriptor Src(string src) => Assign(src, (a, v) => a.Src = v);
 	}
 
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum PagerDutyContextType
 	{
 		[EnumMember(Value = "link")]

@@ -1,26 +1,21 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IActivateWatchResponse : IResponse
+	public class ActivateWatchResponse : ResponseBase
 	{
-		ActivationStatus Status { get; }
-	}
-
-	public class ActivateWatchResponse : ResponseBase, IActivateWatchResponse
-	{
-		[JsonProperty("_status")]
+		[DataMember(Name ="status")]
 		public ActivationStatus Status { get; internal set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class ActivationStatus
 	{
-		[JsonProperty("state")]
-		public ActivationState State { get; internal set; }
-
-		[JsonProperty("actions")]
+		[DataMember(Name ="actions")]
 		public IReadOnlyDictionary<string, ActionStatus> Actions { get; set; }
+
+		[DataMember(Name ="state")]
+		public ActivationState State { get; internal set; }
 	}
 }

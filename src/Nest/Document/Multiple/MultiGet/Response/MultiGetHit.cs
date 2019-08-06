@@ -1,69 +1,69 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IMultiGetHit<out T> where T : class
+	[ReadAs(typeof(MultiGetHit<>))]
+	public interface IMultiGetHit<out TDocument> where TDocument : class
 	{
-		T Source { get; }
+		Error Error { get; }
+
+		bool Found { get; }
+
+		string Id { get; }
 
 		string Index { get; }
 
-		bool Found { get; }
+		string Routing { get; }
+
+		TDocument Source { get; }
 
 		string Type { get; }
 
 		long Version { get; }
 
-		string Id { get; }
+		long? SequenceNumber { get; }
 
-		string Parent { get; }
-
-		string Routing { get; }
-
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.x and up")]
-		long? Timestamp { get; }
-
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.x and up")]
-		long? Ttl { get; }
+		long? PrimaryTerm { get; }
 	}
 
-	[JsonObject]
-	public class MultiGetHit<T> : IMultiGetHit<T>
-		where T : class
+	[DataContract]
+	public class MultiGetHit<TDocument> : IMultiGetHit<TDocument>
+		where TDocument : class
 	{
+		[DataMember(Name = "error")]
+		public Error Error { get; internal set; }
+
+		[DataMember(Name = "fields")]
 		public FieldValues Fields { get; internal set; }
 
-		[JsonProperty(PropertyName = "_source")]
-		public T Source { get; internal set; }
-
-		[JsonProperty(PropertyName = "_index")]
-		public string Index { get; internal set; }
-
-		[JsonProperty(PropertyName = "found")]
+		[DataMember(Name = "found")]
 		public bool Found { get; internal set; }
 
-		[JsonProperty(PropertyName = "_type")]
-		public string Type { get; internal set; }
-
-		[JsonProperty(PropertyName = "_version")]
-		public long Version { get; internal set; }
-
-		[JsonProperty(PropertyName = "_id")]
+		[DataMember(Name = "_id")]
 		public string Id { get; internal set; }
 
-		[JsonProperty("_parent")]
-		public string Parent { get; internal set; }
+		[DataMember(Name = "_index")]
+		public string Index { get; internal set; }
 
-		[JsonProperty("_routing")]
+		[DataMember(Name = "_routing")]
 		public string Routing { get; internal set; }
 
-		[JsonProperty("_timestamp")]
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.x and up")]
-		public long? Timestamp { get; internal set; }
+		[DataMember(Name = "_source")]
+		[JsonFormatter(typeof(SourceFormatter<>))]
+		public TDocument Source { get; internal set; }
 
-		[JsonProperty("_ttl")]
-		[Obsolete("This feature is no longer supported on indices created in Elasticsearch 5.x and up")]
-		public long? Ttl { get; internal set; }
+		[DataMember(Name = "_type")]
+		public string Type { get; internal set; }
+
+		[DataMember(Name = "_version")]
+		public long Version { get; internal set; }
+
+		[DataMember(Name = "_seq_no")]
+		public long? SequenceNumber { get; internal set; }
+
+		[DataMember(Name = "_primary_term")]
+		public long? PrimaryTerm { get; internal set; }
 	}
 }

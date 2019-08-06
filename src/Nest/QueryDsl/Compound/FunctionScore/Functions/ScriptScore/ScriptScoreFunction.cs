@@ -1,27 +1,40 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	/// <summary>
+	/// The script score function allows you to wrap another query and customize the
+	/// scoring of it optionally with a computation derived from other numeric
+	/// field values in the doc using a script expression.
+	/// </summary>
+	[InterfaceDataContract]
 	public interface IScriptScoreFunction : IScoreFunction
 	{
-		[JsonProperty(PropertyName = "script")]
-		IScriptQuery Script { get; set; }
+		/// <summary>
+		/// The script to execute to calculate score
+		/// </summary>
+		[DataMember(Name = "script")]
+		IScript Script { get; set; }
 	}
 
+	/// <inheritdoc cref="IScriptScoreFunction"/>
 	public class ScriptScoreFunction : FunctionScoreFunctionBase, IScriptScoreFunction
 	{
-		public IScriptQuery Script { get; set; }
+		/// <inheritdoc />
+		public IScript Script { get; set; }
 	}
 
-	public class ScriptScoreFunctionDescriptor<T> :
-		FunctionScoreFunctionDescriptorBase<ScriptScoreFunctionDescriptor<T>, IScriptScoreFunction, T> , IScriptScoreFunction
+	/// <inheritdoc cref="IScriptScoreFunction"/>
+	public class ScriptScoreFunctionDescriptor<T>
+		: FunctionScoreFunctionDescriptorBase<ScriptScoreFunctionDescriptor<T>, IScriptScoreFunction, T>, IScriptScoreFunction
 		where T : class
 	{
-		IScriptQuery IScriptScoreFunction.Script { get; set; }
+		IScript IScriptScoreFunction.Script { get; set; }
 
-		public ScriptScoreFunctionDescriptor<T> Script(Func<ScriptQueryDescriptor<T>, IScriptQuery> selector) =>
-			Assign(a => a.Script = selector?.Invoke(new ScriptQueryDescriptor<T>()));
+    /// <inheritdoc cref="IScriptScoreFunction.Script"/>
+	public ScriptScoreFunctionDescriptor<T> Script(Func<ScriptDescriptor, IScript> selector) =>
+		Assign(selector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 	}
 }

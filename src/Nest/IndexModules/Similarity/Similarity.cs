@@ -1,11 +1,18 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(SimilarityJsonConverter))]
+	/// <summary>
+	/// A similarity.
+	/// </summary>
+	[JsonFormatter(typeof(SimilarityFormatter))]
 	public interface ISimilarity
 	{
-		[JsonProperty("type")]
+		/// <summary>
+		/// The type of similarity.
+		/// </summary>
+		[DataMember(Name ="type")]
 		string Type { get; }
 	}
 }

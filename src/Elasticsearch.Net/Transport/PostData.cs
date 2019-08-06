@@ -1,15 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Elasticsearch.Net.Extensions;
 
 namespace Elasticsearch.Net
 {
-	public interface IPostData
+	// ReSharper disable once UnusedTypeParameter
+	public interface IPostData<out T> 
 	{
 		void Write(Stream writableStream, IConnectionConfigurationValues settings);
+		Task WriteAsync(Stream writableStream, IConnectionConfigurationValues settings, CancellationToken token);
 	}
-	public interface IPostData<out T> : IPostData { }
 
 	public enum PostType
 	{
@@ -20,152 +23,152 @@ namespace Elasticsearch.Net
 		Serializable
 	}
 
-	public class PostData<T> : IPostData<T>
+	public abstract class PostData
 	{
-		private const int BufferSize = 81920;
-		private const string NewLineString = "\n";
-		private static readonly byte[] NewLineByteArray = { (byte)'\n' };
-		private readonly string _literalString;
-		private readonly IEnumerable<string> _enumurabeOfStrings;
-		private readonly IEnumerable<object> _enumerableOfObject;
-		private readonly T _serializable;
+		protected const int BufferSize = 81920;
+		protected const string NewLineString = "\n";
+		protected static readonly byte[] NewLineByteArray = { (byte)'\n' };
 
 		public bool? DisableDirectStreaming { get; set; }
-		public byte[] WrittenBytes { get; private set; }
-		public PostType Type { get; }
+		public PostType Type { get; protected set; }
+		public byte[] WrittenBytes { get; protected set; }
 
-		public PostData(byte[] item) { WrittenBytes = item; Type = PostType.ByteArray; }
-		public PostData(string item) { _literalString = item; Type = PostType.LiteralString; }
-		public PostData(IEnumerable<string> item) { _enumurabeOfStrings = item; Type = PostType.EnumerableOfString; }
-		public PostData(IEnumerable<object> item) { _enumerableOfObject = item; Type = PostType.EnumerableOfObject; }
-		public PostData(T item)
+		public abstract void Write(Stream writableStream, IConnectionConfigurationValues settings);
+
+		public abstract Task WriteAsync(Stream writableStream, IConnectionConfigurationValues settings, CancellationToken cancellationToken);
+
+		public static implicit operator PostData(byte[] byteArray) => Bytes(byteArray);
+
+		public static implicit operator PostData(string literalString) => String(literalString);
+
+		public static SerializableData<T> Serializable<T>(T o) => new SerializableData<T>(o);
+
+		public static PostData MultiJson(IEnumerable<string> listOfString) => new PostData<object>(listOfString);
+
+		public static PostData MultiJson(IEnumerable<object> listOfObjects) => new PostData<object>(listOfObjects);
+
+		public static PostData Bytes(byte[] bytes) => new PostData<object>(bytes);
+
+		public static PostData String(string serializedString) => new PostData<object>(serializedString);
+	}
+
+	public class PostData<T> : PostData, IPostData<T>
+	{
+		private readonly IEnumerable<object> _enumerableOfObject;
+		private readonly IEnumerable<string> _enumerableOfStrings;
+		private readonly string _literalString;
+
+		protected internal PostData(byte[] item)
 		{
-			var boxedType = item.GetType();
-			if (typeof(byte[]).AssignableFrom(boxedType))
-			{
-				WrittenBytes = item as byte[]; Type = PostType.ByteArray;
-			}
-			else if (typeof(string).AssignableFrom(boxedType))
-			{
-				_literalString = item as string; Type = PostType.LiteralString;
-			}
-			else if (typeof(IEnumerable<string>).AssignableFrom(boxedType))
-			{
-				_enumurabeOfStrings = (IEnumerable<string>)item; Type = PostType.EnumerableOfString;
-			}
-			else if (typeof(IEnumerable<object>).AssignableFrom(boxedType))
-			{
-				_enumerableOfObject = (IEnumerable<object>)item; Type = PostType.EnumerableOfObject;
-			}
-			else
-			{
-				_serializable = item; Type = PostType.Serializable;
-			}
+			WrittenBytes = item;
+			Type = PostType.ByteArray;
 		}
 
-		public void Write(Stream writableStream, IConnectionConfigurationValues settings)
+		protected internal PostData(string item)
 		{
-			var indent = settings.PrettyJson ? SerializationFormatting.Indented : SerializationFormatting.None;
+			_literalString = item;
+			Type = PostType.LiteralString;
+		}
+
+		protected internal PostData(IEnumerable<string> item)
+		{
+			_enumerableOfStrings = item;
+			Type = PostType.EnumerableOfString;
+		}
+
+		protected internal PostData(IEnumerable<object> item)
+		{
+			_enumerableOfObject = item;
+			Type = PostType.EnumerableOfObject;
+		}
+
+		public override void Write(Stream writableStream, IConnectionConfigurationValues settings)
+		{
 			MemoryStream ms = null;
-			Stream stream = null;
 			switch (Type)
 			{
-				case PostType.ByteArray: 
-					ms = new MemoryStream(WrittenBytes);
+				case PostType.ByteArray:
+					ms = settings.MemoryStreamFactory.Create(WrittenBytes);
 					break;
 				case PostType.LiteralString:
-					ms = !string.IsNullOrEmpty(_literalString) ? new MemoryStream(_literalString?.Utf8Bytes()) : null;
+					ms = !string.IsNullOrEmpty(_literalString) ? settings.MemoryStreamFactory.Create(_literalString?.Utf8Bytes()) : null;
 					break;
-				case PostType.EnumerableOfString: 
-					ms = _enumurabeOfStrings.HasAny() ? new MemoryStream((string.Join(NewLineString, _enumurabeOfStrings) + NewLineString).Utf8Bytes()) : null;
+				case PostType.EnumerableOfString:
+					ms = _enumerableOfStrings.HasAny()
+						? settings.MemoryStreamFactory.Create((string.Join(NewLineString, _enumerableOfStrings) + NewLineString).Utf8Bytes())
+						: null;
 					break;
 				case PostType.EnumerableOfObject:
 					if (!_enumerableOfObject.HasAny()) return;
 
-					if (this.DisableDirectStreaming ?? settings.DisableDirectStreaming)
+					Stream stream;
+					if (DisableDirectStreaming ?? settings.DisableDirectStreaming)
 					{
-						ms = new MemoryStream();
+						ms = settings.MemoryStreamFactory.Create();
 						stream = ms;
 					}
 					else stream = writableStream;
 					foreach (var o in _enumerableOfObject)
 					{
-						settings.Serializer.Serialize(o, stream, SerializationFormatting.None);
+						settings.RequestResponseSerializer.Serialize(o, stream, SerializationFormatting.None);
 						stream.Write(NewLineByteArray, 0, 1);
 					}
 					break;
-				case PostType.Serializable: 
-					stream = writableStream;
-					if (this.DisableDirectStreaming ?? settings.DisableDirectStreaming)
-					{
-						ms = new MemoryStream();
-						stream = ms;
-					}
-					settings.Serializer.Serialize(this._serializable, stream, indent);
-					break;
+				case PostType.Serializable:
+					throw new Exception("PostData is not expected/capable to handle contain serializable, use SerializableData instead");
 			}
 			if (ms != null)
 			{
 				ms.Position = 0;
 				ms.CopyTo(writableStream, BufferSize);
 			}
-			if (this.Type != 0)
-				this.WrittenBytes = ms?.ToArray();
+			if (Type != 0)
+				WrittenBytes = ms?.ToArray();
 		}
 
-		public async Task WriteAsync(Stream writableStream, IConnectionConfigurationValues settings, CancellationToken cancellationToken)
+		public override async Task WriteAsync(Stream writableStream, IConnectionConfigurationValues settings, CancellationToken cancellationToken)
 		{
-			var indent = settings.PrettyJson ? SerializationFormatting.Indented : SerializationFormatting.None;
-			MemoryStream ms = null; Stream stream = null;
+			MemoryStream ms = null;
 			switch (Type)
 			{
-				case PostType.ByteArray: 
-					ms = new MemoryStream(WrittenBytes);
+				case PostType.ByteArray:
+					ms = settings.MemoryStreamFactory.Create(WrittenBytes);
 					break;
-				case PostType.LiteralString: 
-					ms = !string.IsNullOrEmpty(_literalString) ? new MemoryStream(_literalString.Utf8Bytes()) : null;
+				case PostType.LiteralString:
+					ms = !string.IsNullOrEmpty(_literalString) ? settings.MemoryStreamFactory.Create(_literalString.Utf8Bytes()) : null;
 					break;
-				case PostType.EnumerableOfString: 
-					ms = _enumurabeOfStrings.HasAny() ? new MemoryStream((string.Join(NewLineString, _enumurabeOfStrings) + NewLineString).Utf8Bytes()) : null;
+				case PostType.EnumerableOfString:
+					ms = _enumerableOfStrings.HasAny()
+						? settings.MemoryStreamFactory.Create((string.Join(NewLineString, _enumerableOfStrings) + NewLineString).Utf8Bytes())
+						: null;
 					break;
 				case PostType.EnumerableOfObject:
 					if (!_enumerableOfObject.HasAny()) return;
-					if (this.DisableDirectStreaming ?? settings.DisableDirectStreaming)
+
+					Stream stream;
+					if (DisableDirectStreaming ?? settings.DisableDirectStreaming)
 					{
-						ms = new MemoryStream();
+						ms = settings.MemoryStreamFactory.Create();
 						stream = ms;
 					}
 					else stream = writableStream;
 					foreach (var o in _enumerableOfObject)
 					{
-						settings.Serializer.Serialize(o, stream, SerializationFormatting.None);
+						await settings.RequestResponseSerializer.SerializeAsync(o, stream, SerializationFormatting.None, cancellationToken)
+							.ConfigureAwait(false);
 						await stream.WriteAsync(NewLineByteArray, 0, 1, cancellationToken).ConfigureAwait(false);
 					}
 					break;
-				case PostType.Serializable: 
-					stream = writableStream;
-					if (this.DisableDirectStreaming ?? settings.DisableDirectStreaming)
-					{
-						ms = new MemoryStream();
-						stream = ms;
-					}
-					settings.Serializer.Serialize(this._serializable, stream, indent);
-					break;
+				case PostType.Serializable:
+					throw new Exception("PostData is not expected/capable to handle contain serializable, use SerializableData instead");
 			}
 			if (ms != null)
 			{
 				ms.Position = 0;
 				await ms.CopyToAsync(writableStream, BufferSize, cancellationToken).ConfigureAwait(false);
 			}
-			if (this.Type != 0)
-				this.WrittenBytes = ms?.ToArray();
+			if (Type != 0)
+				WrittenBytes = ms?.ToArray();
 		}
-
-		public static implicit operator PostData<T>(byte[] byteArray) => new PostData<T>(byteArray);
-		public static implicit operator PostData<T>(string literalString) => new PostData<T>(literalString);
-		public static implicit operator PostData<T>(List<string> listOfStrings) => new PostData<T>(listOfStrings);
-		public static implicit operator PostData<T>(List<object> listOfObjects) => new PostData<T>(listOfObjects);
-		public static implicit operator PostData<T>(T @object) => new PostData<T>(@object);
 	}
-
 }

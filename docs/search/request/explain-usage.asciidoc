@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,7 +7,7 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Search/Request/ExplainUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Search/Request/ExplainUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
@@ -19,7 +19,8 @@ Enables explanation for each hit on how its score was computed.
 
 See the Elasticsearch documentation on {ref_current}/search-explain.html[Explain] for more detail.
 
-=== Fluent DSL Example
+[float]
+=== Fluent DSL example
 
 [source,csharp]
 ----
@@ -27,7 +28,8 @@ s => s
 .Explain()
 ----
 
-=== Object Initializer Syntax Example
+[float]
+=== Object Initializer syntax example
 
 [source,csharp]
 ----

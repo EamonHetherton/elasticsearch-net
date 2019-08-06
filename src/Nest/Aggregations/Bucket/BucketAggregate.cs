@@ -1,40 +1,69 @@
-using System;
 using System.Collections.Generic;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public abstract class BucketAggregateBase : AggregationsHelper, IAggregate
+	public abstract class BucketAggregateBase : AggregateDictionary, IAggregate
 	{
-		protected BucketAggregateBase() { }
-		protected BucketAggregateBase(IDictionary<string, IAggregate> aggregations) : base(aggregations) { }
+		protected BucketAggregateBase(IReadOnlyDictionary<string, IAggregate> aggregations) : base(aggregations) { }
 
 		public IReadOnlyDictionary<string, object> Meta { get; set; } = EmptyReadOnly<string, object>.Dictionary;
-	}
-
-	public class MultiBucketAggregate<TBucket> : BucketAggregateBase
-		where TBucket : IBucket
-	{
-		public MultiBucketAggregate() { }
-		public MultiBucketAggregate(IDictionary<string, IAggregate> aggregations) : base(aggregations) { }
-
-		public IReadOnlyCollection<TBucket> Buckets { get; set; } = EmptyReadOnly<TBucket>.Collection;
 	}
 
 	public class SingleBucketAggregate : BucketAggregateBase
 	{
-		public SingleBucketAggregate() { }
-		public SingleBucketAggregate(IDictionary<string, IAggregate> aggregations) : base(aggregations) { }
+		public SingleBucketAggregate(IReadOnlyDictionary<string, IAggregate> aggregations) : base(aggregations) { }
 
+		/// <summary>
+		/// Count of documents in the bucket
+		/// </summary>
 		public long DocCount { get; internal set; }
 	}
 
-	// Intermediate object used for deserialization
+	/// <summary>
+	/// Aggregation response for a bucket aggregation
+	/// </summary>
+	/// <typeparam name="TBucket"></typeparam>
+	public class MultiBucketAggregate<TBucket> : IAggregate
+		where TBucket : IBucket
+	{
+		/// <summary>
+		/// The buckets into which results are grouped
+		/// </summary>
+		public IReadOnlyCollection<TBucket> Buckets { get; set; } = EmptyReadOnly<TBucket>.Collection;
+
+		/// <inheritdoc />
+		public IReadOnlyDictionary<string, object> Meta { get; set; } = EmptyReadOnly<string, object>.Dictionary;
+	}
+
+	/// <summary>
+	/// Aggregation response of <see cref="CompositeAggregation" />
+	/// </summary>
+	public class CompositeBucketAggregate : MultiBucketAggregate<CompositeBucket>
+	{
+		/// <summary>
+		/// The composite key of the last bucket returned
+		/// in the response before any filtering by pipeline aggregations.
+		/// If all buckets are filtered/removed by pipeline aggregations,
+		/// <see cref="AfterKey" /> will contain the composite key of the last bucket before filtering.
+		/// </summary>
+		/// <remarks> Valid for Elasticsearch 6.3.0+ </remarks>
+		public CompositeKey AfterKey { get; set; }
+	}
+
+	/// <summary>
+	/// Intermediate Aggregation response, transformed to a more specific
+	/// aggregation response when requested.
+	/// </summary>
 	public class BucketAggregate : IAggregate
 	{
-		public IReadOnlyCollection<IBucket> Items { get; set; } = EmptyReadOnly<IBucket>.Collection;
-		public long? DocCountErrorUpperBound { get; set; }
-		public long? SumOtherDocCount { get; set; }
-		public IReadOnlyDictionary<string, object> Meta { get; set; } = EmptyReadOnly<string, object>.Dictionary;
+		public CompositeKey AfterKey { get; set; }
+		public long BgCount { get; set; }
 		public long DocCount { get; set; }
+		public long? DocCountErrorUpperBound { get; set; }
+		public IReadOnlyCollection<IBucket> Items { get; set; } = EmptyReadOnly<IBucket>.Collection;
+		public IReadOnlyDictionary<string, object> Meta { get; set; } = EmptyReadOnly<string, object>.Dictionary;
+		public long? SumOtherDocCount { get; set; }
+		public Time Interval { get; set; }
 	}
 }

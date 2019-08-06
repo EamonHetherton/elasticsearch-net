@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
 	public class GraphVertexInclude
 	{
-		[JsonProperty("term")]
-		public string Term { get; set; }
-
-		[JsonProperty("boost")]
+		[DataMember(Name ="boost")]
 		public double? Boost { get; set; }
+
+		[DataMember(Name ="term")]
+		public string Term { get; set; }
 	}
 
 	public class GraphVertexIncludeDescriptor : DescriptorPromiseBase<GraphVertexIncludeDescriptor, List<GraphVertexInclude>>
@@ -19,16 +18,15 @@ namespace Nest
 		public GraphVertexIncludeDescriptor() : base(new List<GraphVertexInclude>()) { }
 
 		public GraphVertexIncludeDescriptor Include(string term, double? boost = null) =>
-			Assign(a => a.Add(new GraphVertexInclude { Term = term, Boost = boost }));
+			Assign(new GraphVertexInclude { Term = term, Boost = boost }, (a, v) => a.Add(v));
 
 		public GraphVertexIncludeDescriptor IncludeRange(params string[] terms) =>
-			Assign(a => a.AddRange(terms.Select(t=>new GraphVertexInclude { Term = t })));
+			Assign(terms.Select(t => new GraphVertexInclude { Term = t }), (a, v) => a.AddRange(v));
 
 		public GraphVertexIncludeDescriptor IncludeRange(IEnumerable<string> terms) =>
-			Assign(a => a.AddRange(terms.Select(t=>new GraphVertexInclude { Term = t })));
+			Assign(terms.Select(t => new GraphVertexInclude { Term = t }), (a, v) => a.AddRange(v));
 
 		public GraphVertexIncludeDescriptor IncludeRange(IEnumerable<GraphVertexInclude> includes) =>
-			Assign(a => a.AddRange(includes));
-
+			Assign(includes, (a, v) => a.AddRange(v));
 	}
 }

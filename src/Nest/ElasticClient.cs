@@ -1,30 +1,80 @@
 ﻿using System;
-using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Elasticsearch.Net;
-using System.Threading;
+using Elasticsearch.Net.Specification.MachineLearningApi;
 
 namespace Nest
 {
+
+	public class NamespacedClientProxy
+	{
+		private readonly ElasticClient _client;
+
+		protected NamespacedClientProxy(ElasticClient client) => _client = client;
+
+		internal TResponse DoRequest<TRequest, TResponse>(
+			TRequest p,
+			IRequestParameters parameters,
+			Action<IRequestConfiguration> forceConfiguration = null
+		)
+			where TRequest : class, IRequest
+			where TResponse : class, IElasticsearchResponse, new() =>
+			_client.DoRequest<TRequest, TResponse>(p, parameters, forceConfiguration);
+
+		internal Task<TResponse> DoRequestAsync<TRequest, TResponse>(
+			TRequest p,
+			IRequestParameters parameters,
+			CancellationToken ct,
+			Action<IRequestConfiguration> forceConfiguration = null
+		)
+			where TRequest : class, IRequest
+			where TResponse : class, IElasticsearchResponse, new() =>
+			_client.DoRequestAsync<TRequest, TResponse>(p, parameters, ct, forceConfiguration);
+
+		protected CatResponse<TCatRecord> DoCat<TRequest, TParams, TCatRecord>(TRequest request)
+			where TCatRecord : ICatRecord
+			where TParams : RequestParameters<TParams>, new()
+			where TRequest : class, IRequest<TParams>
+		{
+			if (typeof(TCatRecord) == typeof(CatHelpRecord))
+			{
+				request.RequestParameters.CustomResponseBuilder = CatHelpResponseBuilder.Instance;
+				return DoRequest<TRequest, CatResponse<TCatRecord>>(request, request.RequestParameters, r => ElasticClient.ForceTextPlain(r));
+			}
+			request.RequestParameters.CustomResponseBuilder = CatResponseBuilder<TCatRecord>.Instance;
+			return DoRequest<TRequest, CatResponse<TCatRecord>>(request, request.RequestParameters, r => ElasticClient.ForceJson(r));
+		}
+
+		protected Task<CatResponse<TCatRecord>> DoCatAsync<TRequest, TParams, TCatRecord>(TRequest request, CancellationToken ct)
+			where TCatRecord : ICatRecord
+			where TParams : RequestParameters<TParams>, new()
+			where TRequest : class, IRequest<TParams>
+		{
+			if (typeof(TCatRecord) == typeof(CatHelpRecord))
+			{
+				request.RequestParameters.CustomResponseBuilder = CatHelpResponseBuilder.Instance;
+				return DoRequestAsync<TRequest, CatResponse<TCatRecord>>(request, request.RequestParameters, ct, r => ElasticClient.ForceTextPlain(r));
+			}
+			request.RequestParameters.CustomResponseBuilder = CatResponseBuilder<TCatRecord>.Instance;
+			return DoRequestAsync<TRequest, CatResponse<TCatRecord>>(request, request.RequestParameters, ct, r => ElasticClient.ForceJson(r));
+		}
+
+		internal IRequestParameters ResponseBuilder(PreviewDatafeedRequestParameters parameters, CustomResponseBuilderBase builder)
+		{
+			parameters.CustomResponseBuilder = builder;
+			return parameters;
+		}
+	}
 	/// <summary>
 	/// ElasticClient is NEST's strongly typed client which exposes fully mapped Elasticsearch endpoints
 	/// </summary>
-	public partial class ElasticClient : IElasticClient, IHighLevelToLowLevelDispatcher
+	public partial class ElasticClient : IElasticClient
 	{
-		private IHighLevelToLowLevelDispatcher Dispatcher => this;
-
-		private LowLevelDispatch LowLevelDispatch { get; }
-
-		private ITransport<IConnectionSettingsValues> Transport { get; }
-
-		public IElasticsearchSerializer Serializer => this.Transport.Settings.Serializer;
-		public Inferrer Infer => this.Transport.Settings.Inferrer;
-		public IConnectionSettingsValues ConnectionSettings => this.Transport.Settings;
-
-		public IElasticLowLevelClient LowLevel { get; }
-
 		public ElasticClient() : this(new ConnectionSettings(new Uri("http://localhost:9200"))) { }
+
 		public ElasticClient(Uri uri) : this(new ConnectionSettings(uri)) { }
+
 		public ElasticClient(IConnectionSettingsValues connectionSettings)
 			: this(new Transport<IConnectionSettingsValues>(connectionSettings ?? new ConnectionSettings())) { }
 
@@ -32,72 +82,88 @@ namespace Nest
 		{
 			transport.ThrowIfNull(nameof(transport));
 			transport.Settings.ThrowIfNull(nameof(transport.Settings));
-			transport.Settings.Serializer.ThrowIfNull(nameof(transport.Settings.Serializer));
+			transport.Settings.RequestResponseSerializer.ThrowIfNull(nameof(transport.Settings.RequestResponseSerializer));
 			transport.Settings.Inferrer.ThrowIfNull(nameof(transport.Settings.Inferrer));
 
-			this.Transport = transport;
-			this.LowLevel = new ElasticLowLevelClient(this.Transport);
-			this.LowLevelDispatch = new LowLevelDispatch(this.LowLevel);
+			Transport = transport;
+			LowLevel = new ElasticLowLevelClient(Transport);
+			SetupNamespaces();
 		}
 
-		TResponse IHighLevelToLowLevelDispatcher.Dispatch<TRequest, TQueryString, TResponse>(
-			TRequest request,
-			Func<TRequest, PostData<object>,
-			ElasticsearchResponse<TResponse>> dispatch
-			) => this.Dispatcher.Dispatch<TRequest,TQueryString,TResponse>(request, null, dispatch);
+		partial void SetupNamespaces();
 
-		TResponse IHighLevelToLowLevelDispatcher.Dispatch<TRequest, TQueryString, TResponse>(
-			TRequest request, Func<IApiCallDetails, Stream, TResponse> responseGenerator,
-			Func<TRequest, PostData<object>, ElasticsearchResponse<TResponse>> dispatch
-			)
+		public IConnectionSettingsValues ConnectionSettings => Transport.Settings;
+		public Inferrer Infer => Transport.Settings.Inferrer;
+
+		public IElasticLowLevelClient LowLevel { get; }
+		public IElasticsearchSerializer RequestResponseSerializer => Transport.Settings.RequestResponseSerializer;
+
+		public IElasticsearchSerializer SourceSerializer => Transport.Settings.SourceSerializer;
+
+		private ITransport<IConnectionSettingsValues> Transport { get; }
+
+		internal TResponse DoRequest<TRequest, TResponse>(TRequest p, IRequestParameters parameters, Action<IRequestConfiguration> forceConfiguration = null)
+			where TRequest : class, IRequest
+			where TResponse : class, IElasticsearchResponse, new()
 		{
-			request.RouteValues.Resolve(this.ConnectionSettings);
-			request.RequestParameters.DeserializationOverride(responseGenerator);
+			if (forceConfiguration != null) ForceConfiguration(p, forceConfiguration);
+			if (p.ContentType != null) ForceContentType(p, p.ContentType);
 
-			var response = dispatch(request, request);
-			return ResultsSelector(response);
+			var url = p.GetUrl(ConnectionSettings);
+			var b = (p.HttpMethod == HttpMethod.GET || p.HttpMethod == HttpMethod.HEAD) ? null : new SerializableData<TRequest>(p);
+
+			return LowLevel.DoRequest<TResponse>(p.HttpMethod, url, b, parameters);
 		}
 
-		Task<TResponseInterface> IHighLevelToLowLevelDispatcher.DispatchAsync<TRequest, TQueryString, TResponse, TResponseInterface>(
-			TRequest descriptor,
-			CancellationToken cancellationToken,
-			Func<TRequest, PostData<object>, CancellationToken, Task<ElasticsearchResponse<TResponse>>> dispatch
-			) => this.Dispatcher.DispatchAsync<TRequest,TQueryString,TResponse,TResponseInterface>(descriptor, cancellationToken, null, dispatch);
-
-		async Task<TResponseInterface> IHighLevelToLowLevelDispatcher.DispatchAsync<TRequest, TQueryString, TResponse, TResponseInterface>(
-			TRequest request,
-			CancellationToken cancellationToken,
-			Func<IApiCallDetails, Stream, TResponse> responseGenerator,
-			Func<TRequest, PostData<object>, CancellationToken, Task<ElasticsearchResponse<TResponse>>> dispatch
-			)
+		internal Task<TResponse> DoRequestAsync<TRequest, TResponse>(
+			TRequest p,
+			IRequestParameters parameters,
+			CancellationToken ct,
+			Action<IRequestConfiguration> forceConfiguration = null
+		)
+			where TRequest : class, IRequest
+			where TResponse : class, IElasticsearchResponse, new()
 		{
-			request.RouteValues.Resolve(this.ConnectionSettings);
-			request.RequestParameters.DeserializationOverride(responseGenerator);
-			var response = await dispatch(request, request, cancellationToken).ConfigureAwait(false);
-			return ResultsSelector(response);
+			if (forceConfiguration != null) ForceConfiguration(p, forceConfiguration);
+			if (p.ContentType != null) ForceContentType(p, p.ContentType);
+
+			var url = p.GetUrl(ConnectionSettings);
+			var b = (p.HttpMethod == HttpMethod.GET || p.HttpMethod == HttpMethod.HEAD) ? null : new SerializableData<TRequest>(p);
+
+			return LowLevel.DoRequestAsync<TResponse>(p.HttpMethod, url, ct, b, parameters);
 		}
 
-		private static TResponse ResultsSelector<TResponse>(ElasticsearchResponse<TResponse> c)
-			where TResponse : ResponseBase =>
-			c.Body ?? CreateInvalidInstance<TResponse>(c);
-
-		private static TResponse CreateInvalidInstance<TResponse>(IApiCallDetails response)
-			where TResponse : ResponseBase
+		private static void ForceConfiguration(IRequest request, Action<IRequestConfiguration> forceConfiguration)
 		{
-			var r = typeof(TResponse).CreateInstance<TResponse>();
-			((IBodyWithApiCallDetails)r).ApiCall = response;
-			return r;
+			if (forceConfiguration == null) return;
+			
+			var configuration = request.RequestParameters.RequestConfiguration ?? new RequestConfiguration();
+			forceConfiguration(configuration);
+			request.RequestParameters.RequestConfiguration = configuration;
 		}
-
-		private TRequest ForceConfiguration<TRequest, TParams>(TRequest request, Action<IRequestConfiguration> setter)
-			where TRequest : IRequest<TParams>
-			where TParams : IRequestParameters, new()
+		private void ForceContentType<TRequest>(TRequest request, string contentType) where TRequest : class, IRequest
 		{
 			var configuration = request.RequestParameters.RequestConfiguration ?? new RequestConfiguration();
-			setter(configuration);
+			configuration.Accept = contentType;
+			configuration.ContentType = contentType;
 			request.RequestParameters.RequestConfiguration = configuration;
-			return request;
 		}
 
+		internal static void ForceJson(IRequestConfiguration requestConfiguration)
+		{
+			requestConfiguration.Accept = RequestData.MimeType;
+			requestConfiguration.ContentType = RequestData.MimeType;
+		}
+		internal static void ForceTextPlain(IRequestConfiguration requestConfiguration)
+		{
+			requestConfiguration.Accept = RequestData.MimeTypeTextPlain;
+			requestConfiguration.ContentType = RequestData.MimeTypeTextPlain;
+		}
+
+		internal IRequestParameters ResponseBuilder(SourceRequestParameters parameters, CustomResponseBuilderBase builder)
+		{
+			parameters.CustomResponseBuilder = builder;
+			return parameters;
+		}
 	}
 }

@@ -4,5 +4,7 @@ namespace DocGenerator.Documentation.Blocks
 	{
 		int LineNumber { get; }
 		string Value { get; }
+
+		string ToAsciiDoc();
 	}
 }

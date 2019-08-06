@@ -1,26 +1,26 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class ClusterRerouteParameters
 	{
-		[JsonProperty("index")]
-		public string Index { get; set; }
+		[DataMember(Name ="allow_primary")]
+		public bool? AllowPrimary { get; set; }
 
-		[JsonProperty("shard")]
-		public int Shard { get; set; }
-
-		[JsonProperty("from_node")]
+		[DataMember(Name ="from_node")]
 		public string FromNode { get; set; }
 
-		[JsonProperty("to_node")]
-		public string ToNode { get; set; }
+		[DataMember(Name ="index")]
+		public string Index { get; set; }
 
-		[JsonProperty("node")]
+		[DataMember(Name ="node")]
 		public string Node { get; set; }
 
-		[JsonProperty("allow_primary")]
-		public bool? AllowPrimary { get; set; }
+		[DataMember(Name ="shard")]
+		public int Shard { get; set; }
+
+		[DataMember(Name ="to_node")]
+		public string ToNode { get; set; }
 	}
 }

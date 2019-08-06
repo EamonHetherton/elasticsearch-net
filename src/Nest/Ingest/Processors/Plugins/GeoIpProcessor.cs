@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -14,27 +15,26 @@ namespace Nest
 	/// <remarks>
 	/// Requires the Ingest Geoip Processor Plugin to be installed on the cluster.
 	/// </remarks>
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ProcessorJsonConverter<GeoIpProcessor>))]
+	[InterfaceDataContract]
 	public interface IGeoIpProcessor : IProcessor
 	{
-		[JsonProperty("field")]
-		Field Field { get; set; }
-
-		[JsonProperty("target_field")]
-		Field TargetField { get; set; }
-
-		[JsonProperty("database_file")]
+		[DataMember(Name ="database_file")]
 		string DatabaseFile { get; set; }
 
-		[JsonProperty("properties")]
-		IEnumerable<string> Properties { get; set; }
+		[DataMember(Name ="field")]
+		Field Field { get; set; }
 
 		/// <summary>
 		/// If `true` and `field` does not exist, the processor quietly exits without modifying the document
 		/// </summary>
-		[JsonProperty("ignore_missing")]
+		[DataMember(Name ="ignore_missing")]
 		bool? IgnoreMissing { get; set; }
+
+		[DataMember(Name ="properties")]
+		IEnumerable<string> Properties { get; set; }
+
+		[DataMember(Name ="target_field")]
+		Field TargetField { get; set; }
 	}
 
 	/// <summary>
@@ -48,18 +48,17 @@ namespace Nest
 	/// </remarks>
 	public class GeoIpProcessor : ProcessorBase, IGeoIpProcessor
 	{
-		protected override string Name => "geoip";
+		public string DatabaseFile { get; set; }
 
 		public Field Field { get; set; }
 
-		public Field TargetField { get; set; }
-
-		public string DatabaseFile { get; set; }
+		/// <inheritdoc />
+		public bool? IgnoreMissing { get; set; }
 
 		public IEnumerable<string> Properties { get; set; }
 
-		/// <inheritdoc/>
-		public bool? IgnoreMissing { get; set; }
+		public Field TargetField { get; set; }
+		protected override string Name => "geoip";
 	}
 
 	/// <summary>
@@ -72,35 +71,34 @@ namespace Nest
 	/// Requires the Ingest Geoip Processor Plugin to be installed on the cluster.
 	/// </remarks>
 	public class GeoIpProcessorDescriptor<T>
-	: ProcessorDescriptorBase<GeoIpProcessorDescriptor<T>, IGeoIpProcessor>, IGeoIpProcessor
-	where T : class
+		: ProcessorDescriptorBase<GeoIpProcessorDescriptor<T>, IGeoIpProcessor>, IGeoIpProcessor
+		where T : class
 	{
 		protected override string Name => "geoip";
+		string IGeoIpProcessor.DatabaseFile { get; set; }
 
 		Field IGeoIpProcessor.Field { get; set; }
-		Field IGeoIpProcessor.TargetField { get; set; }
-		string IGeoIpProcessor.DatabaseFile { get; set; }
-		IEnumerable<string> IGeoIpProcessor.Properties { get; set; }
 		bool? IGeoIpProcessor.IgnoreMissing { get; set; }
+		IEnumerable<string> IGeoIpProcessor.Properties { get; set; }
+		Field IGeoIpProcessor.TargetField { get; set; }
 
+		public GeoIpProcessorDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public GeoIpProcessorDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		public GeoIpProcessorDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> objectPath) =>
+			Assign(objectPath, (a, v) => a.Field = v);
 
-		public GeoIpProcessorDescriptor<T> Field(Expression<Func<T, object>> objectPath) =>
-			Assign(a => a.Field = objectPath);
+		/// <inheritdoc />
+		public GeoIpProcessorDescriptor<T> IgnoreMissing(bool? ignoreMissing = true) => Assign(ignoreMissing, (a, v) => a.IgnoreMissing = v);
 
-		/// <inheritdoc/>
-		public GeoIpProcessorDescriptor<T> IgnoreMissing(bool? ignoreMissing = true) => Assign(a => a.IgnoreMissing = ignoreMissing);
+		public GeoIpProcessorDescriptor<T> TargetField(Field field) => Assign(field, (a, v) => a.TargetField = v);
 
-		public GeoIpProcessorDescriptor<T> TargetField(Field field) => Assign(a => a.TargetField = field);
+		public GeoIpProcessorDescriptor<T> TargetField<TValue>(Expression<Func<T, TValue>> objectPath) =>
+			Assign(objectPath, (a, v) => a.TargetField = v);
 
-		public GeoIpProcessorDescriptor<T> TargetField(Expression<Func<T, object>> objectPath) =>
-			Assign(a => a.TargetField = objectPath);
+		public GeoIpProcessorDescriptor<T> DatabaseFile(string file) => Assign(file, (a, v) => a.DatabaseFile = v);
 
-		public GeoIpProcessorDescriptor<T> DatabaseFile(string file) => Assign(a => a.DatabaseFile = file);
+		public GeoIpProcessorDescriptor<T> Properties(IEnumerable<string> properties) => Assign(properties, (a, v) => a.Properties = v);
 
-		public GeoIpProcessorDescriptor<T> Properties(IEnumerable<string> properties) => Assign(a => a.Properties = properties);
-
-		public GeoIpProcessorDescriptor<T> Properties(params string[] properties) => Assign(a => a.Properties = properties);
+		public GeoIpProcessorDescriptor<T> Properties(params string[] properties) => Assign(properties, (a, v) => a.Properties = v);
 	}
 }

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,44 +7,39 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Bucket/Nested/NestedAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Bucket/Nested/NestedAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[nested-aggregation-usage]]
-== Nested Aggregation Usage
+=== Nested Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Nested("tags", n => n
-        .Path(p => p.Tags)
-        .Aggregations(aa => aa
-            .Terms("tag_names", t => t
-                .Field(p => p.Tags.Suffix("name"))
-            )
+a => a
+.Nested("tags", n => n
+    .Path(p => p.Tags)
+    .Aggregations(aa => aa
+        .Terms("tag_names", t => t
+            .Field(p => p.Tags.Suffix("name"))
         )
     )
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new NestedAggregation("tags")
 {
-    Aggregations = new NestedAggregation("tags")
+    Path = "tags",
+    Aggregations = new TermsAggregation("tag_names")
     {
-        Path = "tags",
-        Aggregations = new TermsAggregation("tag_names")
-        {
-            Field = "tags.name"
-        }
+        Field = "tags.name"
     }
 }
 ----
@@ -53,16 +48,14 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "tags": {
-      "nested": {
-        "path": "tags"
-      },
-      "aggs": {
-        "tag_names": {
-          "terms": {
-            "field": "tags.name"
-          }
+  "tags": {
+    "nested": {
+      "path": "tags"
+    },
+    "aggs": {
+      "tag_names": {
+        "terms": {
+          "field": "tags.name"
         }
       }
     }
@@ -70,17 +63,16 @@ new SearchRequest<Project>
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var tags = response.Aggs.Nested("tags");
+var tags = response.Aggregations.Nested("tags");
 tags.Should().NotBeNull();
 var tagNames = tags.Terms("tag_names");
 tagNames.Should().NotBeNull();
-
-foreach(var item in tagNames.Buckets)
+foreach (var item in tagNames.Buckets)
 {
     item.Key.Should().NotBeNullOrEmpty();
     item.DocCount.Should().BeGreaterThan(0);

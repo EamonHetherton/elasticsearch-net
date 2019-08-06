@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -10,45 +10,41 @@ namespace Nest
 		/// <summary>
 		/// Character used for splitting the tokens.
 		/// </summary>
-		[JsonProperty("delimiter")]
-		char Delimiter { get; set; }
+		[DataMember(Name ="delimiter")]
+		char? Delimiter { get; set; }
 
 		/// <summary>
-		/// The type of the payload. int for integer, float for float and identity for characters. 
+		/// The type of the payload. int for integer, float for float and identity for characters.
 		/// </summary>
-		[JsonProperty("encoding")]
+		[DataMember(Name ="encoding")]
 		DelimitedPayloadEncoding? Encoding { get; set; }
-
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class DelimitedPayloadTokenFilter : TokenFilterBase, IDelimitedPayloadTokenFilter
 	{
-		public DelimitedPayloadTokenFilter() : base("delimited_payload_filter") { }
+		public DelimitedPayloadTokenFilter() : base("delimited_payload") { }
 
-		/// <inheritdoc/>
-		public char Delimiter { get; set; }
+		/// <inheritdoc />
+		public char? Delimiter { get; set; }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public DelimitedPayloadEncoding? Encoding { get; set; }
-
 	}
 
-	///<inheritdoc/>
-	public class DelimitedPayloadTokenFilterDescriptor 
+	/// <inheritdoc />
+	public class DelimitedPayloadTokenFilterDescriptor
 		: TokenFilterDescriptorBase<DelimitedPayloadTokenFilterDescriptor, IDelimitedPayloadTokenFilter>, IDelimitedPayloadTokenFilter
 	{
-		protected override string Type => "delimited_payload_filter";
+		protected override string Type => "delimited_payload";
 
-		char IDelimitedPayloadTokenFilter.Delimiter { get; set; }
+		char? IDelimitedPayloadTokenFilter.Delimiter { get; set; }
 		DelimitedPayloadEncoding? IDelimitedPayloadTokenFilter.Encoding { get; set; }
 
-		///<inheritdoc/>
-		public DelimitedPayloadTokenFilterDescriptor Delimiter(char delimiter) => Assign(a => a.Delimiter = delimiter);
+		/// <inheritdoc />
+		public DelimitedPayloadTokenFilterDescriptor Delimiter(char? delimiter) => Assign(delimiter, (a, v) => a.Delimiter = v);
 
-		///<inheritdoc/>
-		public DelimitedPayloadTokenFilterDescriptor Encoding(DelimitedPayloadEncoding? encoding) => Assign(a => a.Encoding = encoding);
-
+		/// <inheritdoc />
+		public DelimitedPayloadTokenFilterDescriptor Encoding(DelimitedPayloadEncoding? encoding) => Assign(encoding, (a, v) => a.Encoding = v);
 	}
-
 }

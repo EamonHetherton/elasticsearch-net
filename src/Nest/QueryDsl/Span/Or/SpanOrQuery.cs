@@ -1,39 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<SpanOrQuery>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(SpanOrQuery))]
 	public interface ISpanOrQuery : ISpanSubQuery
 	{
-		[JsonProperty(PropertyName = "clauses")]
+		[DataMember(Name ="clauses")]
 		IEnumerable<ISpanQuery> Clauses { get; set; }
 	}
 
 	public class SpanOrQuery : QueryBase, ISpanOrQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
 		public IEnumerable<ISpanQuery> Clauses { get; set; }
+		protected override bool Conditionless => IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.SpanOr = this;
+
 		internal static bool IsConditionless(ISpanOrQuery q) => !q.Clauses.HasAny() || q.Clauses.Cast<IQuery>().All(qq => qq.Conditionless);
 	}
 
-	public class SpanOrQueryDescriptor<T> 
+	public class SpanOrQueryDescriptor<T>
 		: QueryDescriptorBase<SpanOrQueryDescriptor<T>, ISpanOrQuery>
-		, ISpanOrQuery where T : class
+			, ISpanOrQuery where T : class
 	{
 		protected override bool Conditionless => SpanOrQuery.IsConditionless(this);
 		IEnumerable<ISpanQuery> ISpanOrQuery.Clauses { get; set; }
 
-		public SpanOrQueryDescriptor<T> Clauses(params Func<SpanQueryDescriptor<T>, SpanQueryDescriptor<T>>[] selectors) => Assign(a =>
+		public SpanOrQueryDescriptor<T> Clauses(params Func<SpanQueryDescriptor<T>, SpanQueryDescriptor<T>>[] selectors) => Assign(selectors, (a, v) =>
 		{
 			var clauses = (
-				from selector in selectors
-				select selector(new SpanQueryDescriptor<T>()) into q
+				from selector in v
+				select selector(new SpanQueryDescriptor<T>())
+				into q
 				where !(q as IQuery).Conditionless
 				select q
 			).ToList();

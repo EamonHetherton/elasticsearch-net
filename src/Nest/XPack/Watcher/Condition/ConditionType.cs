@@ -1,20 +1,24 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum ConditionType
 	{
-		[EnumMember(Value="always")]
+		[EnumMember(Value = "always")]
 		Always,
-		[EnumMember(Value="never")]
+
+		[EnumMember(Value = "never")]
 		Never,
-		[EnumMember(Value="script")]
+
+		[EnumMember(Value = "script")]
 		Script,
+
 		[EnumMember(Value = "compare")]
 		Compare,
+
 		[EnumMember(Value = "array_compare")]
 		ArrayCompare
 	}

@@ -1,45 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	[AttributeUsage(AttributeTargets.Property)]
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	public abstract class ElasticsearchPropertyAttributeBase : Attribute, IProperty, IPropertyMapping
+	[DataContract]
+	public abstract class ElasticsearchPropertyAttributeBase : Attribute, IProperty, IPropertyMapping, IJsonProperty
 	{
-		private IProperty Self => this;
+		protected ElasticsearchPropertyAttributeBase(FieldType type) => Self.Type = type.GetStringValue();
 
-		PropertyName IProperty.Name { get; set; }
-		TypeName IProperty.Type { get; set; }
-		IDictionary<string, object> IProperty.LocalMetadata { get; set; }
+		public bool? AllowPrivate { get; set; } = true;
 
-		public string Name { get; set; }
 		public bool Ignore { get; set; }
 
-		protected ElasticsearchPropertyAttributeBase(FieldType type)
-		{
-			Self.Type = type.GetStringValue();
-		}
+		public string Name { get; set; }
 
-		[Obsolete("Please use overload taking FieldType")]
-		protected ElasticsearchPropertyAttributeBase(string typeName)
-		{
-			Self.Type = typeName;
-		}
+		public int Order { get; } = -2;
 
-		[Obsolete("Please use overload taking FieldType")]
-		protected ElasticsearchPropertyAttributeBase(Type type)
-		{
-			Self.Type = type;
-		}
+		IDictionary<string, object> IProperty.LocalMetadata { get; set; }
 
-		public static ElasticsearchPropertyAttributeBase From(MemberInfo memberInfo)
-		{
-			return memberInfo.GetCustomAttribute<ElasticsearchPropertyAttributeBase>(true);
-		}
+		PropertyName IProperty.Name { get; set; }
+		private IProperty Self => this;
+		string IProperty.Type { get; set; }
+
+		public static ElasticsearchPropertyAttributeBase From(MemberInfo memberInfo) =>
+			memberInfo.GetCustomAttribute<ElasticsearchPropertyAttributeBase>(true);
 	}
 }

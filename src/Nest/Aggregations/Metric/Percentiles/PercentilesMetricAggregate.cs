@@ -2,11 +2,10 @@
 
 namespace Nest
 {
-
 	public class PercentileItem
 	{
 		public double Percentile { get; internal set; }
-		public double Value { get; internal set; }
+		public double? Value { get; internal set; }
 	}
 
 	public class PercentilesAggregate : MetricAggregateBase

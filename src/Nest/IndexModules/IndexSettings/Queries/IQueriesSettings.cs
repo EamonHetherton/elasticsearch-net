@@ -16,8 +16,8 @@ namespace Nest
 	{
 		IQueriesCacheSettings IQueriesSettings.Cache { get; set; }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public QueriesSettingsDescriptor Cache(Func<QueriesCacheSettingsDescriptor, IQueriesCacheSettings> selector) =>
-			Assign(a => a.Cache = selector.Invoke(new QueriesCacheSettingsDescriptor()));
+			Assign(selector.Invoke(new QueriesCacheSettingsDescriptor()), (a, v) => a.Cache = v);
 	}
 }

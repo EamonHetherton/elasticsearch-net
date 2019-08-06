@@ -1,56 +1,42 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IGetMappingResponse : IResponse
+	[JsonFormatter(typeof(ResolvableDictionaryResponseFormatter<GetMappingResponse, IndexName, IndexMappings>))]
+	public class GetMappingResponse : DictionaryResponseBase<IndexName, IndexMappings>
 	{
-		IReadOnlyDictionary<string, IReadOnlyDictionary<string, TypeMapping>> Mappings { get; }
-
-		TypeMapping Mapping { get; }
-
-		void Accept(IMappingVisitor visitor);
-	}
-
-	internal class GetRootObjectMappingWrapping : Dictionary<string, Dictionary<string, Dictionary<string, TypeMapping>>>
-	{
-	}
-
-	public class GetMappingResponse : ResponseBase, IGetMappingResponse
-	{
-		internal GetMappingResponse() { }
-
-		internal GetMappingResponse(GetRootObjectMappingWrapping dict)
-		{
-			foreach (var index in dict)
-			{
-				Dictionary<string, TypeMapping> mappings;
-				if (index.Value != null && index.Value.TryGetValue("mappings", out mappings))
-				{
-					this._mappings.Add(index.Key, new Dictionary<string, TypeMapping>());
-					foreach (var mapping in mappings)
-					{
-						if (mapping.Value == null) continue;
-						this._mappings[index.Key].Add(mapping.Key, mapping.Value);
-					}
-				}
-			}
-
-			this.Mapping = this.Mappings.Where(kv => kv.Value.HasAny(v => v.Value != null))
-				.SelectMany(kv => kv.Value)
-				.FirstOrDefault(t => t.Value != null).Value;
-		}
-
-		private Dictionary<string, Dictionary<string, TypeMapping>> _mappings = new Dictionary<string, Dictionary<string, TypeMapping>>();
-		public IReadOnlyDictionary<string, IReadOnlyDictionary<string, TypeMapping>> Mappings => this._mappings
-			.ToDictionary(k=>k.Key, v=>(IReadOnlyDictionary<string, TypeMapping>)v.Value);
-
-		public TypeMapping Mapping { get; internal set; }
+		[IgnoreDataMember]
+		public IReadOnlyDictionary<IndexName, IndexMappings> Indices => Self.BackingDictionary;
 
 		public void Accept(IMappingVisitor visitor)
 		{
 			var walker = new MappingWalker(visitor);
 			walker.Accept(this);
+		}
+	}
+
+	public class IndexMappings
+	{
+		[Obsolete("Mapping are no longer grouped by type, this indexer is ignored and simply returns Mapppings")]
+		public TypeMapping this[string type] => Mappings;
+
+		[DataMember(Name = "mappings")]
+		public TypeMapping Mappings { get; internal set; }
+	}
+
+
+	public static class GetMappingResponseExtensions
+	{
+		public static ITypeMapping GetMappingFor<T>(this GetMappingResponse response) => response.GetMappingFor(typeof(T));
+
+		public static ITypeMapping GetMappingFor(this GetMappingResponse response, IndexName index)
+		{
+			if (index.IsNullOrEmpty()) return null;
+
+			return response.Indices.TryGetValue(index, out var indexMappings) ? indexMappings.Mappings : null;
 		}
 	}
 }

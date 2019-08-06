@@ -1,5 +1,5 @@
+using System;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,26 +7,35 @@ namespace Elasticsearch.Net
 {
 	public interface IElasticsearchSerializer
 	{
+		/// <summary> Deserialize <paramref name="stream"/> to an instance of <paramref name="type"/> </summary>
+		object Deserialize(Type type, Stream stream);
+
+		/// <summary> Deserialize <paramref name="stream"/> to an instance of <typeparamref name="T" /></summary>
 		T Deserialize<T>(Stream stream);
 
-		Task<T> DeserializeAsync<T>(Stream responseStream, CancellationToken cancellationToken = default(CancellationToken));
+		/// <inheritdoc cref="DeserializeAsync"/>
+		Task<object> DeserializeAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
 
-		void Serialize(object data, Stream writableStream, SerializationFormatting formatting = SerializationFormatting.Indented);
+		/// <inheritdoc cref="DeserializeAsync{T}"/>
+		Task<T> DeserializeAsync<T>(Stream stream, CancellationToken cancellationToken = default);
 
-		IPropertyMapping CreatePropertyMapping(MemberInfo memberInfo);
-	}
+		/// <summary>
+		/// Serialize an instance of <typeparamref name="T"/> to <paramref name="stream"/> using <paramref name="formatting"/>.
+		/// </summary>
+		/// <param name="data">The instance of <typeparamref name="T"/> that we want to serialize</param>
+		/// <param name="stream">The stream to serialize to</param>
+		/// <param name="formatting">
+		/// Formatting hint, note no all implementations of <see cref="IElasticsearchSerializer"/> are able to
+		/// satisfy this hint, including the default serializer that is shipped with 7.0.
+		/// </param>
+		void Serialize<T>(T data, Stream stream, SerializationFormatting formatting = SerializationFormatting.None);
 
-	public static class ElasticsearchSerializerExtensions
-	{
-		public static byte[] SerializeToBytes(this IElasticsearchSerializer serializer, object data, SerializationFormatting formatting = SerializationFormatting.Indented)
-		{
-			using (var ms = new MemoryStream())
-			{
-				serializer.Serialize(data, ms, formatting);
-				return ms.ToArray();
-			}
-		}
-		public static string SerializeToString(this IElasticsearchSerializer serializer, object data, SerializationFormatting formatting = SerializationFormatting.Indented) =>
-			serializer.SerializeToBytes(data, formatting).Utf8String();
+		/// <inheritdoc cref="Serialize{T}"/>
+		Task SerializeAsync<T>(
+			T data,
+			Stream stream,
+			SerializationFormatting formatting = SerializationFormatting.None,
+			CancellationToken cancellationToken = default
+		);
 	}
 }

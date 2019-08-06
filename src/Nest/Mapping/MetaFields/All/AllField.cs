@@ -1,87 +1,89 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<AllField>))]
+	[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
+	[ReadAs(typeof(AllField))]
 	public interface IAllField : IFieldMapping
 	{
-		[JsonProperty("enabled")]
-		bool? Enabled { get; set; }
-
-		[JsonProperty("store")]
-		bool? Store { get; set; }
-
-		[JsonProperty("store_term_vectors")]
-		bool? StoreTermVectors { get; set; }
-
-		[JsonProperty("store_term_vector_offsets")]
-		bool? StoreTermVectorOffsets { get; set; }
-
-		[JsonProperty("store_term_vector_positions")]
-		bool? StoreTermVectorPositions { get; set; }
-
-		[JsonProperty("store_term_vector_payloads")]
-		bool? StoreTermVectorPayloads { get; set; }
-
-		[JsonProperty("omit_norms")]
-		bool? OmitNorms { get; set; }
-
-		[JsonProperty("analyzer")]
+		[DataMember(Name ="analyzer")]
 		string Analyzer { get; set; }
 
-		[JsonProperty("search_analyzer")]
+		[DataMember(Name ="enabled")]
+		bool? Enabled { get; set; }
+
+		[DataMember(Name ="omit_norms")]
+		bool? OmitNorms { get; set; }
+
+		[DataMember(Name ="search_analyzer")]
 		string SearchAnalyzer { get; set; }
 
-		[JsonProperty("similarity")]
+		[DataMember(Name ="similarity")]
 		string Similarity { get; set; }
 
+		[DataMember(Name ="store")]
+		bool? Store { get; set; }
+
+		[DataMember(Name ="store_term_vector_offsets")]
+		bool? StoreTermVectorOffsets { get; set; }
+
+		[DataMember(Name ="store_term_vector_payloads")]
+		bool? StoreTermVectorPayloads { get; set; }
+
+		[DataMember(Name ="store_term_vector_positions")]
+		bool? StoreTermVectorPositions { get; set; }
+
+		[DataMember(Name ="store_term_vectors")]
+		bool? StoreTermVectors { get; set; }
 	}
 
+	[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
 	public class AllField : IAllField
 	{
-		public bool? Enabled { get; set; }
-		public bool? Store { get; set; }
-		public bool? StoreTermVectors { get; set; }
-		public bool? StoreTermVectorOffsets { get; set; }
-		public bool? StoreTermVectorPositions { get; set; }
-		public bool? StoreTermVectorPayloads { get; set; }
-		public TermVectorOption? TermVector { get; set; }
-		public bool? OmitNorms { get; set; }
 		public string Analyzer { get; set; }
+		public bool? Enabled { get; set; }
+		public bool? OmitNorms { get; set; }
 		public string SearchAnalyzer { get; set; }
 		public string Similarity { get; set; }
+		public bool? Store { get; set; }
+		public bool? StoreTermVectorOffsets { get; set; }
+		public bool? StoreTermVectorPayloads { get; set; }
+		public bool? StoreTermVectorPositions { get; set; }
+		public bool? StoreTermVectors { get; set; }
 	}
 
+	[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
 	public class AllFieldDescriptor
 		: DescriptorBase<AllFieldDescriptor, IAllField>, IAllField
 	{
-		bool? IAllField.Enabled { get; set; }
-		bool? IAllField.Store { get; set; }
-		bool? IAllField.StoreTermVectors { get; set; }
-		bool? IAllField.StoreTermVectorOffsets { get; set; }
-		bool? IAllField.StoreTermVectorPositions { get; set; }
-		bool? IAllField.StoreTermVectorPayloads { get; set; }
-		public bool? OmitNorms { get; set; }
 		string IAllField.Analyzer { get; set; }
+		bool? IAllField.Enabled { get; set; }
+		bool? IAllField.OmitNorms { get; set; }
 		string IAllField.SearchAnalyzer { get; set; }
 		string IAllField.Similarity { get; set; }
+		bool? IAllField.Store { get; set; }
+		bool? IAllField.StoreTermVectorOffsets { get; set; }
+		bool? IAllField.StoreTermVectorPayloads { get; set; }
+		bool? IAllField.StoreTermVectorPositions { get; set; }
+		bool? IAllField.StoreTermVectors { get; set; }
 
-		public AllFieldDescriptor Enabled(bool enabled = true) => Assign(a => a.Enabled = enabled);
+		public AllFieldDescriptor Enabled(bool? enabled = true) => Assign(enabled, (a, v) => a.Enabled = v);
 
-		public AllFieldDescriptor Store(bool store = true) => Assign(a => a.Store = store);
+		public AllFieldDescriptor Store(bool? store = true) => Assign(store, (a, v) => a.Store = v);
 
-		public AllFieldDescriptor StoreTermVectors(bool store = true) => Assign(a => a.StoreTermVectors = store);
+		public AllFieldDescriptor StoreTermVectors(bool? store = true) => Assign(store, (a, v) => a.StoreTermVectors = v);
 
-		public AllFieldDescriptor StoreTermVectorOffsets(bool store = true) => Assign(a => a.StoreTermVectorOffsets = store);
+		public AllFieldDescriptor StoreTermVectorOffsets(bool? store = true) => Assign(store, (a, v) => a.StoreTermVectorOffsets = v);
 
-		public AllFieldDescriptor StoreTermVectorPositions(bool store = true) => Assign(a => a.StoreTermVectorPositions = store);
+		public AllFieldDescriptor StoreTermVectorPositions(bool? store = true) => Assign(store, (a, v) => a.StoreTermVectorPositions = v);
 
-		public AllFieldDescriptor StoreTermVectorPayloads(bool store = true) => Assign(a => a.StoreTermVectorPayloads = store);
+		public AllFieldDescriptor StoreTermVectorPayloads(bool? store = true) => Assign(store, (a, v) => a.StoreTermVectorPayloads = v);
 
-		public AllFieldDescriptor Analyzer(string analyzer) => Assign(a => a.Analyzer = analyzer);
+		public AllFieldDescriptor Analyzer(string analyzer) => Assign(analyzer, (a, v) => a.Analyzer = v);
 
-		public AllFieldDescriptor SearchAnalyzer(string searchAnalyzer) => Assign(a => a.SearchAnalyzer = searchAnalyzer);
+		public AllFieldDescriptor SearchAnalyzer(string searchAnalyzer) => Assign(searchAnalyzer, (a, v) => a.SearchAnalyzer = v);
 
-		public AllFieldDescriptor Similarity(string similarity) => Assign(a => a.Similarity = similarity);
+		public AllFieldDescriptor Similarity(string similarity) => Assign(similarity, (a, v) => a.Similarity = v);
 	}
 }

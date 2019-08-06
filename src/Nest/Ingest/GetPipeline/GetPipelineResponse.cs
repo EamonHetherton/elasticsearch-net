@@ -1,22 +1,13 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Linq;
-using System;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	public interface IGetPipelineResponse : IResponse
+	[JsonFormatter(typeof(DictionaryResponseFormatter<GetPipelineResponse, string, IPipeline>))]
+	public class GetPipelineResponse : DictionaryResponseBase<string, IPipeline>
 	{
-		[JsonProperty("pipelines")]
-		IReadOnlyDictionary<string, IPipeline> Pipelines { get; }
-	}
-
-	[JsonConverter(typeof(DictionaryResponseJsonConverter<GetPipelineResponse, string, IPipeline>))]
-	public class GetPipelineResponse : DictionaryResponseBase<string, IPipeline>, IGetPipelineResponse
-	{
-		[JsonIgnore]
+		[IgnoreDataMember]
 		public IReadOnlyDictionary<string, IPipeline> Pipelines => Self.BackingDictionary;
 	}
-
 }

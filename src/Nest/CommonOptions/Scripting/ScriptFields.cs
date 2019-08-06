@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<ScriptField>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(ScriptField))]
 	public interface IScriptField
 	{
-		[JsonProperty("script")]
+		[DataMember(Name = "script")]
 		IScript Script { get; set; }
 	}
 
@@ -24,22 +24,23 @@ namespace Nest
 		IScript IScriptField.Script { get; set; }
 
 		public ScriptFieldDescriptor Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
-			Assign(a => a.Script = scriptSelector?.Invoke(new ScriptDescriptor()));
+			Assign(scriptSelector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 	}
 
-	[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<ScriptFields, string, IScriptField>))]
+	[JsonFormatter(typeof(VerbatimDictionaryKeysFormatter<ScriptFields, IScriptFields, string, IScriptField>))]
 	public interface IScriptFields : IIsADictionary<string, IScriptField> { }
 
 	public class ScriptFields : IsADictionaryBase<string, IScriptField>, IScriptFields
 	{
-		public ScriptFields() {}
-		public ScriptFields(IDictionary<string, IScriptField> container) : base(container) { }
-		public ScriptFields(Dictionary<string, IScriptField> container)
-			: base(container.Select(kv => kv).ToDictionary(kv => kv.Key, kv => kv.Value))
-		{}
+		public ScriptFields() { }
 
-		public void Add(string name, IScriptField script) => this.BackingDictionary.Add(name, script);
-		public void Add(string name, IScript script) => this.BackingDictionary.Add(name, new ScriptField { Script = script });
+		public ScriptFields(IDictionary<string, IScriptField> container) : base(container) { }
+
+		public ScriptFields(Dictionary<string, IScriptField> container) : base(container) { }
+
+		public void Add(string name, IScriptField script) => BackingDictionary.Add(name, script);
+
+		public void Add(string name, IScript script) => BackingDictionary.Add(name, new ScriptField { Script = script });
 	}
 
 	public class ScriptFieldsDescriptor : IsADictionaryDescriptorBase<ScriptFieldsDescriptor, IScriptFields, string, IScriptField>

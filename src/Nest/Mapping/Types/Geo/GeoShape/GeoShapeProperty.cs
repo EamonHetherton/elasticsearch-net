@@ -1,87 +1,112 @@
 using System.Diagnostics;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	/// <summary>
+	/// Maps a property as a geo_shape field
+	/// </summary>
+	[InterfaceDataContract]
 	public interface IGeoShapeProperty : IDocValuesProperty
 	{
-		[JsonProperty("tree")]
-		GeoTree? Tree { get; set; }
-
-		[JsonProperty("precision")]
-		Distance Precision { get; set; }
-
-		[JsonProperty("orientation")]
-		GeoOrientation? Orientation { get; set; }
-
-		[JsonProperty("tree_levels")]
-		int? TreeLevels { get; set; }
+		/// <summary>
+		/// If <c>true</c>, malformed geojson shapes are ignored. If false (default),
+		/// malformed geojson shapes throw an exception and reject the whole document.
+		/// </summary>
+		/// <remarks>
+		/// Valid for Elasticsearch 6.1.0+
+		/// </remarks>
+		[DataMember(Name ="ignore_malformed")]
+		bool? IgnoreMalformed { get; set; }
 
 		/// <summary>
-		/// defines the approach for how to represent shapes at indexing and search time.
+		/// If true (default) three dimension points will be accepted (stored in source) but
+		/// only latitude and longitude values will be indexed; the third dimension is ignored. If false,
+		/// geo-points containing any more than latitude and longitude (two dimensions) values throw
+		/// an exception and reject the whole document.
+		/// </summary>
+		/// <remarks>
+		/// Valid for Elasticsearch 6.3.0+
+		/// </remarks>
+		[DataMember(Name ="ignore_z_value")]
+		bool? IgnoreZValue { get; set; }
+
+		/// <summary>
+		/// Defines how to interpret vertex order for polygons and multipolygons.
+		/// Defaults to <see cref="GeoOrientation.CounterClockWise" />
+		/// </summary>
+		[DataMember(Name ="orientation")]
+		GeoOrientation? Orientation { get; set; }
+
+		/// <summary>
+		/// Defines the approach for how to represent shapes at indexing and search time.
 		/// It also influences the capabilities available so it is recommended to let
 		/// Elasticsearch set this parameter automatically.
 		/// </summary>
-		[JsonProperty("strategy")]
+		[DataMember(Name ="strategy")]
 		GeoStrategy? Strategy { get; set; }
 
-		[JsonProperty("distance_error_pct")]
-		double? DistanceErrorPercentage { get; set; }
-
-		[JsonProperty("points_only")]
-		bool? PointsOnly { get; set; }
+		/// <summary>
+		/// Should the data be coerced into becoming a valid geo shape (for instance closing a polygon)
+		/// </summary>
+		[DataMember(Name ="coerce")]
+		bool? Coerce { get; set; }
 	}
 
+	/// <inheritdoc cref="IGeoShapeProperty" />
 	[DebuggerDisplay("{DebugDisplay}")]
 	public class GeoShapeProperty : DocValuesPropertyBase, IGeoShapeProperty
 	{
 		public GeoShapeProperty() : base(FieldType.GeoShape) { }
 
-		public GeoTree? Tree { get; set; }
+		/// <inheritdoc />
+		public bool? IgnoreMalformed { get; set; }
 
-		public Distance Precision { get; set; }
+		/// <inheritdoc />
+		public bool? IgnoreZValue { get; set; }
 
+		/// <inheritdoc />
 		public GeoOrientation? Orientation { get; set; }
 
-		public int? TreeLevels { get; set; }
-
+		/// <inheritdoc />
 		public GeoStrategy? Strategy { get; set; }
 
-		public double? DistanceErrorPercentage { get; set; }
-
-		public bool? PointsOnly { get; set; }
+		/// <inheritdoc />
+		public bool? Coerce { get; set; }
 	}
 
+	/// <inheritdoc cref="IGeoShapeProperty" />
 	[DebuggerDisplay("{DebugDisplay}")]
 	public class GeoShapePropertyDescriptor<T>
 		: DocValuesPropertyDescriptorBase<GeoShapePropertyDescriptor<T>, IGeoShapeProperty, T>, IGeoShapeProperty
 		where T : class
 	{
-		GeoTree? IGeoShapeProperty.Tree { get; set; }
-		Distance IGeoShapeProperty.Precision { get; set; }
-		GeoOrientation? IGeoShapeProperty.Orientation { get; set; }
-		int? IGeoShapeProperty.TreeLevels { get; set; }
-		GeoStrategy? IGeoShapeProperty.Strategy { get; set; }
-		double? IGeoShapeProperty.DistanceErrorPercentage { get; set; }
-		bool? IGeoShapeProperty.PointsOnly { get; set; }
-
 		public GeoShapePropertyDescriptor() : base(FieldType.GeoShape) { }
 
-		public GeoShapePropertyDescriptor<T> Tree(GeoTree tree) => Assign(a => a.Tree = tree);
 
-		public GeoShapePropertyDescriptor<T> TreeLevels(int treeLevels) => Assign(a => a.TreeLevels = treeLevels);
+		bool? IGeoShapeProperty.IgnoreMalformed { get; set; }
+		bool? IGeoShapeProperty.IgnoreZValue { get; set; }
+		GeoOrientation? IGeoShapeProperty.Orientation { get; set; }
+		GeoStrategy? IGeoShapeProperty.Strategy { get; set; }
+		bool? IGeoShapeProperty.Coerce { get; set; }
 
-		public GeoShapePropertyDescriptor<T> Strategy(GeoStrategy strategy) => Assign(a => a.Strategy = strategy);
+		/// <inheritdoc cref="IGeoShapeProperty.Strategy" />
+		public GeoShapePropertyDescriptor<T> Strategy(GeoStrategy? strategy) => Assign(strategy, (a, v) => a.Strategy = v);
 
-		public GeoShapePropertyDescriptor<T> Precision(double precision, DistanceUnit unit) =>
-			Assign(a => a.Precision = new Distance(precision, unit));
+		/// <inheritdoc cref="IGeoShapeProperty.Orientation" />
+		public GeoShapePropertyDescriptor<T> Orientation(GeoOrientation? orientation) => Assign(orientation, (a, v) => a.Orientation = v);
 
-		public GeoShapePropertyDescriptor<T> Orientation(GeoOrientation orientation) => Assign(a => a.Orientation = orientation);
+		/// <inheritdoc cref="IGeoShapeProperty.IgnoreMalformed" />
+		public GeoShapePropertyDescriptor<T> IgnoreMalformed(bool? ignoreMalformed = true) =>
+			Assign(ignoreMalformed, (a, v) => a.IgnoreMalformed = v);
 
-		public GeoShapePropertyDescriptor<T> DistanceErrorPercentage(double distanceErrorPercentage) =>
-			Assign(a => a.DistanceErrorPercentage = distanceErrorPercentage);
+		/// <inheritdoc cref="IGeoShapeProperty.IgnoreZValue" />
+		public GeoShapePropertyDescriptor<T> IgnoreZValue(bool? ignoreZValue = true) =>
+			Assign(ignoreZValue, (a, v) => a.IgnoreZValue = v);
 
-		public GeoShapePropertyDescriptor<T> PointsOnly(bool pointsOnly = true) => Assign(a => a.PointsOnly = pointsOnly);
+		/// <inheritdoc cref="IGeoShapeProperty.Coerce" />
+		public GeoShapePropertyDescriptor<T> Coerce(bool? coerce = true) =>
+			Assign(coerce, (a, v) => a.Coerce = v);
 	}
 }

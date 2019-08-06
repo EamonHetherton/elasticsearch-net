@@ -1,26 +1,23 @@
-﻿using System;
-using System.Diagnostics;
-using Newtonsoft.Json;
+﻿using System.Diagnostics;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface ITokenCountProperty : IDocValuesProperty
 	{
-		[JsonProperty("analyzer")]
+		[DataMember(Name ="analyzer")]
 		string Analyzer { get; set; }
 
-		[JsonProperty("index")]
-		bool? Index { get; set; }
-
-		[JsonProperty("boost")]
+		[DataMember(Name ="boost")]
 		double? Boost { get; set; }
 
-		[JsonProperty("null_value")]
-		double? NullValue { get; set; }
+		[DataMember(Name ="index")]
+		bool? Index { get; set; }
 
-		[JsonProperty("include_in_all")]
-		bool? IncludeInAll { get; set; }
+		[DataMember(Name ="null_value")]
+		double? NullValue { get; set; }
 	}
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -30,13 +27,11 @@ namespace Nest
 
 		public string Analyzer { get; set; }
 
-		public bool? Index { get; set; }
-
 		public double? Boost { get; set; }
 
-		public double? NullValue { get; set; }
+		public bool? Index { get; set; }
 
-		public bool? IncludeInAll { get; set; }
+		public double? NullValue { get; set; }
 	}
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -48,14 +43,15 @@ namespace Nest
 
 		string ITokenCountProperty.Analyzer { get; set; }
 		double? ITokenCountProperty.Boost { get; set; }
-		bool? ITokenCountProperty.IncludeInAll { get; set; }
 		bool? ITokenCountProperty.Index { get; set; }
 		double? ITokenCountProperty.NullValue { get; set; }
 
-		public TokenCountPropertyDescriptor<T> Analyzer(string analyzer) => Assign(a => a.Analyzer = analyzer);
-		public TokenCountPropertyDescriptor<T> Boost(double boost) => Assign(a => a.Boost = boost);
-		public TokenCountPropertyDescriptor<T> IncludeInAll(bool includeInAll = true) => Assign(a => a.IncludeInAll = includeInAll);
-		public TokenCountPropertyDescriptor<T> Index(bool index = true) => Assign(a => a.Index = index);
-		public TokenCountPropertyDescriptor<T> NullValue(double nullValue) => Assign(a => a.NullValue = nullValue);
+		public TokenCountPropertyDescriptor<T> Analyzer(string analyzer) => Assign(analyzer, (a, v) => a.Analyzer = v);
+
+		public TokenCountPropertyDescriptor<T> Boost(double? boost) => Assign(boost, (a, v) => a.Boost = v);
+
+		public TokenCountPropertyDescriptor<T> Index(bool? index = true) => Assign(index, (a, v) => a.Index = v);
+
+		public TokenCountPropertyDescriptor<T> NullValue(double? nullValue) => Assign(nullValue, (a, v) => a.NullValue = v);
 	}
 }

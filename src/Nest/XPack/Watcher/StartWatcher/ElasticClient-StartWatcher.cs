@@ -10,41 +10,39 @@ namespace Nest
 		/// <summary>
 		/// Starts the Watcher/Alerting service, if the service is not already running
 		/// </summary>
-		IStartWatcherResponse StartWatcher(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null);
+		StartWatcherResponse StartWatcher(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null);
 
-		/// <inheritdoc/>
-		IStartWatcherResponse StartWatcher(IStartWatcherRequest request);
+		/// <inheritdoc />
+		StartWatcherResponse StartWatcher(IStartWatcherRequest request);
 
-		/// <inheritdoc/>
-		Task<IStartWatcherResponse> StartWatcherAsync(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null, CancellationToken cancellationToken = default(CancellationToken));
+		/// <inheritdoc />
+		Task<StartWatcherResponse> StartWatcherAsync(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null,
+			CancellationToken ct = default
+		);
 
-		/// <inheritdoc/>
-		Task<IStartWatcherResponse> StartWatcherAsync(IStartWatcherRequest request, CancellationToken cancellationToken = default(CancellationToken));
+		/// <inheritdoc />
+		Task<StartWatcherResponse> StartWatcherAsync(IStartWatcherRequest request, CancellationToken ct = default);
 	}
 
 	public partial class ElasticClient
 	{
-		/// <inheritdoc/>
-		public IStartWatcherResponse StartWatcher(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null) =>
-			this.StartWatcher(selector.InvokeOrDefault(new StartWatcherDescriptor()));
+		/// <inheritdoc />
+		public StartWatcherResponse StartWatcher(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null) =>
+			StartWatcher(selector.InvokeOrDefault(new StartWatcherDescriptor()));
 
-		/// <inheritdoc/>
-		public IStartWatcherResponse StartWatcher(IStartWatcherRequest request) =>
-			this.Dispatcher.Dispatch<IStartWatcherRequest, StartWatcherRequestParameters, StartWatcherResponse>(
-				request,
-				(p, d) => this.LowLevelDispatch.XpackWatcherStartDispatch<StartWatcherResponse>(p)
-			);
+		/// <inheritdoc />
+		public StartWatcherResponse StartWatcher(IStartWatcherRequest request) =>
+			DoRequest<IStartWatcherRequest, StartWatcherResponse>(request, request.RequestParameters);
 
-		/// <inheritdoc/>
-		public Task<IStartWatcherResponse> StartWatcherAsync(Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.StartWatcherAsync(selector.InvokeOrDefault(new StartWatcherDescriptor()), cancellationToken);
+		/// <inheritdoc />
+		public Task<StartWatcherResponse> StartWatcherAsync(
+			Func<StartWatcherDescriptor, IStartWatcherRequest> selector = null,
+			CancellationToken ct = default
+		) => StartWatcherAsync(selector.InvokeOrDefault(new StartWatcherDescriptor()), ct);
 
-		/// <inheritdoc/>
-		public Task<IStartWatcherResponse> StartWatcherAsync(IStartWatcherRequest request, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.Dispatcher.DispatchAsync<IStartWatcherRequest, StartWatcherRequestParameters, StartWatcherResponse, IStartWatcherResponse>(
-				request,
-				cancellationToken,
-				(p, d, c) => this.LowLevelDispatch.XpackWatcherStartDispatchAsync<StartWatcherResponse>(p,c)
-			);
+		/// <inheritdoc />
+		public Task<StartWatcherResponse> StartWatcherAsync(IStartWatcherRequest request, CancellationToken ct = default) =>
+			DoRequestAsync<IStartWatcherRequest, StartWatcherResponse>
+				(request, request.RequestParameters, ct);
 	}
 }

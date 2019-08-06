@@ -1,7 +1,5 @@
-﻿using System;
-using System.Threading.Tasks;
-using Elasticsearch.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nest
 {
@@ -9,62 +7,35 @@ namespace Nest
 	{
 		/// <summary>
 		/// Adds or updates a typed JSON document in a specific index, making it searchable.
-		/// <para> </para><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html</a>
+		/// <para> </para>
+		/// <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html">http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html</a>
 		/// </summary>
-		/// <typeparam name="T">The document type used to infer the default index, type and id</typeparam>
-		/// <param name="document">The document to be indexed. Id will be inferred from (in order):
-		/// <para>1. Id property set up on <see cref="ConnectionSettings"/> for <typeparamref name="T"/></para> 
-		/// <para>2. <see cref="ElasticsearchTypeAttribute.IdProperty"/> property on <see cref="ElasticsearchTypeAttribute"/> applied to <typeparamref name="T"/></para> 
-		/// <para>3. A property named Id on <typeparamref name="T"/></para> 
+		/// <typeparam name="TDocument">The document type used to infer the default index, type and id</typeparam>
+		/// <param name="document">
+		/// The document to be indexed. Id will be inferred from (in order):
+		/// <para>1. Id property set up on <see cref="ConnectionSettings" /> for <typeparamref name="TDocument" /></para>
+		/// <para>
+		/// 2. <see cref="ElasticsearchTypeAttribute.IdProperty" /> property on <see cref="ElasticsearchTypeAttribute" /> applied to
+		/// <typeparamref name="TDocument" />
+		/// </para>
+		/// <para>3. A property named Id on <typeparamref name="TDocument" /></para>
 		/// </param>
 		/// <param name="selector">Optionally further describe the index operation i.e override type, index, id</param>
-		IIndexResponse Index<T>(T document, Func<IndexDescriptor<T>, IIndexRequest> selector = null) where T : class;
+		IndexResponse IndexDocument<TDocument>(TDocument document) where TDocument : class;
 
-		/// <inheritdoc/>
-		IIndexResponse Index(IIndexRequest request);
-
-		/// <inheritdoc/>
-		Task<IIndexResponse> IndexAsync<T>(
-			T document,
-			Func<IndexDescriptor<T>, IIndexRequest> selector = null,
-			CancellationToken cancellationToken = default(CancellationToken)
-		) where T : class;
-
-		/// <inheritdoc/>
-		Task<IIndexResponse> IndexAsync(IIndexRequest request, CancellationToken cancellationToken = default(CancellationToken));
-
+		/// <inheritdoc cref="IElasticClient.IndexDocument{TDocument}" />
+		Task<IndexResponse> IndexDocumentAsync<T>(T document, CancellationToken ct = default)
+			where T : class;
 	}
 
 	public partial class ElasticClient
 	{
-		/// <inheritdoc/>
-		public IIndexResponse Index<T>(T document, Func<IndexDescriptor<T>, IIndexRequest> selector = null)
-			where T : class
-		{
-			var request = document as IIndexRequest;
-			return this.Index(request ?? selector.InvokeOrDefault(new IndexDescriptor<T>(document)));
-		}
+		/// <inheritdoc cref="IElasticClient.IndexDocument{TDocument}" />
+		public IndexResponse IndexDocument<TDocument>(TDocument document) where TDocument : class => Index(document, s => s);
 
-		/// <inheritdoc/>
-		public IIndexResponse Index(IIndexRequest request) =>
-			this.Dispatcher.Dispatch<IIndexRequest, IndexRequestParameters, IndexResponse>(
-				request,
-				this.LowLevelDispatch.IndexDispatch<IndexResponse>
-			);
-
-		/// <inheritdoc/>
-		public Task<IIndexResponse> IndexAsync<T>(T document, Func<IndexDescriptor<T>, IIndexRequest> selector = null,
-			CancellationToken cancellationToken = default(CancellationToken))
-			where T : class
-		{
-			var request = document as IIndexRequest;
-			return this.IndexAsync(request ?? selector.InvokeOrDefault(new IndexDescriptor<T>(document)), cancellationToken);
-		}
-
-		/// <inheritdoc/>
-		public Task<IIndexResponse> IndexAsync(IIndexRequest request, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.Dispatcher.DispatchAsync<IIndexRequest, IndexRequestParameters, IndexResponse, IIndexResponse>(
-				request, cancellationToken, this.LowLevelDispatch.IndexDispatchAsync<IndexResponse>
-			);
+		/// <inheritdoc cref="IElasticClient.IndexDocument{TDocument}" />
+		public Task<IndexResponse> IndexDocumentAsync<TDocument>(TDocument document, CancellationToken ct = default)
+			where TDocument : class =>
+			IndexAsync(document, s => s, ct);
 	}
 }

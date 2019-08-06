@@ -1,46 +1,39 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface ISimulatePipelineDocument
 	{
-		[JsonProperty("_index")]
-		IndexName Index { get; set; }
-
-		[JsonProperty("_type")]
-		TypeName Type { get; set; }
-
-		[JsonProperty("_id")]
+		[DataMember(Name = "_id")]
 		Id Id { get; set; }
 
-		[JsonProperty("_source")]
+		[DataMember(Name = "_index")]
+		IndexName Index { get; set; }
+
+		[DataMember(Name = "_source")]
+		[JsonFormatter(typeof(SourceFormatter<>))]
 		object Source { get; set; }
 	}
 
 	public class SimulatePipelineDocument : ISimulatePipelineDocument
 	{
-		public IndexName Index { get; set; }
-
-		public TypeName Type { get; set; }
+		private object _source;
 
 		public Id Id { get; set; }
+		public IndexName Index { get; set; }
 
-		private object _source;
 		public object Source
 		{
-			get { return _source; }
+			get => _source;
 			set
 			{
 				_source = value;
-				this.Index = this.Index ?? _source.GetType();
-				this.Type = this.Type ?? _source.GetType();
-				this.Id = this.Id ?? Id.From(_source);
+				Index = Index ?? _source.GetType();
+				Id = Id ?? Id.From(_source);
 			}
 		}
 	}
@@ -50,18 +43,17 @@ namespace Nest
 	{
 		Id ISimulatePipelineDocument.Id { get; set; }
 		IndexName ISimulatePipelineDocument.Index { get; set; }
-		TypeName ISimulatePipelineDocument.Type { get; set; }
 		object ISimulatePipelineDocument.Source { get; set; }
 
-		public SimulatePipelineDocumentDescriptor Id(Id id) => Assign(a => a.Id = id);
-		public SimulatePipelineDocumentDescriptor Index(IndexName index) => Assign(a => a.Index = index);
-		public SimulatePipelineDocumentDescriptor Type(TypeName type) => Assign(a => a.Type = type);
-		public SimulatePipelineDocumentDescriptor Source<T>(T source) where T : class => Assign(a =>
+		public SimulatePipelineDocumentDescriptor Id(Id id) => Assign(id, (a, v) => a.Id = v);
+
+		public SimulatePipelineDocumentDescriptor Index(IndexName index) => Assign(index, (a, v) => a.Index = v);
+
+		public SimulatePipelineDocumentDescriptor Source<T>(T source) where T : class => Assign(source, (a, v) =>
 		{
-			a.Source = source;
-			a.Index = a.Index ?? source.GetType();
-			a.Type = a.Type ?? source.GetType();
-			a.Id = a.Id ?? Nest.Id.From(source);
+			a.Source = v;
+			a.Index = a.Index ?? v.GetType();
+			a.Id = a.Id ?? Nest.Id.From(v);
 		});
 	}
 
@@ -71,6 +63,6 @@ namespace Nest
 		public SimulatePipelineDocumentsDescriptor() : base(new List<ISimulatePipelineDocument>()) { }
 
 		public SimulatePipelineDocumentsDescriptor Document(Func<SimulatePipelineDocumentDescriptor, ISimulatePipelineDocument> selector) =>
-			this.Assign(a => a.AddIfNotNull(selector?.Invoke(new SimulatePipelineDocumentDescriptor())));
+			Assign(selector, (a, v) => a.AddIfNotNull(v?.Invoke(new SimulatePipelineDocumentDescriptor())));
 	}
 }

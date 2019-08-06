@@ -1,13 +1,13 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IAliasAddAction : IAliasAction
 	{
-		[JsonProperty("add")]
+		[DataMember(Name ="add")]
 		AliasAddOperation Add { get; set; }
 	}
 
@@ -18,10 +18,7 @@ namespace Nest
 
 	public class AliasAddDescriptor : DescriptorBase<AliasAddDescriptor, IAliasAddAction>, IAliasAddAction
 	{
-		public AliasAddDescriptor()
-		{
-			Self.Add = new AliasAddOperation();
-		}
+		public AliasAddDescriptor() => Self.Add = new AliasAddOperation();
 
 		AliasAddOperation IAliasAddAction.Add { get; set; }
 
@@ -30,36 +27,49 @@ namespace Nest
 			Self.Add.Index = index;
 			return this;
 		}
+
 		public AliasAddDescriptor Index(Type index)
 		{
 			Self.Add.Index = index;
 			return this;
 		}
+
 		public AliasAddDescriptor Index<T>() where T : class
 		{
 			Self.Add.Index = typeof(T);
 			return this;
 		}
+
 		public AliasAddDescriptor Alias(string alias)
 		{
 			Self.Add.Alias = alias;
 			return this;
 		}
+
 		public AliasAddDescriptor Routing(string routing)
 		{
 			Self.Add.Routing = routing;
 			return this;
 		}
+
 		public AliasAddDescriptor IndexRouting(string indexRouting)
 		{
 			Self.Add.IndexRouting = indexRouting;
 			return this;
 		}
+
 		public AliasAddDescriptor SearchRouting(string searchRouting)
 		{
 			Self.Add.SearchRouting = searchRouting;
 			return this;
 		}
+
+		public AliasAddDescriptor IsWriteIndex(bool? isWriteIndex = true)
+		{
+			Self.Add.IsWriteIndex = isWriteIndex;
+			return this;
+		}
+
 		public AliasAddDescriptor Filter<T>(Func<QueryContainerDescriptor<T>, QueryContainer> filterSelector)
 			where T : class
 		{

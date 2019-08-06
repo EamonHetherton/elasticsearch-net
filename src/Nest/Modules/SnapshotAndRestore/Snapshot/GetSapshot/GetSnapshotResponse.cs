@@ -1,20 +1,13 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IGetSnapshotResponse : IResponse
+	[DataContract]
+	public class GetSnapshotResponse : ResponseBase
 	{
-		[JsonProperty("snapshots")]
-		IReadOnlyCollection<Snapshot> Snapshots { get; }
-	}
-
-	[JsonObject]
-	public class GetSnapshotResponse : ResponseBase, IGetSnapshotResponse
-	{
-
-		[JsonProperty("snapshots")]
+		[DataMember(Name ="snapshots")]
 		public IReadOnlyCollection<Snapshot> Snapshots { get; internal set; } = EmptyReadOnly<Snapshot>.Collection;
-
 	}
 }

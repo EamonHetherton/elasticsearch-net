@@ -1,15 +1,14 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum DynamicMapping
 	{
 		/// <summary>
-		/// If new unmapped fields are passed, the whole document WON'T be added/updated
+		/// If new unmapped fields are passed, the whole document will not be added/updated
 		/// </summary>
 		[EnumMember(Value = "strict")]
 		Strict

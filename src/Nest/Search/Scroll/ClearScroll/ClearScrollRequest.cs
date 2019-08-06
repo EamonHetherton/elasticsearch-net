@@ -1,34 +1,28 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
+	[MapsApi("clear_scroll.json")]
 	public partial interface IClearScrollRequest
 	{
-		[JsonProperty("scroll_id")]
+		[DataMember(Name ="scroll_id")]
 		IEnumerable<string> ScrollIds { get; set; }
 	}
 
 	public partial class ClearScrollRequest
 	{
+		public ClearScrollRequest(IEnumerable<string> scrollIds) => ScrollIds = scrollIds;
+
+		public ClearScrollRequest(string scrollId) => ScrollIds = new[] { scrollId };
+
 		public IEnumerable<string> ScrollIds { get; set; }
-
-		public ClearScrollRequest(IEnumerable<string> scrollIds)
-		{
-			this.ScrollIds = scrollIds;
-		}
-
-		public ClearScrollRequest(string scrollId)
-		{
-			this.ScrollIds = new string[] { scrollId };
-		}
 	}
 
-	[DescriptorFor("ClearScroll")]
 	public partial class ClearScrollDescriptor
 	{
 		IEnumerable<string> IClearScrollRequest.ScrollIds { get; set; }
 
-		public ClearScrollDescriptor ScrollId(params string[] scrollIds) => Assign(a => a.ScrollIds = scrollIds);
+		public ClearScrollDescriptor ScrollId(params string[] scrollIds) => Assign(scrollIds, (a, v) => a.ScrollIds = v);
 	}
 }

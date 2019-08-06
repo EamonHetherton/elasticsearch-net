@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,56 +7,49 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Metric/ValueCount/ValueCountAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Metric/ValueCount/ValueCountAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[value-count-aggregation-usage]]
-== Value Count Aggregation Usage
+=== Value Count Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .ValueCount("commit_count", c => c
-        .Field(p => p.NumberOfCommits)
-    )
+a => a
+.ValueCount("commit_count", c => c
+    .Field(p => p.NumberOfCommits)
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
-{
-    Aggregations = new ValueCountAggregation("commit_count", Field<Project>(p => p.NumberOfCommits))
-}
+new ValueCountAggregation("commit_count", Field<Project>(p => p.NumberOfCommits))
 ----
 
 [source,javascript]
 .Example json output
 ----
 {
-  "aggs": {
-    "commit_count": {
-      "value_count": {
-        "field": "numberOfCommits"
-      }
+  "commit_count": {
+    "value_count": {
+      "field": "numberOfCommits"
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
-response.IsValid.Should().BeTrue();
-var commitCount = response.Aggs.ValueCount("commit_count");
+response.ShouldBeValid();
+var commitCount = response.Aggregations.ValueCount("commit_count");
 commitCount.Should().NotBeNull();
 commitCount.Value.Should().BeGreaterThan(0);
 ----

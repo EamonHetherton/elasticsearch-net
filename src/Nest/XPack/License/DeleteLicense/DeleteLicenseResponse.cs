@@ -1,9 +1,4 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-
-namespace Nest
+﻿namespace Nest
 {
-	public interface IDeleteLicenseResponse : IResponse { }
-
-	public class DeleteLicenseResponse : ResponseBase, IDeleteLicenseResponse { }
+	public class DeleteLicenseResponse : ResponseBase { }
 }

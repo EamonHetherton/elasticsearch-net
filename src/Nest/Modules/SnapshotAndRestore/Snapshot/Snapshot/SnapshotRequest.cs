@@ -1,55 +1,54 @@
-﻿using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public partial interface ISnapshotRequest 
+	[MapsApi("snapshot.create.json")]
+	public partial interface ISnapshotRequest
 	{
-		[JsonProperty("indices")]
-		[JsonConverter(typeof(IndicesMultiSyntaxJsonConverter))]
-		Indices Indices { get; set; }
-
-		[JsonProperty("ignore_unavailable")]
+		[DataMember(Name ="ignore_unavailable")]
 		bool? IgnoreUnavailable { get; set; }
 
-		[JsonProperty("include_global_state")]
+		[DataMember(Name ="include_global_state")]
 		bool? IncludeGlobalState { get; set; }
 
-		[JsonProperty("partial")]
+		[DataMember(Name ="indices")]
+		[JsonFormatter(typeof(IndicesMultiSyntaxFormatter))]
+		Indices Indices { get; set; }
+
+		[DataMember(Name ="partial")]
 		bool? Partial { get; set; }
 	}
 
-	public partial class SnapshotRequest 
+	public partial class SnapshotRequest
 	{
-		public Indices Indices { get; set; }
-
 		public bool? IgnoreUnavailable { get; set; }
 
 		public bool? IncludeGlobalState { get; set; }
+		public Indices Indices { get; set; }
 
 		public bool? Partial { get; set; }
-
 	}
 
-	[DescriptorFor("SnapshotCreate")]
-	public partial class SnapshotDescriptor 
+	public partial class SnapshotDescriptor
 	{
-		Indices ISnapshotRequest.Indices { get; set; }
 		bool? ISnapshotRequest.IgnoreUnavailable { get; set; }
 
 		bool? ISnapshotRequest.IncludeGlobalState { get; set; }
+		Indices ISnapshotRequest.Indices { get; set; }
 
 		bool? ISnapshotRequest.Partial { get; set; }
 
-		public SnapshotDescriptor Index(IndexName index) => this.Indices(index);
+		public SnapshotDescriptor Index(IndexName index) => Indices(index);
 
-		public SnapshotDescriptor Index<T>() where T : class => this.Indices(typeof(T));
+		public SnapshotDescriptor Index<T>() where T : class => Indices(typeof(T));
 
-		public SnapshotDescriptor Indices(Indices indices) => Assign(a => a.Indices = indices);
+		public SnapshotDescriptor Indices(Indices indices) => Assign(indices, (a, v) => a.Indices = v);
 
-		public SnapshotDescriptor IgnoreUnavailable(bool ignoreUnavailable = true) => Assign(a => a.IgnoreUnavailable = ignoreUnavailable);
+		public SnapshotDescriptor IgnoreUnavailable(bool? ignoreUnavailable = true) => Assign(ignoreUnavailable, (a, v) => a.IgnoreUnavailable = v);
 
-		public SnapshotDescriptor IncludeGlobalState(bool includeGlobalState = true) => Assign(a => a.IncludeGlobalState = includeGlobalState);
+		public SnapshotDescriptor IncludeGlobalState(bool? includeGlobalState = true) => Assign(includeGlobalState, (a, v) => a.IncludeGlobalState = v);
 
-		public SnapshotDescriptor Partial(bool partial = true) => Assign(a => a.Partial = partial);
+		public SnapshotDescriptor Partial(bool? partial = true) => Assign(partial, (a, v) => a.Partial = v);
 	}
 }

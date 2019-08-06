@@ -28,7 +28,7 @@ test-results
 test-results/*
 *.lib
 *.sbr
-*.DotSettings
+*.DotSettings.user
 obj/
 [Rr]elease*/
 _ReSharper*/
@@ -39,7 +39,9 @@ _NCrunch*/
 .fake
 packages/*
 paket.exe
+paket-files/*.cached
 
+BenchmarkDotNet.Artifacts
 build/*
 !build/tools
 !build/keys
@@ -52,6 +54,7 @@ build/tools/*
 !build/*.ps1
 !build/*.nuspec
 !build/*.png
+!build/*.targets
 !build/scripts
 
 
@@ -64,6 +67,7 @@ doc/Help
 *.ncrunchproject
 Cache
 YamlCache
+tests.yaml
 
 *.DS_Store
 *.sln.ide

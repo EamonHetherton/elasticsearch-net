@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,46 +7,41 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Metric/Average/AverageAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Metric/Average/AverageAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[average-aggregation-usage]]
-== Average Aggregation Usage
+=== Average Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Average("average_commits", avg => avg
-        .Meta(m => m
-            .Add("foo", "bar")
-        )
-        .Field(p => p.NumberOfCommits)
-        .Missing(10)
-        .Script(ss=>ss.Inline("_value * 1.2").Lang("groovy"))
+a => a
+.Average("average_commits", avg => avg
+    .Meta(m => m
+        .Add("foo", "bar")
     )
+    .Field(p => p.NumberOfCommits)
+    .Missing(10)
+    .Script(ss => ss.Source("_value * 1.2"))
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new AverageAggregation("average_commits", Field<Project>(p => p.NumberOfCommits))
 {
-    Aggregations = new AverageAggregation("average_commits", Field<Project>(p => p.NumberOfCommits))
+    Meta = new Dictionary<string, object>
     {
-        Meta = new Dictionary<string, object>
-        {
-            { "foo", "bar" }
-        },
-        Missing = 10,
-        Script = new InlineScript("_value * 1.2") { Lang = "groovy" }
-    }
+        { "foo", "bar" }
+    },
+    Missing = 10,
+    Script = new InlineScript("_value * 1.2")
 }
 ----
 
@@ -54,30 +49,27 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "average_commits": {
-      "meta": {
-        "foo": "bar"
-      },
-      "avg": {
-        "field": "numberOfCommits",
-        "missing": 10.0,
-        "script": {
-          "inline": "_value * 1.2",
-          "lang": "groovy"
-        }
+  "average_commits": {
+    "meta": {
+      "foo": "bar"
+    },
+    "avg": {
+      "field": "numberOfCommits",
+      "missing": 10.0,
+      "script": {
+        "source": "_value * 1.2"
       }
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var commitsAvg = response.Aggs.Average("average_commits");
+var commitsAvg = response.Aggregations.Average("average_commits");
 commitsAvg.Should().NotBeNull();
 commitsAvg.Value.Should().BeGreaterThan(0);
 commitsAvg.Meta.Should().NotBeNull().And.HaveCount(1);

@@ -1,15 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IShardsOperationResponse : IResponse
+	public abstract class ShardsOperationResponseBase : ResponseBase
 	{
-		ShardsMetaData Shards { get; }
-	}
-
-	public abstract class ShardsOperationResponseBase : ResponseBase, IShardsOperationResponse
-	{
-		[JsonProperty("_shards")]
-		public ShardsMetaData Shards { get; internal set; }
+		[DataMember(Name ="_shards")]
+		public ShardStatistics Shards { get; internal set; }
 	}
 }

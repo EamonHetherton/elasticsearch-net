@@ -1,29 +1,28 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(FieldNameQueryJsonConverter<MatchPhraseQuery>))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(FieldNameQueryFormatter<MatchPhraseQuery, IMatchPhraseQuery>))]
 	public interface IMatchPhraseQuery : IFieldNameQuery
 	{
-		[JsonProperty(PropertyName = "query")]
-		string Query { get; set; }
-
-		[JsonProperty(PropertyName = "analyzer")]
+		[DataMember(Name = "analyzer")]
 		string Analyzer { get; set; }
 
-		[JsonProperty(PropertyName = "slop")]
+		[DataMember(Name = "query")]
+		string Query { get; set; }
+
+		[DataMember(Name = "slop")]
 		int? Slop { get; set; }
 	}
 
 	public class MatchPhraseQuery : FieldNameQueryBase, IMatchPhraseQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
-
 		public string Analyzer { get; set; }
 		public string Query { get; set; }
 		public int? Slop { get; set; }
+		protected override bool Conditionless => IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.MatchPhrase = this;
 
@@ -40,10 +39,10 @@ namespace Nest
 		string IMatchPhraseQuery.Query { get; set; }
 		int? IMatchPhraseQuery.Slop { get; set; }
 
-		public MatchPhraseQueryDescriptor<T> Query(string query) => Assign(a => a.Query = query);
+		public MatchPhraseQueryDescriptor<T> Query(string query) => Assign(query, (a, v) => a.Query = v);
 
-		public MatchPhraseQueryDescriptor<T> Analyzer(string analyzer) => Assign(a => a.Analyzer = analyzer);
+		public MatchPhraseQueryDescriptor<T> Analyzer(string analyzer) => Assign(analyzer, (a, v) => a.Analyzer = v);
 
-		public MatchPhraseQueryDescriptor<T> Slop(int slop) => Assign(a => a.Slop = slop);
+		public MatchPhraseQueryDescriptor<T> Slop(int? slop) => Assign(slop, (a, v) => a.Slop = v);
 	}
 }

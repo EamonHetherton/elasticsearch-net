@@ -1,45 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	public partial interface IRenderSearchTemplateRequest
 	{
-		[JsonProperty("inline")]
-		string Inline { get; set; }
-
-		[JsonProperty("file")]
+		[DataMember(Name = "file")]
 		string File { get; set; }
 
-		[JsonProperty("params")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, object>))]
+		[DataMember(Name = "params")]
+		[JsonFormatter(typeof(VerbatimDictionaryKeysBaseFormatter<Dictionary<string, object>, string, object>))]
 		Dictionary<string, object> Params { get; set; }
 
+		[DataMember(Name = "source")]
+		string Source { get; set; }
 	}
 
 	public partial class RenderSearchTemplateRequest
 	{
-		public string Inline { get; set; }
 		public string File { get; set; }
-		public Dictionary<string, object> Params { get; set; }
-	}
 
+		public Dictionary<string, object> Params { get; set; }
+		public string Source { get; set; }
+	}
 
 	public partial class RenderSearchTemplateDescriptor
 	{
-		string IRenderSearchTemplateRequest.Inline { get; set; }
 		string IRenderSearchTemplateRequest.File { get; set; }
+
 		Dictionary<string, object> IRenderSearchTemplateRequest.Params { get; set; }
+		string IRenderSearchTemplateRequest.Source { get; set; }
 
-		public RenderSearchTemplateDescriptor Inline(string inline) => Assign(a => a.Inline = inline);
+		public RenderSearchTemplateDescriptor Source(string source) => Assign(source, (a, v) => a.Source = v);
 
-		public RenderSearchTemplateDescriptor File(string file) => Assign(a => a.File = file);
+		public RenderSearchTemplateDescriptor File(string file) => Assign(file, (a, v) => a.File = v);
 
-		public RenderSearchTemplateDescriptor Params(Dictionary<string, object> scriptParams) => Assign(a => a.Params = scriptParams);
+		public RenderSearchTemplateDescriptor Params(Dictionary<string, object> scriptParams) => Assign(scriptParams, (a, v) => a.Params = v);
 
 		public RenderSearchTemplateDescriptor Params(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> paramsSelector) =>
-			Assign(a => a.Params = paramsSelector?.Invoke(new FluentDictionary<string, object>()));
-
+			Assign(paramsSelector, (a, v) => a.Params = v?.Invoke(new FluentDictionary<string, object>()));
 	}
 }

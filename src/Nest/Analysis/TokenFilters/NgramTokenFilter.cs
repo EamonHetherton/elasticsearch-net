@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -8,44 +9,45 @@ namespace Nest
 	public interface INGramTokenFilter : ITokenFilter
 	{
 		/// <summary>
-		/// Defaults to 1. 
+		/// Defaults to 2
 		/// </summary>
-		[JsonProperty("min_gram")]
-		int? MinGram { get; set; }
+		[DataMember(Name ="max_gram")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
+		int? MaxGram { get; set; }
 
 		/// <summary>
-		/// Defaults to 2 
+		/// Defaults to 1.
 		/// </summary>
-		[JsonProperty("max_gram")]
-		int? MaxGram { get; set; }
+		[DataMember(Name ="min_gram")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
+		int? MinGram { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class NGramTokenFilter : TokenFilterBase, INGramTokenFilter
 	{
 		public NGramTokenFilter() : base("ngram") { }
 
-		/// <inheritdoc/>
-		public int? MinGram { get; set; }
-
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public int? MaxGram { get; set; }
+
+		/// <inheritdoc />
+		public int? MinGram { get; set; }
 	}
-	///<inheritdoc/>
-	public class NGramTokenFilterDescriptor 
+
+	/// <inheritdoc />
+	public class NGramTokenFilterDescriptor
 		: TokenFilterDescriptorBase<NGramTokenFilterDescriptor, INGramTokenFilter>, INGramTokenFilter
 	{
 		protected override string Type => "ngram";
-
-		int? INGramTokenFilter.MinGram { get; set; }
 		int? INGramTokenFilter.MaxGram { get; set; }
 
-		///<inheritdoc/>
-		public NGramTokenFilterDescriptor MinGram(int? minGram) => Assign(a => a.MinGram = minGram);
+		int? INGramTokenFilter.MinGram { get; set; }
 
-		///<inheritdoc/>
-		public NGramTokenFilterDescriptor MaxGram(int? maxGram) => Assign(a => a.MaxGram = maxGram);
+		/// <inheritdoc />
+		public NGramTokenFilterDescriptor MinGram(int? minGram) => Assign(minGram, (a, v) => a.MinGram = v);
 
+		/// <inheritdoc />
+		public NGramTokenFilterDescriptor MaxGram(int? maxGram) => Assign(maxGram, (a, v) => a.MaxGram = v);
 	}
-
 }

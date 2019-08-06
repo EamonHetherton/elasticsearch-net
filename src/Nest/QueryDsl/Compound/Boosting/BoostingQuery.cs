@@ -1,50 +1,50 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<BoostingQueryDescriptor<object>>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(BoostingQueryDescriptor<object>))]
 	public interface IBoostingQuery : IQuery
 	{
-		[JsonProperty("positive")]
-		QueryContainer PositiveQuery { get; set; }
+		[DataMember(Name ="negative_boost")]
+		double? NegativeBoost { get; set; }
 
-		[JsonProperty("negative")]
+		[DataMember(Name ="negative")]
 		QueryContainer NegativeQuery { get; set; }
 
-		[JsonProperty("negative_boost")]
-		double? NegativeBoost { get; set; }
+		[DataMember(Name ="positive")]
+		QueryContainer PositiveQuery { get; set; }
 	}
 
 	public class BoostingQuery : QueryBase, IBoostingQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
-		public QueryContainer PositiveQuery { get; set; }
-		public QueryContainer NegativeQuery { get; set; }
 		public double? NegativeBoost { get; set; }
+		public QueryContainer NegativeQuery { get; set; }
+		public QueryContainer PositiveQuery { get; set; }
+		protected override bool Conditionless => IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.Boosting = this;
+
 		internal static bool IsConditionless(IBoostingQuery q) => q.NegativeQuery.NotWritable() && q.PositiveQuery.NotWritable();
 	}
 
 	public class BoostingQueryDescriptor<T>
 		: QueryDescriptorBase<BoostingQueryDescriptor<T>, IBoostingQuery>
-		, IBoostingQuery where T : class
+			, IBoostingQuery where T : class
 	{
 		protected override bool Conditionless => BoostingQuery.IsConditionless(this);
-		QueryContainer IBoostingQuery.PositiveQuery { get; set; }
-		QueryContainer IBoostingQuery.NegativeQuery { get; set; }
 		double? IBoostingQuery.NegativeBoost { get; set; }
+		QueryContainer IBoostingQuery.NegativeQuery { get; set; }
+		QueryContainer IBoostingQuery.PositiveQuery { get; set; }
 
-		public BoostingQueryDescriptor<T> NegativeBoost(double? boost) => Assign(a => a.NegativeBoost = boost);
+		public BoostingQueryDescriptor<T> NegativeBoost(double? boost) => Assign(boost, (a, v) => a.NegativeBoost = v);
 
 		public BoostingQueryDescriptor<T> Positive(Func<QueryContainerDescriptor<T>, QueryContainer> selector) =>
-			Assign(a => a.PositiveQuery = selector?.Invoke(new QueryContainerDescriptor<T>()));
+			Assign(selector, (a, v) => a.PositiveQuery = v?.Invoke(new QueryContainerDescriptor<T>()));
 
 		public BoostingQueryDescriptor<T> Negative(Func<QueryContainerDescriptor<T>, QueryContainer> selector) =>
-			Assign(a => a.NegativeQuery = selector?.Invoke(new QueryContainerDescriptor<T>()));
+			Assign(selector, (a, v) => a.NegativeQuery = v?.Invoke(new QueryContainerDescriptor<T>()));
 	}
 }

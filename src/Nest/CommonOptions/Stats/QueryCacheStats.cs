@@ -1,32 +1,29 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class QueryCacheStats
 	{
-		[JsonProperty("memory_size")]
-		public string MemorySize { get; set; }
-		[JsonProperty("memory_size_in_bytes")]
-		public long MemorySizeInBytes { get; set; }
-
-		[JsonProperty("total_count")]
-		public long TotalCount { get; set; }
-
-		[JsonProperty("hit_count")]
-		public long HitCount { get; set; }
-
-		[JsonProperty("miss_count")]
-		public long MissCount { get; set; }
-
-		[JsonProperty("cache_size")]
-		public long CacheSize { get; set; }
-
-		[JsonProperty("cache_count")]
+		[DataMember(Name ="cache_count")]
 		public long CacheCount { get; set; }
 
-		[JsonProperty("evictions")]
+		[DataMember(Name ="cache_size")]
+		public long CacheSize { get; set; }
+
+		[DataMember(Name ="evictions")]
 		public long Evictions { get; set; }
 
+		[DataMember(Name ="hit_count")]
+		public long HitCount { get; set; }
+
+		[DataMember(Name ="memory_size_in_bytes")]
+		public long MemorySizeInBytes { get; set; }
+
+		[DataMember(Name ="miss_count")]
+		public long MissCount { get; set; }
+
+		[DataMember(Name ="total_count")]
+		public long TotalCount { get; set; }
 	}
 }

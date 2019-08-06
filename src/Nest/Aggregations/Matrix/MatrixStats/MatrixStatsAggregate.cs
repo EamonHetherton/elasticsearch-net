@@ -1,46 +1,43 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-
-	[JsonObject]
+	[DataContract]
 	public class MatrixStatsField
 	{
-		[JsonProperty("name")]
-		public string Name { get; set; }
-
-		[JsonProperty("count")]
-		public int Count { get; set; }
-
-		[JsonProperty("mean")]
-		public double Mean { get; set; }
-
-		[JsonProperty("variance")]
-		public double Variance { get; set; }
-
-		[JsonProperty("skewness")]
-		public double Skewness { get; set; }
-
-		[JsonProperty("kurtosis")]
-		public double Kurtosis { get; set; }
-
-		[JsonProperty("covariance")]
-		public Dictionary<string, double> Covariance { get; set; }
-
-		[JsonProperty("correlation")]
+		[DataMember(Name = "correlation")]
 		public Dictionary<string, double> Correlation { get; set; }
 
+		[DataMember(Name = "count")]
+		public int Count { get; set; }
+
+		[DataMember(Name = "covariance")]
+		public Dictionary<string, double> Covariance { get; set; }
+
+		[DataMember(Name = "kurtosis")]
+		public double Kurtosis { get; set; }
+
+		[DataMember(Name = "mean")]
+		public double Mean { get; set; }
+
+		[DataMember(Name = "name")]
+		public string Name { get; set; }
+
+		[DataMember(Name = "skewness")]
+		public double Skewness { get; set; }
+
+		[DataMember(Name = "variance")]
+		public double Variance { get; set; }
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class MatrixStatsAggregate : MatrixAggregateBase
 	{
-		[JsonProperty("fields")]
+		[DataMember(Name = "doc_count")]
+		public long DocCount { get; set; }
+
+		[DataMember(Name = "fields")]
 		public List<MatrixStatsField> Fields { get; set; }
 	}
 }

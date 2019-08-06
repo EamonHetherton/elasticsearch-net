@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum RangeType
 	{
 		/// <summary>
@@ -13,27 +13,38 @@ namespace Nest
 		/// </summary>
 		[EnumMember(Value = "integer_range")]
 		IntegerRange,
+
 		/// <summary>
 		/// A range of single-precision 32-bit IEEE 754 floating point values.
 		/// </summary>
 		[EnumMember(Value = "float_range")]
 		FloatRange,
+
 		/// <summary>
 		/// A range of signed 64-bit integers with a minimum value of -263 and maximum of 263-1.
 		/// </summary>
 		[EnumMember(Value = "long_range")]
 		LongRange,
+
 		/// <summary>
 		/// A range of double-precision 64-bit IEEE 754 floating point values.
 		/// </summary>
 		[EnumMember(Value = "double_range")]
 		DoubleRange,
+
 		/// <summary>
 		/// A range of date values represented as unsigned 64-bit integer milliseconds elapsed since system epoch.
 		/// </summary>
 		[EnumMember(Value = "date_range")]
-		DateRange
+		DateRange,
+
+		/// <summary>
+		/// A range of ip values supporting either IPv4 or IPv6 (or mixed) addresses.
+		/// </summary>
+		[EnumMember(Value = "ip_range")]
+		IpRange
 	}
+
 	internal static class RangeTypeExtensions
 	{
 		public static FieldType ToFieldType(this RangeType rangeType)
@@ -45,10 +56,10 @@ namespace Nest
 				case RangeType.LongRange: return FieldType.LongRange;
 				case RangeType.DoubleRange: return FieldType.DoubleRange;
 				case RangeType.DateRange: return FieldType.DateRange;
+				case RangeType.IpRange: return FieldType.IpRange;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(rangeType), rangeType, null);
 			}
-
 		}
 	}
 }

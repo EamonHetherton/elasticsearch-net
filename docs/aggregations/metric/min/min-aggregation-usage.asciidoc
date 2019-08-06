@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,56 +7,49 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Metric/Min/MinAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Metric/Min/MinAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[min-aggregation-usage]]
-== Min Aggregation Usage
+=== Min Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Min("min_last_activity", m => m
-        .Field(p => p.LastActivity)
-    )
+a => a
+.Min("min_last_activity", m => m
+    .Field(p => p.LastActivity)
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
-{
-    Aggregations = new MinAggregation("min_last_activity", Field<Project>(p => p.LastActivity))
-}
+new MinAggregation("min_last_activity", Field<Project>(p => p.LastActivity))
 ----
 
 [source,javascript]
 .Example json output
 ----
 {
-  "aggs": {
-    "min_last_activity": {
-      "min": {
-        "field": "lastActivity"
-      }
+  "min_last_activity": {
+    "min": {
+      "field": "lastActivity"
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var min = response.Aggs.Min("min_last_activity");
+var min = response.Aggregations.Min("min_last_activity");
 min.Should().NotBeNull();
 min.Value.Should().BeGreaterThan(0);
 min.ValueAsString.Should().NotBeNullOrEmpty();

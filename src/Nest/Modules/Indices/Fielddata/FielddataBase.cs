@@ -1,16 +1,17 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IFielddata
 	{
-		[JsonProperty("loading")]
-		FielddataLoading? Loading { get; set; }
-
-		[JsonProperty("filter")]
+		[DataMember(Name ="filter")]
 		IFielddataFilter Filter { get; set; }
+
+		[DataMember(Name ="loading")]
+		FielddataLoading? Loading { get; set; }
 	}
 
 	public abstract class FielddataBase : IFielddata
@@ -28,8 +29,8 @@ namespace Nest
 		FielddataLoading? IFielddata.Loading { get; set; }
 
 		public TDescriptor Filter(Func<FielddataFilterDescriptor, IFielddataFilter> filterSelector) =>
-			Assign(a => a.Filter = filterSelector(new FielddataFilterDescriptor()));
+			Assign(filterSelector(new FielddataFilterDescriptor()), (a, v) => a.Filter = v);
 
-		public TDescriptor Loading(FielddataLoading loading) => Assign(a => a.Loading = loading);
+		public TDescriptor Loading(FielddataLoading? loading) => Assign(loading, (a, v) => a.Loading = v);
 	}
 }

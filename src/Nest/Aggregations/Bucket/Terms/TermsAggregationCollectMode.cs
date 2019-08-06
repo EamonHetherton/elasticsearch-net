@@ -1,20 +1,20 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	/// <summary>
 	/// Determines how the terms aggregation is executed
 	/// </summary>
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum TermsAggregationCollectMode
 	{
 		/// <summary>
-		/// Order by using field values directly in order to aggregate data per-bucket 
+		/// Order by using field values directly in order to aggregate data per-bucket
 		/// </summary>
 		[EnumMember(Value = "depth_first")]
 		DepthFirst,
+
 		/// <summary>
 		/// Order by using ordinals of the field values instead of the values themselves
 		/// </summary>

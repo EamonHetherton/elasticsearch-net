@@ -2,50 +2,65 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(SimpleQueryStringFlagsJsonConverter))]
 	[Flags]
 	public enum SimpleQueryStringFlags
 	{
 		[EnumMember(Value = "NONE")]
 		None = 1 << 0,
+
 		[EnumMember(Value = "AND")]
 		And = 1 << 1,
+
 		[EnumMember(Value = "OR")]
 		Or = 1 << 2,
+
 		[EnumMember(Value = "NOT")]
 		Not = 1 << 3,
+
 		[EnumMember(Value = "PREFIX")]
 		Prefix = 1 << 4,
+
 		[EnumMember(Value = "PHRASE")]
 		Phrase = 1 << 5,
+
 		[EnumMember(Value = "PRECEDENCE")]
 		Precedence = 1 << 6,
+
 		[EnumMember(Value = "ESCAPE")]
 		Escape = 1 << 7,
+
 		[EnumMember(Value = "WHITESPACE")]
 		Whitespace = 1 << 8,
+
 		[EnumMember(Value = "FUZZY")]
 		Fuzzy = 1 << 9,
+
 		[EnumMember(Value = "NEAR")]
 		Near = 1 << 10,
+
 		[EnumMember(Value = "SLOP")]
 		Slop = 1 << 11,
+
 		[EnumMember(Value = "ALL")]
 		All = 1 << 12,
 	}
 
-	internal class SimpleQueryStringFlagsJsonConverter : JsonConverter
+	internal class SimpleQueryStringFlagsFormatter : IJsonFormatter<SimpleQueryStringFlags?>
 	{
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		public void Serialize(ref JsonWriter writer, SimpleQueryStringFlags? value, IJsonFormatterResolver formatterResolver)
 		{
-			var em = value as SimpleQueryStringFlags?;
-			if (!em.HasValue) return; ;
-			var e = em.Value;
-			var list = new List<string>();
+			if (!value.HasValue)
+			{
+				writer.WriteNull();
+				return;
+			}
+
+			var e = value.Value;
+			var list = new List<string>(13);
 			if (e.HasFlag(SimpleQueryStringFlags.All)) list.Add("ALL");
 			if (e.HasFlag(SimpleQueryStringFlags.None)) list.Add("NONE");
 			if (e.HasFlag(SimpleQueryStringFlags.And)) list.Add("AND");
@@ -60,18 +75,16 @@ namespace Nest
 			if (e.HasFlag(SimpleQueryStringFlags.Near)) list.Add("NEAR");
 			if (e.HasFlag(SimpleQueryStringFlags.Slop)) list.Add("SLOP");
 			var flags = string.Join("|", list);
-			writer.WriteValue(flags);
+			writer.WriteString(flags);
 		}
 
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+		public SimpleQueryStringFlags? Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
 		{
-			var flags = reader.Value as string;
+			var flags = reader.ReadString();
 			return flags?.Split('|')
 				.Select(flag => flag.ToEnum<SimpleQueryStringFlags>())
 				.Where(s => s.HasValue)
 				.Aggregate(default(SimpleQueryStringFlags), (current, s) => current | s.Value);
 		}
-
-		public override bool CanConvert(Type objectType) => true;
 	}
 }

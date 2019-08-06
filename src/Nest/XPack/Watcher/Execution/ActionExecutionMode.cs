@@ -1,15 +1,15 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum ActionExecutionMode
 	{
 		/// <summary>
-		///The action will be simulated (not actually executed)
-		/// and it will be throttled if needed.
+		/// The action will be simulated (not actually executed)
+		///  and it will be throttled if needed.
 		/// </summary>
 		[EnumMember(Value = "simulate")]
 		Simulate,

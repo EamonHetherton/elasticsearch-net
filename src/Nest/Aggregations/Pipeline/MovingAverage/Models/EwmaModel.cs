@@ -1,27 +1,27 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IEwmaModel : IMovingAverageModel
 	{
-		[JsonProperty("alpha")]
+		[DataMember(Name ="alpha")]
 		float? Alpha { get; set; }
 	}
 
 	public class EwmaModel : IEwmaModel
 	{
-		string IMovingAverageModel.Name { get; } = "ewma";
-
 		public float? Alpha { get; set; }
+		string IMovingAverageModel.Name { get; } = "ewma";
 	}
 
 	public class EwmaModelDescriptor
 		: DescriptorBase<EwmaModelDescriptor, IEwmaModel>, IEwmaModel
 	{
-		string IMovingAverageModel.Name { get; } = "ewma";
 		float? IEwmaModel.Alpha { get; set; }
+		string IMovingAverageModel.Name { get; } = "ewma";
 
-		public EwmaModelDescriptor Alpha(float alpha) => Assign(a => a.Alpha = alpha);
+		public EwmaModelDescriptor Alpha(float? alpha) => Assign(alpha, (a, v) => a.Alpha = v);
 	}
 }

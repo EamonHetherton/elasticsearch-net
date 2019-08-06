@@ -1,56 +1,56 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class IndexStats
 	{
-		[JsonProperty(PropertyName = "docs")]
-		public DocStats Documents { get; set; }
-
-		[JsonProperty(PropertyName = "store")]
-		public StoreStats Store { get; set; }
-
-		[JsonProperty(PropertyName = "indexing")]
-		public IndexingStats Indexing { get; set; }
-
-		[JsonProperty(PropertyName = "get")]
-		public GetStats Get { get; set; }
-
-		[JsonProperty(PropertyName = "search")]
-		public SearchStats Search { get; set; }
-
-		[JsonProperty(PropertyName = "merges")]
-		public MergesStats Merges { get; set; }
-
-		[JsonProperty(PropertyName = "refresh")]
-		public RefreshStats Refresh { get; set; }
-
-		[JsonProperty(PropertyName = "flush")]
-		public FlushStats Flush { get; set; }
-
-		[JsonProperty(PropertyName = "warmer")]
-		public WarmerStats Warmer { get; set; }
-
-		[JsonProperty(PropertyName = "query_cache")]
-		public QueryCacheStats QueryCache { get; set; }
-
-		[JsonProperty(PropertyName = "fielddata")]
-		public FielddataStats Fielddata { get; set; }
-
-		[JsonProperty(PropertyName = "completion")]
+		[DataMember(Name ="completion")]
 		public CompletionStats Completion { get; set; }
 
-		[JsonProperty(PropertyName = "segments")]
-		public SegmentsStats Segments { get; set; }
+		[DataMember(Name ="docs")]
+		public DocStats Documents { get; set; }
 
-		[JsonProperty(PropertyName = "translog")]
-		public TranslogStats Translog { get; set; }
+		[DataMember(Name ="fielddata")]
+		public FielddataStats Fielddata { get; set; }
 
-		[JsonProperty(PropertyName = "request_cache")]
+		[DataMember(Name ="flush")]
+		public FlushStats Flush { get; set; }
+
+		[DataMember(Name ="get")]
+		public GetStats Get { get; set; }
+
+		[DataMember(Name ="indexing")]
+		public IndexingStats Indexing { get; set; }
+
+		[DataMember(Name ="merges")]
+		public MergesStats Merges { get; set; }
+
+		[DataMember(Name ="query_cache")]
+		public QueryCacheStats QueryCache { get; set; }
+
+		[DataMember(Name ="recovery")]
+		public RecoveryStats Recovery { get; set; }
+
+		[DataMember(Name ="refresh")]
+		public RefreshStats Refresh { get; set; }
+
+		[DataMember(Name ="request_cache")]
 		public RequestCacheStats RequestCache { get; set; }
 
-		[JsonProperty(PropertyName = "recovery")]
-		public RecoveryStats Recovery { get; set; }
+		[DataMember(Name ="search")]
+		public SearchStats Search { get; set; }
+
+		[DataMember(Name ="segments")]
+		public SegmentsStats Segments { get; set; }
+
+		[DataMember(Name ="store")]
+		public StoreStats Store { get; set; }
+
+		[DataMember(Name ="translog")]
+		public TranslogStats Translog { get; set; }
+
+		[DataMember(Name ="warmer")]
+		public WarmerStats Warmer { get; set; }
 	}
 }

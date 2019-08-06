@@ -1,11 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<SizeField>))]
+	[ReadAs(typeof(SizeField))]
 	public interface ISizeField : IFieldMapping
 	{
-		[JsonProperty("enabled")]
+		[DataMember(Name ="enabled")]
 		bool? Enabled { get; set; }
 	}
 
@@ -14,11 +14,11 @@ namespace Nest
 		public bool? Enabled { get; set; }
 	}
 
-	public class SizeFieldDescriptor 
+	public class SizeFieldDescriptor
 		: DescriptorBase<SizeFieldDescriptor, ISizeField>, ISizeField
 	{
 		bool? ISizeField.Enabled { get; set; }
 
-		public SizeFieldDescriptor Enabled(bool enabled = true) => Assign(a => a.Enabled = enabled);
+		public SizeFieldDescriptor Enabled(bool? enabled = true) => Assign(enabled, (a, v) => a.Enabled = v);
 	}
 }

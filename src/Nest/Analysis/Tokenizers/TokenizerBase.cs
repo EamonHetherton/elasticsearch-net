@@ -1,34 +1,33 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(TokenizerJsonConverter))]
+	[JsonFormatter(typeof(TokenizerFormatter))]
 	public interface ITokenizer
 	{
-		[JsonProperty(PropertyName = "version")]
-		string Version { get; set; }
-
-		[JsonProperty(PropertyName = "type")]
+		[DataMember(Name = "type")]
 		string Type { get; }
+
+		[DataMember(Name = "version")]
+		string Version { get; set; }
 	}
 
 	public abstract class TokenizerBase : ITokenizer
 	{
-		public string Version { get; set; }
-
 		public string Type { get; protected set; }
+		public string Version { get; set; }
 	}
 
-	public abstract class TokenizerDescriptorBase<TTokenizer, TTokenizerInterface> 
+	public abstract class TokenizerDescriptorBase<TTokenizer, TTokenizerInterface>
 		: DescriptorBase<TTokenizer, TTokenizerInterface>, ITokenizer
 		where TTokenizer : TokenizerDescriptorBase<TTokenizer, TTokenizerInterface>, TTokenizerInterface
 		where TTokenizerInterface : class, ITokenizer
 	{
-		string ITokenizer.Version { get; set; }
-		string ITokenizer.Type => this.Type;
 		protected abstract string Type { get; }
+		string ITokenizer.Type => Type;
+		string ITokenizer.Version { get; set; }
 
-		public TTokenizer Version(string version) => Assign(a => a.Version = version);
+		public TTokenizer Version(string version) => Assign(version, (a, v) => a.Version = v);
 	}
-
 }

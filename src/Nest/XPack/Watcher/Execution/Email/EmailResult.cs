@@ -1,39 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
 	public class EmailResult
 	{
-		[JsonProperty("id")]
-		public string Id { get; set; }
-
-		[JsonProperty("sent_date")]
-		public DateTime? SentDate { get; set; }
-
-		[JsonProperty("from")]
-		public string From { get; set; }
-
-		[JsonProperty("to")]
-		public IEnumerable<string> To { get; set; }
-
-		[JsonProperty("cc")]
-		public IEnumerable<string> Cc { get; set; }
-
-		[JsonProperty("bcc")]
+		[DataMember(Name = "bcc")]
 		public IEnumerable<string> Bcc { get; set; }
 
-		[JsonProperty("reply_to")]
-		public IEnumerable<string> ReplyTo { get; set; }
-
-		[JsonProperty("subject")]
-		public string Subject { get; set; }
-
-		[JsonProperty("body")]
+		[DataMember(Name = "body")]
 		public EmailBody Body { get; set; }
 
-		[JsonProperty("priority")]
+		[DataMember(Name = "cc")]
+		public IEnumerable<string> Cc { get; set; }
+
+		[DataMember(Name = "from")]
+		public string From { get; set; }
+
+		[DataMember(Name = "id")]
+		public string Id { get; set; }
+
+		[DataMember(Name = "priority")]
 		public EmailPriority? Priority { get; set; }
+
+		[DataMember(Name = "reply_to")]
+		public IEnumerable<string> ReplyTo { get; set; }
+
+		[DataMember(Name = "sent_date")]
+		public DateTime? SentDate { get; set; }
+
+		[DataMember(Name = "subject")]
+		public string Subject { get; set; }
+
+		[DataMember(Name = "to")]
+		public IEnumerable<string> To { get; set; }
 	}
 }

@@ -1,10 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public abstract class MetricAggregateBase : IAggregate
 	{
-		public IReadOnlyDictionary<string, object> Meta { get;  set; } = EmptyReadOnly<string, object>.Dictionary;
+		[DataMember(Name = "meta")]
+		public IReadOnlyDictionary<string, object> Meta { get; set; } = EmptyReadOnly<string, object>.Dictionary;
 	}
 }

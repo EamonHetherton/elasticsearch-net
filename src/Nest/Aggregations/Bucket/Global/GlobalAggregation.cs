@@ -1,10 +1,9 @@
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<GlobalAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(GlobalAggregation))]
 	public interface IGlobalAggregation : IBucketAggregation { }
 
 	public class GlobalAggregation : BucketAggregationBase, IGlobalAggregation
@@ -16,7 +15,7 @@ namespace Nest
 		internal override void WrapInContainer(AggregationContainer c) => c.Global = this;
 	}
 
-	public class GlobalAggregationDescriptor<T> 
+	public class GlobalAggregationDescriptor<T>
 		: BucketAggregationDescriptorBase<GlobalAggregationDescriptor<T>, IGlobalAggregation, T>
 			, IGlobalAggregation
 		where T : class { }

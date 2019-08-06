@@ -1,62 +1,80 @@
-using System;
-using System.Collections.Generic;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using System.Runtime.Serialization;
+
 
 namespace Nest
 {
+	/// <summary>
+	/// Configures the destination for a reindex API request
+	/// </summary>
 	public interface IReindexDestination
 	{
-		[JsonProperty("index")]
+		/// <summary>
+		/// The index to reindex into
+		/// </summary>
+		[DataMember(Name ="index")]
 		IndexName Index { get; set; }
 
-		[JsonProperty("type")]
-		TypeName Type { get; set; }
+		/// <summary>
+		/// Setting to <see cref="Elasticsearch.Net.OpType.Create" /> will cause reindex to only
+		/// create missing documents in the destination index.
+		/// </summary>
+		[DataMember(Name ="op_type")]
 
-		[JsonProperty("routing")]
-		ReindexRouting Routing { get; set; }
-
-		[JsonProperty("op_type")]
-		[JsonConverter(typeof(StringEnumConverter))]
 		OpType? OpType { get; set; }
 
-		[JsonProperty("version_type")]
-		[JsonConverter(typeof(StringEnumConverter))]
+		/// <summary>
+		/// The routing to use when reindexing
+		/// </summary>
+		[DataMember(Name ="routing")]
+		ReindexRouting Routing { get; set; }
+
+		/// <summary>
+		/// Setting to <see cref="Elasticsearch.Net.VersionType.External" /> will cause Elasticsearch
+		/// to preserve the version from the source, create any documents that are missing,
+		/// and update any documents that have an older version in the destination index
+		/// than they do in the source index
+		/// </summary>
+		[DataMember(Name ="version_type")]
+
 		VersionType? VersionType { get; set; }
 	}
 
+	/// <inheritdoc />
 	public class ReindexDestination : IReindexDestination
 	{
+		/// <inheritdoc />
 		public IndexName Index { get; set; }
 
-		public TypeName Type { get; set; }
-
-
-		public ReindexRouting Routing { get; set; }
-
+		/// <inheritdoc />
 		public OpType? OpType { get; set; }
 
+		/// <inheritdoc />
+		public ReindexRouting Routing { get; set; }
+
+		/// <inheritdoc />
 		public VersionType? VersionType { get; set; }
 	}
 
+	/// <inheritdoc cref="IReindexDestination" />
 	public class ReindexDestinationDescriptor : DescriptorBase<ReindexDestinationDescriptor, IReindexDestination>, IReindexDestination
 	{
 		IndexName IReindexDestination.Index { get; set; }
-		TypeName IReindexDestination.Type { get; set; }
-		ReindexRouting IReindexDestination.Routing { get; set; }
 		OpType? IReindexDestination.OpType { get; set; }
+		ReindexRouting IReindexDestination.Routing { get; set; }
 		VersionType? IReindexDestination.VersionType { get; set; }
 
-		public ReindexDestinationDescriptor Routing(ReindexRouting routing) => Assign(a => a.Routing = routing);
+		/// <inheritdoc cref="IReindexDestination.Routing" />
+		public ReindexDestinationDescriptor Routing(ReindexRouting routing) => Assign(routing, (a, v) => a.Routing = v);
 
-		public ReindexDestinationDescriptor OpType(OpType opType) => Assign(a => a.OpType = opType);
+		/// <inheritdoc cref="IReindexDestination.OpType" />
+		public ReindexDestinationDescriptor OpType(OpType? opType) => Assign(opType, (a, v) => a.OpType = v);
 
-		public ReindexDestinationDescriptor VersionType(VersionType versionType) => Assign(a => a.VersionType = versionType);
+		/// <inheritdoc cref="IReindexDestination.VersionType" />
+		public ReindexDestinationDescriptor VersionType(VersionType? versionType) => Assign(versionType, (a, v) => a.VersionType = v);
 
-		public ReindexDestinationDescriptor Index(IndexName index) => Assign(a => a.Index = index);
-
-		public ReindexDestinationDescriptor Type(TypeName type) => Assign(a => a.Type = type);
+		/// <inheritdoc cref="IReindexDestination.Index" />
+		public ReindexDestinationDescriptor Index(IndexName index) => Assign(index, (a, v) => a.Index = v);
 
 	}
 }

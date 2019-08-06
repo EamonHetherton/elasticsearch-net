@@ -1,11 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<RoutingField>))]
+	[ReadAs(typeof(RoutingField))]
 	public interface IRoutingField : IFieldMapping
 	{
-		[JsonProperty("required")]
+		[DataMember(Name ="required")]
 		bool? Required { get; set; }
 	}
 
@@ -14,11 +14,11 @@ namespace Nest
 		public bool? Required { get; set; }
 	}
 
-	public class RoutingFieldDescriptor<T> 
+	public class RoutingFieldDescriptor<T>
 		: DescriptorBase<RoutingFieldDescriptor<T>, IRoutingField>, IRoutingField
 	{
-		bool? IRoutingField.Required { get; set;}
+		bool? IRoutingField.Required { get; set; }
 
-		public RoutingFieldDescriptor<T> Required(bool required = true) => Assign(a => a.Required = required);
+		public RoutingFieldDescriptor<T> Required(bool? required = true) => Assign(required, (a, v) => a.Required = v);
 	}
 }

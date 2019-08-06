@@ -1,34 +1,34 @@
 using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<SlackDynamicAttachment>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(SlackDynamicAttachment))]
 	public interface ISlackDynamicAttachment
 	{
-		[JsonProperty("list_path")]
-		string ListPath { get; set; }
-
-		[JsonProperty("attachment_template")]
+		[DataMember(Name = "attachment_template")]
 		ISlackAttachment AttachmentTemplate { get; set; }
+
+		[DataMember(Name = "list_path")]
+		string ListPath { get; set; }
 	}
 
 	public class SlackDynamicAttachment : ISlackDynamicAttachment
 	{
-		public string ListPath { get; set; }
-
 		public ISlackAttachment AttachmentTemplate { get; set; }
+		public string ListPath { get; set; }
 	}
 
 	public class SlackDynamicAttachmentDescriptor : DescriptorBase<SlackDynamicAttachmentDescriptor, ISlackDynamicAttachment>, ISlackDynamicAttachment
 	{
-		string ISlackDynamicAttachment.ListPath { get; set; }
 		ISlackAttachment ISlackDynamicAttachment.AttachmentTemplate { get; set; }
+		string ISlackDynamicAttachment.ListPath { get; set; }
 
-		public SlackDynamicAttachmentDescriptor ListPath(string listPath) => Assign(a => a.ListPath = listPath);
+		public SlackDynamicAttachmentDescriptor ListPath(string listPath) => Assign(listPath, (a, v) => a.ListPath = v);
 
 		public SlackDynamicAttachmentDescriptor AttachmentTemplate(Func<SlackAttachmentDescriptor, ISlackAttachment> selector) =>
-			Assign(a => a.AttachmentTemplate = selector?.Invoke(new SlackAttachmentDescriptor()));
+			Assign(selector, (a, v) => a.AttachmentTemplate = v?.Invoke(new SlackAttachmentDescriptor()));
 	}
 }

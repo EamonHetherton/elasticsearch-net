@@ -1,24 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IPutUserResponse : IResponse
+	public class PutUserResponse : ResponseBase
 	{
-		[JsonProperty("user")]
-		PutUserStatus User { get; }
-	}
-
-	public class PutUserResponse : ResponseBase, IPutUserResponse
-	{
-		public PutUserStatus User { get; internal set; }
-	}
-
-	public class PutUserStatus
-	{
-		[JsonProperty("created")]
+		[DataMember(Name ="created")]
 		public bool Created { get; internal set; }
 	}
 }

@@ -1,13 +1,12 @@
-﻿using System;
-#pragma warning disable 612, 618
+﻿#pragma warning disable 612, 618
 
 namespace Nest
 {
+	[MapsApi("cat.templates.json")]
 	public partial interface ICatTemplatesRequest { }
 
 	public partial class CatTemplatesRequest { }
 
-	[DescriptorFor("CatTemplates")]
 	public partial class CatTemplatesDescriptor { }
 }
 

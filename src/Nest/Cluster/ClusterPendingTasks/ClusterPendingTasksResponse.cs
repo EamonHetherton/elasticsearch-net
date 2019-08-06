@@ -1,36 +1,32 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IClusterPendingTasksResponse : IResponse
+	[DataContract]
+	public class ClusterPendingTasksResponse : ResponseBase
 	{
-		IReadOnlyCollection<PendingTask> Tasks { get; }
-	}
-
-	[JsonObject]
-	public class ClusterPendingTasksResponse : ResponseBase, IClusterPendingTasksResponse
-	{
-		[JsonProperty("tasks")]
+		[DataMember(Name ="tasks")]
 		public IReadOnlyCollection<PendingTask> Tasks { get; internal set; } = EmptyReadOnly<PendingTask>.Collection;
 	}
 
-	[JsonObject]
+	[DataContract]
 	public class PendingTask
 	{
-		[JsonProperty("insert_order")]
+		[DataMember(Name ="insert_order")]
 		public int InsertOrder { get; internal set; }
 
-		[JsonProperty("priority")]
+		[DataMember(Name ="priority")]
 		public string Priority { get; internal set; }
 
-		[JsonProperty("source")]
+		[DataMember(Name ="source")]
 		public string Source { get; internal set; }
 
-		[JsonProperty("time_in_queue_millis")]
-		public int TimeInQueueMilliseconds { get; internal set; }
-
-		[JsonProperty("time_in_queue")]
+		[DataMember(Name ="time_in_queue")]
 		public string TimeInQueue { get; internal set; }
+
+		[DataMember(Name ="time_in_queue_millis")]
+		public int TimeInQueueMilliseconds { get; internal set; }
 	}
 }

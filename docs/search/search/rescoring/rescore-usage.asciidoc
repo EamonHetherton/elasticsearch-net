@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,13 +7,13 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Search/Search/Rescoring/RescoreUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Search/Search/Rescoring/RescoreUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[rescore-usage]]
-== Rescore Usage
+=== Rescore Usage
 
 Rescoring can help to improve precision by reordering just the top (eg 100 - 500) documents
 returned by the query and post_filter phases, using a secondary (usually more costly) algorithm,
@@ -21,7 +21,7 @@ instead of applying the costly algorithm to all documents in the index.
 
 See the Elasticsearch documentation on {ref_current}/search-request-rescore.html[Rescoring] for more detail.
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
@@ -54,7 +54,7 @@ s => s
             .Query(q => q
                 .FunctionScore(fs => fs
                     .Functions(f => f
-                        .RandomScore(1337)
+                        .RandomScore(rs => rs.Seed(1337).Field("_seq_no"))
                     )
                 )
             )
@@ -63,7 +63,7 @@ s => s
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -84,7 +84,7 @@ new SearchRequest<Project>
                 {
                     Filter = new TermsQuery
                     {
-                        Field = Infer.Field<Project>(p => p.Tags.First()),
+                        Field = Field<Project>(p => p.Tags.First()),
                         Terms = new[] { "eos", "sit", "sed" }
                     }
                 }
@@ -99,10 +99,7 @@ new SearchRequest<Project>
                 {
                     Functions = new List<IScoreFunction>
                     {
-                        new RandomScoreFunction
-                        {
-                            Seed = 1337
-                        }
+                        new RandomScoreFunction { Seed = 1337, Field = "_seq_no" },
                     }
                 }
             }
@@ -148,7 +145,8 @@ new SearchRequest<Project>
             "functions": [
               {
                 "random_score": {
-                  "seed": 1337
+                  "seed": 1337,
+                  "field": "_seq_no"
                 }
               }
             ]

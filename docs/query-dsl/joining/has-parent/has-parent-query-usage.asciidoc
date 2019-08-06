@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,15 +7,15 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/Joining/HasParent/HasParentQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/Joining/HasParent/HasParentQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[has-parent-query-usage]]
-== Has Parent Query Usage
+=== Has Parent Query Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
@@ -23,14 +23,14 @@ q
 .HasParent<Developer>(c => c
     .Name("named_query")
     .Boost(1.1)
-    .InnerHits(i=>i.Explain())
-    .Score(true)
-    .Query(qq=>qq.MatchAll())
-    .IgnoreUnmapped(true)
+    .InnerHits(i => i.Explain())
+    .Score()
+    .Query(qq => qq.MatchAll())
+    .IgnoreUnmapped()
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -38,7 +38,7 @@ new HasParentQuery
 {
     Name = "named_query",
     Boost = 1.1,
-    Type = Infer.Type<Developer>(),
+    ParentType = Infer.Relation<Developer>(),
     InnerHits = new InnerHits { Explain = true },
     Query = new MatchAllQuery(),
     Score = true,
@@ -53,7 +53,7 @@ new HasParentQuery
   "has_parent": {
     "_name": "named_query",
     "boost": 1.1,
-    "type": "developer",
+    "parent_type": "developer",
     "score": true,
     "ignore_unmapped": true,
     "query": {

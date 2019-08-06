@@ -1,67 +1,51 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class SegmentsStats
 	{
-		[JsonProperty("count")]
+		[DataMember(Name ="count")]
 		public long Count { get; set; }
 
-		[JsonProperty("doc_values_memory")]
-		public string DocValuesMemory { get; set; }
-		[JsonProperty("doc_values_memory_in_bytes")]
+		[DataMember(Name ="doc_values_memory_in_bytes")]
 		public long DocValuesMemoryInBytes { get; set; }
 
-		[JsonProperty("fixed_bit_set_memory")]
-		public string FixedBitSetMemory { get; set; }
-		[JsonProperty("fixed_bit_set_memory_in_bytes")]
+		[DataMember(Name ="fixed_bit_set_memory_in_bytes")]
 		public long FixedBitSetMemoryInBytes { get; set; }
 
-		[JsonProperty("index_writer_max_memory")]
-		public string IndexWriterMaxMemory { get; set; }
-		[JsonProperty("index_writer_max_memory_in_bytes")]
+		[DataMember(Name ="index_writer_max_memory_in_bytes")]
 		public long IndexWriterMaxMemoryInBytes { get; set; }
 
-		[JsonProperty("index_writer_memory")]
-		public string IndexWriterMemory { get; set; }
-		[JsonProperty("index_writer_memory_in_bytes")]
+		[DataMember(Name ="index_writer_memory_in_bytes")]
 		public long IndexWriterMemoryInBytes { get; set; }
 
-		[JsonProperty("memory")]
-		public string Memory { get; set; }
-		[JsonProperty("memory_in_bytes")]
+		[DataMember(Name ="max_unsafe_auto_id_timestamp")]
+		public long MaximumUnsafeAutoIdTimestamp { get; set; }
+
+		[DataMember(Name ="memory_in_bytes")]
 		public long MemoryInBytes { get; set; }
 
-		[JsonProperty("norms_memory")]
-		public string NormsMemory { get; set; }
-		[JsonProperty("norms_memory_in_bytes")]
+		[DataMember(Name ="norms_memory_in_bytes")]
 		public long NormsMemoryInBytes { get; set; }
 
-		[JsonProperty("points_memory")]
-		public string PointsMemory { get; set; }
-		[JsonProperty("points_memory_in_bytes")]
+		[DataMember(Name ="points_memory_in_bytes")]
 		public long PointsMemoryInBytes { get; set; }
 
-		[JsonProperty("stored_fields_memory")]
-		public string StoredFieldsMemory { get; set; }
-		[JsonProperty("stored_fields_memory_in_bytes")]
+		[DataMember(Name ="stored_fields_memory_in_bytes")]
 		public long StoredFieldsMemoryInBytes { get; set; }
 
-		[JsonProperty("term_vectors_memory")]
-		public string TermVectorsMemory { get; set; }
-		[JsonProperty("term_vectors_memory_in_bytes")]
-		public long TermVectorsMemoryInBytes { get; set; }
-
-		[JsonProperty("terms_memory")]
-		public string TermsMemory { get; set; }
-		[JsonProperty("terms_memory_in_bytes")]
+		[DataMember(Name ="terms_memory_in_bytes")]
 		public long TermsMemoryInBytes { get; set; }
 
-		[JsonProperty("version_map_memory")]
-		public string VersionMapMemory { get; set; }
-		[JsonProperty("version_map_memory_in_bytes")]
+		[DataMember(Name ="term_vectors_memory_in_bytes")]
+		public long TermVectorsMemoryInBytes { get; set; }
+
+		[DataMember(Name ="version_map_memory_in_bytes")]
 		public long VersionMapMemoryInBytes { get; set; }
 
+		[DataMember(Name ="file_sizes")]
+		public IReadOnlyDictionary<string, ShardFileSizeInfo> FileSizes { get; internal set; }
 	}
 }

@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public interface ITriggerEvent {}
+	[InterfaceDataContract]
+	public interface ITriggerEvent { }
 
 	public abstract class TriggerEventBase : ITriggerEvent
 	{

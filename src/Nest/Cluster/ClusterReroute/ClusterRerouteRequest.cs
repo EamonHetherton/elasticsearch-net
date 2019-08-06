@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<ClusterRerouteRequest>))]
+	[MapsApi("cluster.reroute.json")]
+	[ReadAs(typeof(ClusterRerouteRequest))]
 	public partial interface IClusterRerouteRequest
 	{
-		[JsonProperty("commands")]
+		[DataMember(Name ="commands")]
 		IList<IClusterRerouteCommand> Commands { get; set; }
 	}
 
@@ -23,18 +24,23 @@ namespace Nest
 		public ClusterRerouteDescriptor Move(Func<MoveClusterRerouteCommandDescriptor, IMoveClusterRerouteCommand> selector) =>
 			AddCommand(selector?.Invoke(new MoveClusterRerouteCommandDescriptor()));
 
-		public ClusterRerouteDescriptor Cancel(Func<CancelClusterRerouteCommandDescriptor, ICancelClusterRerouteCommand> selector)=>
+		public ClusterRerouteDescriptor Cancel(Func<CancelClusterRerouteCommandDescriptor, ICancelClusterRerouteCommand> selector) =>
 			AddCommand(selector?.Invoke(new CancelClusterRerouteCommandDescriptor()));
 
-		public ClusterRerouteDescriptor AllocateReplica(Func<AllocateReplicaClusterRerouteCommandDescriptor, IAllocateClusterRerouteCommand> selector) =>
+		public ClusterRerouteDescriptor AllocateReplica(Func<AllocateReplicaClusterRerouteCommandDescriptor, IAllocateClusterRerouteCommand> selector
+		) =>
 			AddCommand(selector?.Invoke(new AllocateReplicaClusterRerouteCommandDescriptor()));
 
-		public ClusterRerouteDescriptor AllocateEmptyPrimary(Func<AllocateEmptyPrimaryRerouteCommandDescriptor, IAllocateEmptyPrimaryRerouteCommand> selector) =>
+		public ClusterRerouteDescriptor AllocateEmptyPrimary(
+			Func<AllocateEmptyPrimaryRerouteCommandDescriptor, IAllocateEmptyPrimaryRerouteCommand> selector
+		) =>
 			AddCommand(selector?.Invoke(new AllocateEmptyPrimaryRerouteCommandDescriptor()));
 
-		public ClusterRerouteDescriptor AllocateStalePrimary(Func<AllocateStalePrimaryRerouteCommandDescriptor, IAllocateStalePrimaryRerouteCommand> selector) =>
+		public ClusterRerouteDescriptor AllocateStalePrimary(
+			Func<AllocateStalePrimaryRerouteCommandDescriptor, IAllocateStalePrimaryRerouteCommand> selector
+		) =>
 			AddCommand(selector?.Invoke(new AllocateStalePrimaryRerouteCommandDescriptor()));
 
-		private ClusterRerouteDescriptor AddCommand(IClusterRerouteCommand rerouteCommand) => Assign(a => a.Commands?.AddIfNotNull(rerouteCommand));
+		private ClusterRerouteDescriptor AddCommand(IClusterRerouteCommand rerouteCommand) => Assign(rerouteCommand,(a, v) => a.Commands?.AddIfNotNull(v));
 	}
 }

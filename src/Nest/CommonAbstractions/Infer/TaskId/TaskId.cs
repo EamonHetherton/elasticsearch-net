@@ -2,18 +2,14 @@
 using System.Diagnostics;
 using System.Globalization;
 using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	[DebuggerDisplay("{DebugDisplay,nq}")]
+	[JsonFormatter(typeof(TaskIdFormatter))]
 	public class TaskId : IUrlParameter, IEquatable<TaskId>
 	{
-		public string NodeId { get; }
-		public long TaskNumber { get; }
-		public string FullyQualifiedId => $"{NodeId}:{TaskNumber.ToString(CultureInfo.InvariantCulture)}";
-
-		private string DebugDisplay => FullyQualifiedId;
-
 		/// <summary>
 		/// A task id exists in the form [node_id]:[task_id]
 		/// </summary>
@@ -27,44 +23,73 @@ namespace Nest
 			if (tokens.Length != 2)
 				throw new ArgumentException($"TaskId:{taskId} not in expected format of <node_id>:<task_id>", nameof(taskId));
 
-			this.NodeId = tokens[0];
-			long t;
-			if (!long.TryParse(tokens[1], NumberStyles.Any, CultureInfo.InvariantCulture, out t) || t < -1 || t == 0)
+			NodeId = tokens[0];
+			FullyQualifiedId = taskId;
+
+			if (!long.TryParse(tokens[1].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var t) || t < -1 || t == 0)
 				throw new ArgumentException($"TaskId task component:{tokens[1]} could not be parsed to long or is out of range", nameof(taskId));
-			this.TaskNumber = t;
+
+			TaskNumber = t;
 		}
 
-		public override string ToString() => FullyQualifiedId;
+		public string FullyQualifiedId { get; }
+		public string NodeId { get; }
+		public long TaskNumber { get; }
+
+		private string DebugDisplay => FullyQualifiedId;
+
+		public bool Equals(TaskId other) => EqualsString(other?.FullyQualifiedId);
 
 		public string GetString(IConnectionConfigurationValues settings) => FullyQualifiedId;
 
-		public static implicit operator TaskId(string taskId) => new TaskId(taskId);
+		public override string ToString() => FullyQualifiedId;
 
-		public bool Equals(TaskId other)
-		{
-			if (ReferenceEquals(null, other)) return false;
-			if (ReferenceEquals(this, other)) return true;
-			return string.Equals(NodeId, other.NodeId) && TaskNumber == other.TaskNumber;
-		}
+		public static implicit operator TaskId(string taskId) => taskId.IsNullOrEmpty() ? null : new TaskId(taskId);
 
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != this.GetType()) return false;
-			return Equals((TaskId) obj);
-		}
+		public static bool operator ==(TaskId left, TaskId right) => Equals(left, right);
+
+		public static bool operator !=(TaskId left, TaskId right) => !Equals(left, right);
+
+		public override bool Equals(object obj) =>
+			obj != null && obj is string s ? EqualsString(s) : obj is TaskId i && EqualsString(i.FullyQualifiedId);
+
+		private bool EqualsString(string other) => !other.IsNullOrEmpty() && other == FullyQualifiedId;
 
 		public override int GetHashCode()
 		{
 			unchecked
 			{
-				return (NodeId.GetHashCode()*397) ^ TaskNumber.GetHashCode();
+				return (NodeId.GetHashCode() * 397) ^ TaskNumber.GetHashCode();
 			}
 		}
+	}
 
-		public static bool operator ==(TaskId left, TaskId right) => Equals(left, right);
+	internal class TaskIdFormatter : IJsonFormatter<TaskId>, IObjectPropertyNameFormatter<TaskId>
+	{
+		public TaskId Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
+		{
+			if (reader.GetCurrentJsonToken() == JsonToken.String)
+				return new TaskId(reader.ReadString());
 
-		public static bool operator !=(TaskId left, TaskId right) => !Equals(left, right);
+			reader.ReadNextBlock();
+			return null;
+		}
+
+		public void Serialize(ref JsonWriter writer, TaskId value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null)
+			{
+				writer.WriteNull();
+				return;
+			}
+
+			writer.WriteString(value.ToString());
+		}
+
+		public TaskId DeserializeFromPropertyName(ref JsonReader reader, IJsonFormatterResolver formatterResolver) =>
+			Deserialize(ref reader, formatterResolver);
+
+		public void SerializeToPropertyName(ref JsonWriter writer, TaskId value, IJsonFormatterResolver formatterResolver) =>
+			Serialize(ref writer, value, formatterResolver);
 	}
 }

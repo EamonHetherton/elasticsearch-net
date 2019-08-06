@@ -12,41 +12,40 @@ namespace Nest
 		/// Once registered, a new document will be added to the .watches index, representing the watch,
 		/// and its trigger will immediately be registered with the relevant trigger engine.
 		/// </summary>
-		IPutWatchResponse PutWatch(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null);
+		PutWatchResponse PutWatch(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null);
 
-		/// <inheritdoc/>
-		IPutWatchResponse PutWatch(IPutWatchRequest request);
+		/// <inheritdoc cref="PutWatch(Nest.Id,System.Func{Nest.PutWatchDescriptor,Nest.IPutWatchRequest})" />
+		PutWatchResponse PutWatch(IPutWatchRequest request);
 
-		/// <inheritdoc/>
-		Task<IPutWatchResponse> PutWatchAsync(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null, CancellationToken cancellationToken = default(CancellationToken));
+		/// <inheritdoc cref="PutWatch(Nest.Id,System.Func{Nest.PutWatchDescriptor,Nest.IPutWatchRequest})" />
+		Task<PutWatchResponse> PutWatchAsync(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null,
+			CancellationToken ct = default
+		);
 
-		/// <inheritdoc/>
-		Task<IPutWatchResponse> PutWatchAsync(IPutWatchRequest request, CancellationToken cancellationToken = default(CancellationToken));
+		/// <inheritdoc cref="PutWatch(Nest.Id,System.Func{Nest.PutWatchDescriptor,Nest.IPutWatchRequest})" />
+		Task<PutWatchResponse> PutWatchAsync(IPutWatchRequest request, CancellationToken ct = default);
 	}
 
 	public partial class ElasticClient
 	{
-		/// <inheritdoc/>
-		public IPutWatchResponse PutWatch(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null) =>
-			this.PutWatch(selector.InvokeOrDefault(new PutWatchDescriptor(watchId)));
+		/// <inheritdoc />
+		public PutWatchResponse PutWatch(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null) =>
+			PutWatch(selector.InvokeOrDefault(new PutWatchDescriptor(watchId)));
 
-		/// <inheritdoc/>
-		public IPutWatchResponse PutWatch(IPutWatchRequest request) =>
-			this.Dispatcher.Dispatch<IPutWatchRequest, PutWatchRequestParameters, PutWatchResponse>(
-				request,
-				this.LowLevelDispatch.XpackWatcherPutWatchDispatch<PutWatchResponse>
-			);
+		/// <inheritdoc />
+		public PutWatchResponse PutWatch(IPutWatchRequest request) =>
+			DoRequest<IPutWatchRequest, PutWatchResponse>(request, request.RequestParameters);
 
-		/// <inheritdoc/>
-		public Task<IPutWatchResponse> PutWatchAsync(Id watchId, Func<PutWatchDescriptor, IPutWatchRequest> selector = null, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.PutWatchAsync(selector.InvokeOrDefault(new PutWatchDescriptor(watchId)), cancellationToken);
+		/// <inheritdoc />
+		public Task<PutWatchResponse> PutWatchAsync(
+			Id watchId,
+			Func<PutWatchDescriptor, IPutWatchRequest> selector = null,
+			CancellationToken ct = default
+		) => PutWatchAsync(selector.InvokeOrDefault(new PutWatchDescriptor(watchId)), ct);
 
-		/// <inheritdoc/>
-		public Task<IPutWatchResponse> PutWatchAsync(IPutWatchRequest request, CancellationToken cancellationToken = default(CancellationToken)) =>
-			this.Dispatcher.DispatchAsync<IPutWatchRequest, PutWatchRequestParameters, PutWatchResponse, IPutWatchResponse>(
-				request,
-				cancellationToken,
-				this.LowLevelDispatch.XpackWatcherPutWatchDispatchAsync<PutWatchResponse>
-			);
+		/// <inheritdoc />
+		public Task<PutWatchResponse> PutWatchAsync(IPutWatchRequest request, CancellationToken ct = default) =>
+			DoRequestAsync<IPutWatchRequest, PutWatchResponse>
+				(request, request.RequestParameters, ct);
 	}
 }

@@ -1,9 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Nest
+﻿namespace Nest
 {
-	[JsonObject]
-	public interface IRestartWatcherResponse : IAcknowledgedResponse {}
-
-	public class RestartWatcherResponse : AcknowledgedResponseBase, IRestartWatcherResponse {}
+	public class RestartWatcherResponse : AcknowledgedResponseBase { }
 }

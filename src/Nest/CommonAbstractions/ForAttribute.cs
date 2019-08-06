@@ -1,18 +1,29 @@
 ﻿using System;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	/// <summary>
-	/// DescriptorFor is a marker to rename unintuitive generated elasticsearch operation names
-	/// This is used by the code generator and is only meant for internal use to map our more aptly named requests to 
-	/// the original elasticsearch rest spec
+	/// Makes it explicit which API this request interface maps, the name of the interface informs
+	/// The generator how to name related types
 	/// </summary>
-	[AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false)]
-	internal class DescriptorForAttribute : Attribute
+	[AttributeUsage(AttributeTargets.Interface)]
+	internal class MapsApiAttribute : Attribute
 	{
+		// ReSharper disable once UnusedParameter.Local
+		public MapsApiAttribute(string restSpecName) { }
+	}
 
-// ReSharper disable once UnusedParameter.Local
-		public DescriptorForAttribute (string operation) { }
-
+	/// <summary>
+	/// The preferred way to wire in a custom response formatter is for requests to override
+	/// <see cref="RequestBase{TParameters}.RequestDefaults"/> however sometimes a request does not have
+	/// access to enough type information. This attribute will set up the <see cref="RequestParameters{T}.CustomResponseBuilder"/>
+	/// in the generated client methods instead.
+	/// </summary>
+	[AttributeUsage(AttributeTargets.Interface)]
+	internal class ResponseBuilderWithGeneric : Attribute
+	{
+		// ReSharper disable once UnusedParameter.Local
+		public ResponseBuilderWithGeneric(string pathToBuilder) { }
 	}
 }

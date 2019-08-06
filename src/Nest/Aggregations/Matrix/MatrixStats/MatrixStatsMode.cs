@@ -1,11 +1,5 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
@@ -14,7 +8,7 @@ namespace Nest
 	/// The mode parameter controls what array value the aggregation will use for array or
 	/// multi-valued fields.
 	/// </summary>
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum MatrixStatsMode
 	{
 		/// <summary>
@@ -22,21 +16,25 @@ namespace Nest
 		/// </summary>
 		[EnumMember(Value = "avg")]
 		Avg,
+
 		/// <summary>
 		/// Pick the lowest value.
 		/// </summary>
 		[EnumMember(Value = "min")]
 		Min,
+
 		/// <summary>
-		///	Pick the highest value.
+		/// 	Pick the highest value.
 		/// </summary>
 		[EnumMember(Value = "max")]
 		Max,
+
 		/// <summary>
 		/// Use the sum of all values.
 		/// </summary>
 		[EnumMember(Value = "sum")]
 		Sum,
+
 		/// <summary>
 		/// Use the median of all values.
 		/// </summary>

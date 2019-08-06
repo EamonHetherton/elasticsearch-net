@@ -2,33 +2,38 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<DateRangeAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(DateRangeAggregation))]
 	public interface IDateRangeAggregation : IBucketAggregation
 	{
-		[JsonProperty("field")]
+		[DataMember(Name ="field")]
 		Field Field { get; set; }
 
-		[JsonProperty("format")]
+		[DataMember(Name ="format")]
 		string Format { get; set; }
 
-		[JsonProperty(PropertyName = "ranges")]
+		[DataMember(Name ="ranges")]
 		IEnumerable<IDateRangeExpression> Ranges { get; set; }
+
+		[DataMember(Name ="time_zone")]
+		string TimeZone { get; set; }
 	}
 
 	public class DateRangeAggregation : BucketAggregationBase, IDateRangeAggregation
 	{
-		public Field Field { get; set; }
-		public string Format { get; set; }
-		public IEnumerable<IDateRangeExpression> Ranges { get; set; }
-
 		internal DateRangeAggregation() { }
 
 		public DateRangeAggregation(string name) : base(name) { }
+
+		public Field Field { get; set; }
+		public string Format { get; set; }
+		public IEnumerable<IDateRangeExpression> Ranges { get; set; }
+		public string TimeZone { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.DateRange = this;
 	}
@@ -44,19 +49,23 @@ namespace Nest
 
 		IEnumerable<IDateRangeExpression> IDateRangeAggregation.Ranges { get; set; }
 
-		public DateRangeAggregationDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		string IDateRangeAggregation.TimeZone { get; set; }
 
-		public DateRangeAggregationDescriptor<T> Field(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
+		public DateRangeAggregationDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public DateRangeAggregationDescriptor<T> Format(string format) => Assign(a => a.Format = format);
+		public DateRangeAggregationDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
+
+		public DateRangeAggregationDescriptor<T> Format(string format) => Assign(format, (a, v) => a.Format = v);
 
 		public DateRangeAggregationDescriptor<T> Ranges(params IDateRangeExpression[] ranges) =>
-			Assign(a=>a.Ranges = ranges.ToListOrNullIfEmpty());
+			Assign(ranges.ToListOrNullIfEmpty(), (a, v) => a.Ranges = v);
+
+		public DateRangeAggregationDescriptor<T> TimeZone(string timeZone) => Assign(timeZone, (a, v) => a.TimeZone = v);
 
 		public DateRangeAggregationDescriptor<T> Ranges(params Func<DateRangeExpressionDescriptor, IDateRangeExpression>[] ranges) =>
-			Assign(a=>a.Ranges = ranges?.Select(r=>r(new DateRangeExpressionDescriptor())).ToListOrNullIfEmpty());
+			Assign(ranges?.Select(r => r(new DateRangeExpressionDescriptor())).ToListOrNullIfEmpty(), (a, v) => a.Ranges = v);
 
 		public DateRangeAggregationDescriptor<T> Ranges(IEnumerable<Func<DateRangeExpressionDescriptor, IDateRangeExpression>> ranges) =>
-			Assign(a=>a.Ranges = ranges?.Select(r=>r(new DateRangeExpressionDescriptor())).ToListOrNullIfEmpty());
+			Assign(ranges?.Select(r => r(new DateRangeExpressionDescriptor())).ToListOrNullIfEmpty(), (a, v) => a.Ranges = v);
 	}
 }

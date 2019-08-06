@@ -1,43 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(PercentileRanksAggregationJsonConverter))]
+	[JsonFormatter(typeof(PercentileRanksAggregationFormatter))]
 	public interface IPercentileRanksAggregation : IMetricAggregation
 	{
-		IEnumerable<double> Values { get; set; }
 		IPercentilesMethod Method { get; set; }
+		IEnumerable<double> Values { get; set; }
+		bool? Keyed { get; set; }
 	}
 
 	public class PercentileRanksAggregation : MetricAggregationBase, IPercentileRanksAggregation
 	{
-		public IEnumerable<double> Values { get; set; }
-		public IPercentilesMethod Method { get; set; }
-
 		internal PercentileRanksAggregation() { }
 
 		public PercentileRanksAggregation(string name, Field field) : base(name, field) { }
 
+		public IPercentilesMethod Method { get; set; }
+		public IEnumerable<double> Values { get; set; }
+		public bool? Keyed { get; set; }
+
 		internal override void WrapInContainer(AggregationContainer c) => c.PercentileRanks = this;
 	}
 
-	public class PercentileRanksAggregationDescriptor<T> 
+	public class PercentileRanksAggregationDescriptor<T>
 		: MetricAggregationDescriptorBase<PercentileRanksAggregationDescriptor<T>, IPercentileRanksAggregation, T>, IPercentileRanksAggregation
 		where T : class
 	{
-		IEnumerable<double> IPercentileRanksAggregation.Values { get; set; }
-
 		IPercentilesMethod IPercentileRanksAggregation.Method { get; set; }
+		IEnumerable<double> IPercentileRanksAggregation.Values { get; set; }
+		bool? IPercentileRanksAggregation.Keyed { get; set; }
 
 		public PercentileRanksAggregationDescriptor<T> Values(IEnumerable<double> values) =>
-			Assign(a => a.Values = values?.ToList());
+			Assign(values, (a, v) => a.Values = v);
 
 		public PercentileRanksAggregationDescriptor<T> Values(params double[] values) =>
-			Assign(a => a.Values = values?.ToList());
+			Assign(values, (a, v) => a.Values = v);
 
 		public PercentileRanksAggregationDescriptor<T> Method(Func<PercentilesMethodDescriptor, IPercentilesMethod> methodSelctor) =>
-			Assign(a => a.Method = methodSelctor?.Invoke(new PercentilesMethodDescriptor()));
+			Assign(methodSelctor, (a, v) => a.Method = v?.Invoke(new PercentilesMethodDescriptor()));
+
+		public PercentileRanksAggregationDescriptor<T> Keyed(bool? keyed = true) =>
+			Assign(keyed, (a, v) => a.Keyed = v);
 	}
 }

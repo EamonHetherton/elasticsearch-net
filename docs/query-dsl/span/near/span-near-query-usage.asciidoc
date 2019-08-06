@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,15 +7,15 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/Span/Near/SpanNearQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/Span/Near/SpanNearQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[span-near-query-usage]]
-== Span Near Query Usage
+=== Span Near Query Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
@@ -24,17 +24,17 @@ q
     .Name("named_query")
     .Boost(1.1)
     .Clauses(
-        c=>c.SpanTerm(st=>st.Field("field").Value("value1")),
-        c=>c.SpanTerm(st=>st.Field("field").Value("value2")),
-        c=>c.SpanTerm(st=>st.Field("field").Value("value3"))
+        c => c.SpanTerm(st => st.Field("field").Value("value1")),
+        c => c.SpanTerm(st => st.Field("field").Value("value2")),
+        c => c.SpanTerm(st => st.Field("field").Value("value3")),
+        c => c.SpanGap(st => st.Field("field").Width(2))
     )
     .Slop(12)
-    .InOrder(false)
-    .CollectPayloads(false)
+    .InOrder()
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -46,11 +46,11 @@ new SpanNearQuery
     {
         new SpanQuery { SpanTerm = new SpanTermQuery { Field = "field", Value = "value1" } },
         new SpanQuery { SpanTerm = new SpanTermQuery { Field = "field", Value = "value2" } },
-        new SpanQuery { SpanTerm = new SpanTermQuery { Field = "field", Value = "value3" } }
+        new SpanQuery { SpanTerm = new SpanTermQuery { Field = "field", Value = "value3" } },
+        new SpanQuery { SpanGap = new SpanGapQuery { Field = "field", Width = 2 } }
     },
     Slop = 12,
-    InOrder = false,
-    CollectPayloads = false
+    InOrder = true,
 }
 ----
 
@@ -80,11 +80,15 @@ new SpanNearQuery
             "value": "value3"
           }
         }
+      },
+      {
+        "span_gap": {
+          "field": 2
+        }
       }
     ],
     "slop": 12,
-    "in_order": false,
-    "collect_payloads": false,
+    "in_order": true,
     "_name": "named_query",
     "boost": 1.1
   }

@@ -1,17 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<MatrixStatsAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(MatrixStatsAggregation))]
 	public interface IMatrixStatsAggregation : IMatrixAggregation
 	{
-		[JsonProperty("mode")]
+		[DataMember(Name ="mode")]
 		MatrixStatsMode? Mode { get; set; }
 	}
 
@@ -28,11 +24,11 @@ namespace Nest
 
 	public class MatrixStatsAggregationDescriptor<T>
 		: MatrixAggregationDescriptorBase<MatrixStatsAggregationDescriptor<T>, IMatrixStatsAggregation, T>
-		, IMatrixStatsAggregation
+			, IMatrixStatsAggregation
 		where T : class
 	{
 		MatrixStatsMode? IMatrixStatsAggregation.Mode { get; set; }
 
-		public MatrixStatsAggregationDescriptor<T> Mode(MatrixStatsMode mode) => Assign(a => a.Mode = mode);
+		public MatrixStatsAggregationDescriptor<T> Mode(MatrixStatsMode? mode) => Assign(mode, (a, v) => a.Mode = v);
 	}
 }

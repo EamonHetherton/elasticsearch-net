@@ -1,73 +1,121 @@
-﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public class SuggestOption<T> where T : class
+	/// <summary>
+	/// Suggest option
+	/// </summary>
+	[InterfaceDataContract]
+	[ReadAs(typeof(SuggestOption<>))]
+	public interface ISuggestOption<out TDocument> where TDocument : class
 	{
-		[JsonProperty("text")]
-		public string Text { get; internal set; }
-
-		[JsonProperty("_score")]
-		internal double? DocumentScore { get; set; }
-
-		[JsonProperty("score")]
-		internal double? SuggestScore { get; set; }
-
-		[JsonIgnore]
-		public double Score => DocumentScore ?? SuggestScore ?? 0;
-
 		/// <summary>
-		/// Term suggester only
+		/// Phrase suggestions only, true if matching documents for the collate query were found,
 		/// </summary>
-		[JsonProperty("freq")]
-		public long Frequency { get; set; }
-
-		/// <summary>
-		/// Completion suggester only, the index of the completed document
-		/// </summary>
-		[JsonProperty("_index")]
-		public IndexName Index { get; internal set; }
-
-		/// <summary>
-		/// Completion suggester only, the type of the completed document
-		/// </summary>
-		[JsonProperty("_type")]
-		public TypeName Type { get; internal set; }
-
-		/// <summary>
-		/// Completion suggester only, the id of the completed document
-		/// </summary>
-		[JsonProperty("_id")]
-		public Id Id { get; internal set; }
-
-		/// <summary>
-		/// Completion suggester only, the source of the completed document
-		/// </summary>
-		[JsonProperty("_source")]
-		public T Source { get; internal set; }
+		[DataMember(Name ="collate_match")]
+		bool CollateMatch { get; }
 
 		/// <summary>
 		/// Completion suggester only, the contexts associated with the completed document
 		/// </summary>
-		[JsonProperty("contexts")]
-		public IDictionary<string, IEnumerable<Context>> Contexts { get; internal set; }
+		[DataMember(Name ="contexts")]
+		IDictionary<string, IEnumerable<Context>> Contexts { get; }
 
 		/// <summary>
-		/// Phrase suggester only, higlighted version of text
+		/// Term suggester only
 		/// </summary>
-		[JsonProperty("highlighted")]
-		public string Highlighted { get; internal set; }
+		[DataMember(Name ="freq")]
+		long Frequency { get; set; }
 
 		/// <summary>
-		/// Phrase suggestions only, true if matching documents for the collate query were found,
+		/// Phrase suggester only, highlighted version of text
 		/// </summary>
-		[JsonProperty("collate_match")]
+		[DataMember(Name ="highlighted")]
+		string Highlighted { get; }
+
+		/// <summary>
+		/// Completion suggester only, the id of the completed document
+		/// </summary>
+		[DataMember(Name ="_id")]
+		string Id { get; }
+
+		/// <summary>
+		/// Completion suggester only, the index of the completed document
+		/// </summary>
+		[DataMember(Name ="_index")]
+		IndexName Index { get; }
+
+		/// <summary> Either the <see cref="DocumentScore"/> or the <see cref="SuggestScore"/></summary>
+		[IgnoreDataMember]
+		double Score { get; }
+
+		/// <summary>
+		/// Completion suggester only, the source of the completed document
+		/// </summary>
+		[DataMember(Name ="_source")]
+		[JsonFormatter(typeof(SourceFormatter<>))]
+		TDocument Source { get; }
+
+		[DataMember(Name ="text")]
+		string Text { get; }
+
+		// TODO this should be reported to elastic/elasticsearch
+		[DataMember(Name = "_score")]
+		double? DocumentScore { get; }
+
+		[DataMember(Name ="score")]
+		double? SuggestScore { get; }
+	}
+
+	/// <inheritdoc />
+	public class SuggestOption<TDocument> : ISuggestOption<TDocument>
+		where TDocument : class
+	{
+		/// <inheritdoc />
+		[DataMember(Name ="collate_match")]
 		public bool CollateMatch { get; internal set; }
 
+		/// <inheritdoc />
+		[DataMember(Name ="contexts")]
+		public IDictionary<string, IEnumerable<Context>> Contexts { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="freq")]
+		public long Frequency { get; set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="highlighted")]
+		public string Highlighted { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="_id")]
+		public string Id { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="_index")]
+		public IndexName Index { get; internal set; }
+
+		/// <inheritdoc />
+		[IgnoreDataMember]
+		public double Score => DocumentScore ?? SuggestScore ?? 0;
+
+		/// <inheritdoc />
+		[DataMember(Name ="_source")]
+		[JsonFormatter(typeof(SourceFormatter<>))]
+		public TDocument Source { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="text")]
+		public string Text { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name = "_score")]
+		public double? DocumentScore { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="score")]
+		public double? SuggestScore { get; internal set; }
 	}
 }

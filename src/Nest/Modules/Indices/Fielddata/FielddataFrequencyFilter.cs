@@ -1,39 +1,40 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<FielddataFrequencyFilter>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(FielddataFrequencyFilter))]
 	public interface IFielddataFrequencyFilter
 	{
-		[JsonProperty("min")]
-		double? Min { get; set; }
-
-		[JsonProperty("max")]
+		[DataMember(Name ="max")]
 		double? Max { get; set; }
 
-		[JsonProperty("min_segment_size")]
+		[DataMember(Name ="min")]
+		double? Min { get; set; }
+
+		[DataMember(Name ="min_segment_size")]
 		int? MinSegmentSize { get; set; }
 	}
 
 	public class FielddataFrequencyFilter : IFielddataFrequencyFilter
 	{
-		public double? Min { get; set; }
 		public double? Max { get; set; }
+		public double? Min { get; set; }
 		public int? MinSegmentSize { get; set; }
 	}
 
 	public class FielddataFrequencyFilterDescriptor
 		: DescriptorBase<FielddataFrequencyFilterDescriptor, IFielddataFrequencyFilter>, IFielddataFrequencyFilter
 	{
-		double? IFielddataFrequencyFilter.Min { get; set; }
 		double? IFielddataFrequencyFilter.Max { get; set; }
+		double? IFielddataFrequencyFilter.Min { get; set; }
 		int? IFielddataFrequencyFilter.MinSegmentSize { get; set; }
 
-		public FielddataFrequencyFilterDescriptor Min(double min) => Assign(a => a.Min = min);
+		public FielddataFrequencyFilterDescriptor Min(double? min) => Assign(min, (a, v) => a.Min = v);
 
-		public FielddataFrequencyFilterDescriptor Max(double max) => Assign(a => a.Max = max);
+		public FielddataFrequencyFilterDescriptor Max(double? max) => Assign(max, (a, v) => a.Max = v);
 
-		public FielddataFrequencyFilterDescriptor MinSegmentSize(int minSegmentSize) => Assign(a => a.MinSegmentSize = minSegmentSize);
+		public FielddataFrequencyFilterDescriptor MinSegmentSize(int? minSegmentSize) => Assign(minSegmentSize, (a, v) => a.MinSegmentSize = v);
 	}
 }

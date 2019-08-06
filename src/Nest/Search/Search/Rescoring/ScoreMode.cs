@@ -1,21 +1,25 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
-    public enum ScoreMode
-    {
+	[StringEnum]
+	public enum ScoreMode
+	{
 		[EnumMember(Value = "avg")]
-        Average,
+		Average,
+
 		[EnumMember(Value = "max")]
-        Max,
+		Max,
+
 		[EnumMember(Value = "min")]
-        Min,
+		Min,
+
 		[EnumMember(Value = "multiply")]
-        Multiply,
+		Multiply,
+
 		[EnumMember(Value = "total")]
-        Total,
-    }
+		Total,
+	}
 }

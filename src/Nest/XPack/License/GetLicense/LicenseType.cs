@@ -1,23 +1,34 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum LicenseType
 	{
-		[EnumMember(Value="trial")]
+		[EnumMember(Value = "missing")]
+		Missing,
+
+		[EnumMember(Value = "trial")]
 		Trial,
-		[EnumMember(Value="basic")]
+
+		[EnumMember(Value = "basic")]
 		Basic,
-		[EnumMember(Value="silver")]
-		Silver,
-		[EnumMember(Value="dev")]
+
+		[EnumMember(Value = "standard")]
+		Standard,
+
+		[EnumMember(Value = "dev")] //bwc
 		Dev,
-		[EnumMember(Value="gold")]
+
+		[EnumMember(Value = "silver")] //bwc
+		Silver,
+
+		[EnumMember(Value = "gold")]
 		Gold,
-		[EnumMember(Value="platinum")]
+
+		[EnumMember(Value = "platinum")]
 		Platinum
 	}
 }

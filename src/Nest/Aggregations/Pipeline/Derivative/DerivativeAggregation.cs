@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<DerivativeAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(DerivativeAggregation))]
 	public interface IDerivativeAggregation : IPipelineAggregation { }
 
 	public class DerivativeAggregation : PipelineAggregationBase, IDerivativeAggregation
@@ -18,5 +18,5 @@ namespace Nest
 
 	public class DerivativeAggregationDescriptor
 		: PipelineAggregationDescriptorBase<DerivativeAggregationDescriptor, IDerivativeAggregation, SingleBucketsPath>
-		, IDerivativeAggregation { }
+			, IDerivativeAggregation { }
 }

@@ -1,58 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
+	[MapsApi("graph.explore.json")]
 	public partial interface IGraphExploreRequest : IHop
 	{
-		[JsonProperty("controls")]
+		[DataMember(Name ="controls")]
 		IGraphExploreControls Controls { get; set; }
 	}
 
-	public interface IGraphExploreRequest<T> : IGraphExploreRequest where T : class { }
+	// ReSharper disable once UnusedTypeParameter
+	public partial interface IGraphExploreRequest<TDocument> where TDocument : class { }
 
 	public partial class GraphExploreRequest
 	{
-		public QueryContainer Query { get; set; }
-		public IEnumerable<IGraphVertexDefinition> Vertices { get; set; }
 		public IHop Connections { get; set; }
 		public IGraphExploreControls Controls { get; set; }
-	}
-
-	public partial class GraphExploreRequest<T> : IGraphExploreRequest<T>
-		where T : class
-	{
-		public GraphExploreRequest() : this(typeof(T), typeof(T)){}
-
 		public QueryContainer Query { get; set; }
 		public IEnumerable<IGraphVertexDefinition> Vertices { get; set; }
-		public IHop Connections { get; set; }
-		public IGraphExploreControls Controls { get; set; }
 	}
 
-	[DescriptorFor("XpackGraphExplore")]
-	public partial class GraphExploreDescriptor<T> : IGraphExploreRequest<T>
-		where T : class
+	// ReSharper disable once UnusedTypeParameter
+	public partial class GraphExploreRequest<TDocument> where TDocument : class { }
+
+	public partial class GraphExploreDescriptor<TDocument> where TDocument : class
 	{
-		QueryContainer IHop.Query { get; set; }
-		IEnumerable<IGraphVertexDefinition> IHop.Vertices { get; set; }
 		IHop IHop.Connections { get; set; }
 		IGraphExploreControls IGraphExploreRequest.Controls { get; set; }
+		QueryContainer IHop.Query { get; set; }
+		IEnumerable<IGraphVertexDefinition> IHop.Vertices { get; set; }
 
-		public GraphExploreDescriptor() : base(r=> r.Optional("index", (Indices)typeof(T)).Optional("type", (Types)typeof(T))){ }
+		public GraphExploreDescriptor<TDocument> Query(Func<QueryContainerDescriptor<TDocument>, QueryContainer> querySelector) =>
+			Assign(querySelector, (a, v) => a.Query = v?.Invoke(new QueryContainerDescriptor<TDocument>()));
 
-		public GraphExploreDescriptor<T> Query(Func<QueryContainerDescriptor<T>, QueryContainer> querySelector) =>
-			Assign(a => a.Query = querySelector?.Invoke(new QueryContainerDescriptor<T>()));
+		public GraphExploreDescriptor<TDocument> Vertices(Func<GraphVerticesDescriptor<TDocument>, IPromise<IList<IGraphVertexDefinition>>> selector) =>
+			Assign(selector, (a, v) => a.Vertices = v?.Invoke(new GraphVerticesDescriptor<TDocument>())?.Value);
 
-		public GraphExploreDescriptor<T> Vertices(Func<GraphVerticesDescriptor<T>, IPromise<IList<IGraphVertexDefinition>>> selector) =>
-			Assign(a => a.Vertices = selector?.Invoke(new GraphVerticesDescriptor<T>())?.Value);
+		public GraphExploreDescriptor<TDocument> Connections(Func<HopDescriptor<TDocument>, IHop> selector) =>
+			Assign(selector, (a, v) => a.Connections = v?.Invoke(new HopDescriptor<TDocument>()));
 
-		public GraphExploreDescriptor<T> Connections(Func<HopDescriptor<T>, IHop> selector) =>
-			Assign(a => a.Connections = selector?.Invoke(new HopDescriptor<T>()));
-
-		public GraphExploreDescriptor<T> Controls(Func<GraphExploreControlsDescriptor<T>, IGraphExploreControls> selector) =>
-			Assign(a => a.Controls = selector?.Invoke(new GraphExploreControlsDescriptor<T>()));
-
+		public GraphExploreDescriptor<TDocument> Controls(Func<GraphExploreControlsDescriptor<TDocument>, IGraphExploreControls> selector) =>
+			Assign(selector, (a, v) => a.Controls = v?.Invoke(new GraphExploreControlsDescriptor<TDocument>()));
 	}
 }

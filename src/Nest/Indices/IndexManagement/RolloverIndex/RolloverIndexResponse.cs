@@ -1,46 +1,27 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	public interface IRolloverIndexResponse : IAcknowledgedResponse
+	public class RolloverIndexResponse : AcknowledgedResponseBase
 	{
-		[JsonProperty("old_index")]
-		string OldIndex { get; }
-
-		[JsonProperty("new_index")]
-		string NewIndex { get; }
-
-		[JsonProperty("rolled_over")]
-		bool RolledOver { get; }
-
-		[JsonProperty("dry_run")]
-		bool DryRun { get; }
-
-		[JsonProperty("conditions")]
-		IReadOnlyDictionary<string, bool> Conditions { get; }
-
-		[JsonProperty("shards_acknowledged")]
-		bool ShardsAcknowledged { get; }
-	}
-
-	public class RolloverIndexResponse : AcknowledgedResponseBase, IRolloverIndexResponse
-	{
-		public bool DryRun { get; internal set; }
-
-		public string NewIndex { get; internal set; }
-
-		public string OldIndex { get; internal set; }
-
-		public bool RolledOver { get; internal set; }
-
+		[DataMember(Name = "conditions")]
 		public IReadOnlyDictionary<string, bool> Conditions { get; internal set; } = EmptyReadOnly<string, bool>.Dictionary;
 
+		[DataMember(Name = "dry_run")]
+		public bool DryRun { get; internal set; }
+
+		[DataMember(Name = "new_index")]
+		public string NewIndex { get; internal set; }
+
+		[DataMember(Name = "old_index")]
+		public string OldIndex { get; internal set; }
+
+		[DataMember(Name = "rolled_over")]
+		public bool RolledOver { get; internal set; }
+
+		[DataMember(Name = "shards_acknowledged")]
 		public bool ShardsAcknowledged { get; internal set; }
 	}
 }

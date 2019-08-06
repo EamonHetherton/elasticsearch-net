@@ -1,19 +1,22 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum IndexOptions
 	{
-		[EnumMember(Value="docs")]
+		[EnumMember(Value = "docs")]
 		Docs,
+
 		[EnumMember(Value = "freqs")]
 		Freqs,
+
 		[EnumMember(Value = "positions")]
 		Positions,
-        [EnumMember(Value = "offsets")]
-        Offsets,
+
+		[EnumMember(Value = "offsets")]
+		Offsets,
 	}
 }

@@ -1,20 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IIndicesResponse : IResponse
+	[DataContract]
+	public abstract class IndicesResponseBase : AcknowledgedResponseBase
 	{
-		bool Acknowledged { get; }
-		ShardsMetaData ShardsHit { get; }
-	}
-
-	[JsonObject]
-	public abstract class IndicesResponseBase : ResponseBase, IIndicesResponse
-	{
-		[JsonProperty(PropertyName = "acknowledged")]
-		public bool Acknowledged { get; private set; }
-
-		[JsonProperty(PropertyName = "_shards")]
-		public ShardsMetaData ShardsHit { get; private set; }
+		[DataMember(Name = "_shards")]
+		public ShardStatistics ShardsHit { get; internal set; }
 	}
 }

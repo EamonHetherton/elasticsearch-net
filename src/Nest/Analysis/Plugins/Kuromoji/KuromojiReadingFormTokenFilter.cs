@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -12,20 +12,21 @@ namespace Nest
 		/// <summary>
 		/// Whether romaji reading form should be output instead of katakana. Defaults to false.
 		/// </summary>
-		[JsonProperty("use_romaji")]
+		[DataMember(Name ="use_romaji")]
+		[JsonFormatter(typeof(NullableStringBooleanFormatter))]
 		bool? UseRomaji { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class KuromojiReadingFormTokenFilter : TokenFilterBase, IKuromojiReadingFormTokenFilter
 	{
 		public KuromojiReadingFormTokenFilter() : base("kuromoji_readingform") { }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public bool? UseRomaji { get; set; }
 	}
 
-	///<inheritdoc/>
+	/// <inheritdoc />
 	public class KuromojiReadingFormTokenFilterDescriptor
 		: TokenFilterDescriptorBase<KuromojiReadingFormTokenFilterDescriptor, IKuromojiReadingFormTokenFilter>, IKuromojiReadingFormTokenFilter
 	{
@@ -33,10 +34,7 @@ namespace Nest
 
 		bool? IKuromojiReadingFormTokenFilter.UseRomaji { get; set; }
 
-		///<inheritdoc/>
-		public KuromojiReadingFormTokenFilterDescriptor UseRomaji(bool? useRomaji = true) => Assign(a => a.UseRomaji = useRomaji);
-
-
+		/// <inheritdoc />
+		public KuromojiReadingFormTokenFilterDescriptor UseRomaji(bool? useRomaji = true) => Assign(useRomaji, (a, v) => a.UseRomaji = v);
 	}
-
 }

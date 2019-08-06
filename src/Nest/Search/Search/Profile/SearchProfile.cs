@@ -1,19 +1,20 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public class SearchProfile
 	{
-		[JsonProperty("rewrite_time")]
-		public long RewriteTime { get; internal set; }
+		[DataMember(Name ="collector")]
+		public IReadOnlyCollection<Collector> Collector { get; internal set; } =
+			EmptyReadOnly<Collector>.Collection;
 
-		[JsonProperty("query")]
+		[DataMember(Name ="query")]
 		public IReadOnlyCollection<QueryProfile> Query { get; internal set; } =
 			EmptyReadOnly<QueryProfile>.Collection;
 
-		[JsonProperty("collector")]
-		public IReadOnlyCollection<Collector> Collector { get; internal set; } =
-			EmptyReadOnly<Collector>.Collection;
+		[DataMember(Name ="rewrite_time")]
+		public long RewriteTime { get; internal set; }
 	}
 }

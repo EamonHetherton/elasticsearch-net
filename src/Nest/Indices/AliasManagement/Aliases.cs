@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<Aliases, IndexName, IAlias>))]
+	[JsonFormatter(typeof(VerbatimDictionaryKeysFormatter<Aliases, IAliases, IndexName, IAlias>))]
 	public interface IAliases : IIsADictionary<IndexName, IAlias> { }
+
 	public class Aliases : IsADictionaryBase<IndexName, IAlias>, IAliases
 	{
-		public Aliases() {}
+		public Aliases() { }
+
 		public Aliases(IDictionary<IndexName, IAlias> container) : base(container) { }
-		public Aliases(Dictionary<IndexName, IAlias> container)
-			: base(container.Select(kv => kv).ToDictionary(kv => kv.Key, kv => kv.Value))
-		{}
+
+		public Aliases(Dictionary<IndexName, IAlias> container) : base(container) { }
 
 		/// <summary>
 		/// Add any setting to the index
@@ -23,9 +23,9 @@ namespace Nest
 
 	public class AliasesDescriptor : IsADictionaryDescriptorBase<AliasesDescriptor, IAliases, IndexName, IAlias>
 	{
-		public AliasesDescriptor() : base(new Aliases()) {}
+		public AliasesDescriptor() : base(new Aliases()) { }
 
-		public AliasesDescriptor Alias(string alias, Func<AliasDescriptor, IAlias> selector = null) => Assign(alias, selector.InvokeOrDefault(new AliasDescriptor()));
+		public AliasesDescriptor Alias(string alias, Func<AliasDescriptor, IAlias> selector = null) =>
+			Assign(alias, selector.InvokeOrDefault(new AliasDescriptor()));
 	}
-
 }

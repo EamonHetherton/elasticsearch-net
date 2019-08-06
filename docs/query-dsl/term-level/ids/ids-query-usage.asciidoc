@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,15 +7,15 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/TermLevel/Ids/IdsQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/TermLevel/Ids/IdsQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[ids-query-usage]]
-== Ids Query Usage
+=== Ids Query Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
@@ -24,11 +24,10 @@ q
     .Name("named_query")
     .Boost(1.1)
     .Values(1, 2, 3, 4)
-    .Types(typeof(Project), typeof(Developer))
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -36,8 +35,7 @@ new IdsQuery
 {
     Name = "named_query",
     Boost = 1.1,
-    Values = new List<Id> { 1, 2,3,4 },
-    Types = Type<Project>().And<Developer>()
+    Values = new List<Id> { 1, 2, 3, 4 },
 }
 ----
 
@@ -48,10 +46,6 @@ new IdsQuery
   "ids": {
     "_name": "named_query",
     "boost": 1.1,
-    "types": [
-      "project",
-      "developer"
-    ],
     "values": [
       1,
       2,

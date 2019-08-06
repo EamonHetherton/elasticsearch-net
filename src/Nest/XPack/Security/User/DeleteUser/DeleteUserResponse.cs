@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IDeleteUserResponse : IResponse
+	public class DeleteUserResponse : ResponseBase
 	{
-		[JsonProperty("found")]
-		bool Found { get; }
-	}
-
-	public class DeleteUserResponse : ResponseBase, IDeleteUserResponse
-	{
+		[DataMember(Name ="found")]
 		public bool Found { get; internal set; }
 	}
 }

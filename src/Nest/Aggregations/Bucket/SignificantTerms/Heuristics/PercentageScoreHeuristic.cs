@@ -1,14 +1,13 @@
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<PercentageScoreHeuristic>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(PercentageScoreHeuristic))]
 	public interface IPercentageScoreHeuristic { }
 
 	public class PercentageScoreHeuristic { }
 
-	public class PercentageScoreHeuristicDescriptor 
-		: DescriptorBase<PercentageScoreHeuristicDescriptor, IPercentageScoreHeuristic>, IPercentageScoreHeuristic
-	{ }
+	public class PercentageScoreHeuristicDescriptor
+		: DescriptorBase<PercentageScoreHeuristicDescriptor, IPercentageScoreHeuristic>, IPercentageScoreHeuristic { }
 }

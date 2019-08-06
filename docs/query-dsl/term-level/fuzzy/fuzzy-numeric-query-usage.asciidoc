@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,15 +7,15 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/QueryDsl/TermLevel/Fuzzy/FuzzyNumericQueryUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/QueryDsl/TermLevel/Fuzzy/FuzzyNumericQueryUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[fuzzy-numeric-query-usage]]
-== Fuzzy Numeric Query Usage
+=== Fuzzy Numeric Query Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
@@ -28,12 +28,12 @@ q
     .Value(12)
     .MaxExpansions(100)
     .PrefixLength(3)
-    .Rewrite(RewriteMultiTerm.ConstantScore)
+    .Rewrite(MultiTermQueryRewrite.ConstantScore)
     .Transpositions()
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
@@ -46,7 +46,7 @@ new FuzzyNumericQuery
     Value = 12,
     MaxExpansions = 100,
     PrefixLength = 3,
-    Rewrite = RewriteMultiTerm.ConstantScore,
+    Rewrite = MultiTermQueryRewrite.ConstantScore,
     Transpositions = true
 }
 ----

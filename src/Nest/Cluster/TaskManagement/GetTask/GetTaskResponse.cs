@@ -1,26 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	public interface IGetTaskResponse : IResponse
+	public class GetTaskResponse : ResponseBase
 	{
-		[JsonProperty("completed")]
-		bool Completed { get; }
-
-		[JsonProperty("task")]
-		TaskInfo Task { get; }
-	}
-
-	public class GetTaskResponse : ResponseBase, IGetTaskResponse
-	{
+		[DataMember(Name = "completed")]
 		public bool Completed { get; internal set; }
 
+		[DataMember(Name = "task")]
 		public TaskInfo Task { get; internal set; }
 	}
 }

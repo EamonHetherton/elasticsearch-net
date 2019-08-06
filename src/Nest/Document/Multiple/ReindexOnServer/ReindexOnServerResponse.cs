@@ -1,80 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using Newtonsoft.Json;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IReindexOnServerResponse : IResponse
+	public class ReindexOnServerResponse : ResponseBase
 	{
-		//https://github.com/elastic/elasticsearch/commit/11f90bffda50f0acc8dc1409f3f33005e1249234
-		// 2.3 released this writing the time value's to string e.g 123.4ms instead of long as all the others took responses
-		[JsonProperty("took")]
-		Time Took { get; }
+		public override bool IsValid => base.IsValid && !Failures.HasAny();
+
+		[DataMember(Name ="batches")]
+		public long Batches { get; internal set; }
+
+		[DataMember(Name ="created")]
+		public long Created { get; internal set; }
+
+		[DataMember(Name ="failures")]
+		public IReadOnlyCollection<BulkIndexByScrollFailure> Failures { get; internal set; }
+			= EmptyReadOnly<BulkIndexByScrollFailure>.Collection;
+
+		[DataMember(Name ="noops")]
+		public long Noops { get; internal set; }
+
+		[DataMember(Name ="retries")]
+		public Retries Retries { get; internal set; }
+
+		[DataMember(Name ="slice_id")]
+		public int? SliceId { get; internal set; }
 
 		/// <summary>
 		/// Only has a value if WaitForCompletion is set to false on the request
 		/// </summary>
-		[JsonProperty("task")]
-		TaskId Task { get; }
-
-		[JsonProperty("timed_out")]
-		bool TimedOut { get; }
-
-		[JsonProperty("total")]
-		long Total { get; }
-
-		[JsonProperty("created")]
-		long Created { get; }
-
-		[JsonProperty("updated")]
-		long Updated { get; }
-
-		[JsonProperty("batches")]
-		long Batches { get; }
-
-		[JsonProperty("version_conflicts")]
-		long VersionConflicts { get; }
-
-		[JsonProperty("noops")]
-		long Noops { get; }
-
-		[JsonProperty("retries")]
-		Retries Retries { get; }
-
-		[JsonProperty("failures")]
-		IReadOnlyCollection<BulkIndexByScrollFailure> Failures { get; }
-	}
-
-	[JsonObject(MemberSerialization.OptIn)]
-	public class ReindexOnServerResponse : ResponseBase, IReindexOnServerResponse
-	{
-		public override bool IsValid => base.IsValid && !this.Failures.HasAny();
-
-		public Time Took { get; internal set; }
-
-		/// <summary>
-		/// Only has a value if WaitForCompletion is set to <c>false</c> on the request
-		/// </summary>
+		[DataMember(Name ="task")]
 		public TaskId Task { get; internal set; }
 
+		[DataMember(Name ="timed_out")]
 		public bool TimedOut { get; internal set; }
 
+		//https://github.com/elastic/elasticsearch/commit/11f90bffda50f0acc8dc1409f3f33005e1249234
+		// 2.3 released this writing the time value's to string e.g 123.4ms instead of long as all the others took responses
+		[DataMember(Name ="took")]
+		public Time Took { get; internal set; }
+
+		[DataMember(Name ="total")]
 		public long Total { get; internal set; }
 
-		public long Created { get; internal set; }
-
+		[DataMember(Name ="updated")]
 		public long Updated { get; internal set; }
 
-		public long Batches { get; internal set; }
-
+		[DataMember(Name ="version_conflicts")]
 		public long VersionConflicts { get; internal set; }
-
-		public long Noops { get; internal set; }
-
-		public Retries Retries { get; internal set; }
-
-		public IReadOnlyCollection<BulkIndexByScrollFailure> Failures { get; internal set; } = EmptyReadOnly<BulkIndexByScrollFailure>.Collection;
 	}
 }

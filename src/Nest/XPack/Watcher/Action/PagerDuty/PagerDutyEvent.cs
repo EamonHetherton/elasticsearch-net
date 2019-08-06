@@ -1,53 +1,54 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<PagerDutyEvent>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(PagerDutyEvent))]
 	public interface IPagerDutyEvent
 	{
-		[JsonProperty("account")]
+		[DataMember(Name = "account")]
 		string Account { get; set; }
 
-		[JsonProperty("description")]
-		string Description { get; set; }
-
-		[JsonProperty("event_type")]
-		PagerDutyEventType? EventType { get; set; }
-
-		[JsonProperty("incident_key")]
-		string IncidentKey { get; set; }
-
-		[JsonProperty("client")]
-		string Client { get; set; }
-
-		[JsonProperty("client_url")]
-		string ClientUrl { get; set; }
-
-		[JsonProperty("attach_payload")]
+		[DataMember(Name = "attach_payload")]
 		bool? AttachPayload { get; set; }
 
-		[JsonProperty("context")]
+		[DataMember(Name = "client")]
+		string Client { get; set; }
+
+		[DataMember(Name = "client_url")]
+		string ClientUrl { get; set; }
+
+		[DataMember(Name = "context")]
 		IEnumerable<IPagerDutyContext> Context { get; set; }
+
+		[DataMember(Name = "description")]
+		string Description { get; set; }
+
+		[DataMember(Name = "event_type")]
+		PagerDutyEventType? EventType { get; set; }
+
+		[DataMember(Name = "incident_key")]
+		string IncidentKey { get; set; }
 	}
 
 	public class PagerDutyEvent : IPagerDutyEvent
 	{
 		public string Account { get; set; }
 
-		public string Description { get; set; }
-
-		public PagerDutyEventType? EventType { get; set; }
-
-		public string IncidentKey { get; set; }
+		public bool? AttachPayload { get; set; }
 
 		public string Client { get; set; }
 
 		public string ClientUrl { get; set; }
 
-		public bool? AttachPayload { get; set; }
-
 		public IEnumerable<IPagerDutyContext> Context { get; set; }
+
+		public string Description { get; set; }
+
+		public PagerDutyEventType? EventType { get; set; }
+
+		public string IncidentKey { get; set; }
 	}
 }

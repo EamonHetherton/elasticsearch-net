@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Nest
 {
-	using Containers = System.Collections.Generic.List<QueryContainer>;
+	using Containers = List<QueryContainer>;
+
 	internal static class BoolQueryAndExtensions
 	{
 		internal static QueryContainer CombineAsMust(this QueryContainer leftContainer, QueryContainer rightContainer)
@@ -15,7 +15,7 @@ namespace Nest
 
 			//neither side is a bool, no special handling needed wrap in a bool must
 			if (leftBool == null && rightBool == null)
-				return CreateMustContainer(new Containers { leftContainer, rightContainer }, null);
+				return CreateMustContainer(new Containers { leftContainer, rightContainer });
 
 			else if (TryHandleBoolsWithOnlyShouldClauses(leftContainer, rightContainer, leftBool, rightBool, out c)) return c;
 			else if (TryHandleUnmergableBools(leftContainer, rightContainer, leftBool, rightBool, out c)) return c;
@@ -33,10 +33,13 @@ namespace Nest
 		/// <summary>
 		/// Handles cases where either side is a bool which indicates it can't be merged yet the other side is mergable.
 		/// A side is considered unmergable if its locked (has important metadata) or has should clauses.
-		/// Instead of always wrapping these cases in another bool we merge to unmergable side into to others must clause therefor flattening the generated graph
+		/// Instead of always wrapping these cases in another bool we merge to unmergable side into to others must clause therefor flattening the
+		/// generated graph
 		/// </summary>
+		[SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalse")] // there for clarity
 		private static bool TryHandleUnmergableBools(
-			QueryContainer leftContainer, QueryContainer rightContainer, IBoolQuery leftBool, IBoolQuery rightBool, out QueryContainer c)
+			QueryContainer leftContainer, QueryContainer rightContainer, IBoolQuery leftBool, IBoolQuery rightBool, out QueryContainer c
+		)
 		{
 			c = null;
 			var leftCantMergeAnd = leftBool != null && !leftBool.CanMergeAnd();
@@ -62,7 +65,7 @@ namespace Nest
 			}
 			//left can't merge and right is not a bool, we forcefully create a wrapped must container
 			else if (leftCantMergeAnd && !rightCantMergeAnd && rightBool == null)
-				c = CreateMustContainer(new Containers { leftContainer, rightContainer }, null);
+				c = CreateMustContainer(new Containers { leftContainer, rightContainer });
 			return c != null;
 		}
 
@@ -73,12 +76,14 @@ namespace Nest
 		/// In this case we can optimize the generated graph by merging and preventing stack overflows
 		/// </summary>
 		private static bool TryHandleBoolsWithOnlyShouldClauses(
-			QueryContainer leftContainer, QueryContainer rightContainer, IBoolQuery leftBool, IBoolQuery rightBool, out QueryContainer c)
+			QueryContainer leftContainer, QueryContainer rightContainer, IBoolQuery leftBool, IBoolQuery rightBool, out QueryContainer c
+		)
 		{
 			c = null;
 			var leftHasOnlyShoulds = leftBool.HasOnlyShouldClauses();
 			var rightHasOnlyShoulds = rightBool.HasOnlyShouldClauses();
 			if (!leftHasOnlyShoulds && !rightHasOnlyShoulds) return false;
+
 			if (leftContainer.HoldsOnlyShouldMusts && rightHasOnlyShoulds)
 			{
 				leftBool.Must = leftBool.Must.AddIfNotNull(rightContainer);
@@ -91,35 +96,28 @@ namespace Nest
 			}
 			else
 			{
-				c = CreateMustContainer(new Containers { leftContainer, rightContainer }, null);
+				c = CreateMustContainer(new Containers { leftContainer, rightContainer });
 				c.HoldsOnlyShouldMusts = rightHasOnlyShoulds && leftHasOnlyShoulds;
 			}
 			return true;
 		}
 
-		private static QueryContainer CreateMustContainer(QueryContainer left, QueryContainer right)
-		{
-			return CreateMustContainer(new Containers { left, right }, null);
-		}
+		private static QueryContainer CreateMustContainer(QueryContainer left, QueryContainer right) =>
+			CreateMustContainer(new Containers { left, right });
 
-		private static QueryContainer CreateMustContainer(List<QueryContainer> mustClauses, QueryContainer reuse)
-		{
-			return new QueryContainer(new BoolQuery() { Must = mustClauses.ToListOrNullIfEmpty() });
-		}
+		private static QueryContainer CreateMustContainer(List<QueryContainer> mustClauses) =>
+			new QueryContainer(new BoolQuery() { Must = mustClauses.ToListOrNullIfEmpty() });
 
 		private static QueryContainer CreateMustContainer(
 			List<QueryContainer> mustClauses,
 			List<QueryContainer> mustNotClauses,
 			List<QueryContainer> filters
-			)
+		) => new QueryContainer(new BoolQuery
 		{
-			return new QueryContainer(new BoolQuery
-			{
-				Must = mustClauses.ToListOrNullIfEmpty(),
-				MustNot = mustNotClauses.ToListOrNullIfEmpty(),
-				Filter = filters.ToListOrNullIfEmpty()
-			});
-		}
+			Must = mustClauses.ToListOrNullIfEmpty(),
+			MustNot = mustNotClauses.ToListOrNullIfEmpty(),
+			Filter = filters.ToListOrNullIfEmpty()
+		});
 
 		private static bool CanMergeAnd(this IBoolQuery boolQuery) =>
 			boolQuery != null && !boolQuery.Locked && !boolQuery.Should.HasAny();
@@ -128,8 +126,10 @@ namespace Nest
 		{
 			var lBoolQuery = container.Self().Bool;
 			if (lBoolQuery == null) return new[] { container };
-			return lBoolQuery?.Must?.AsInstanceOrToListOrNull();
+
+			return lBoolQuery.Must?.AsInstanceOrToListOrNull();
 		}
+
 		private static IEnumerable<QueryContainer> OrphanMustNots(IQueryContainer container) => container.Bool?.MustNot?.AsInstanceOrToListOrNull();
 
 		private static IEnumerable<QueryContainer> OrphanFilters(IQueryContainer container) => container.Bool?.Filter?.AsInstanceOrToListOrNull();

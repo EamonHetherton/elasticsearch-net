@@ -1,34 +1,35 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HoltLinearModel))]
 	public interface IHoltLinearModel : IMovingAverageModel
 	{
-		[JsonProperty("alpha")]
+		[DataMember(Name ="alpha")]
 		float? Alpha { get; set; }
 
-		[JsonProperty("beta")]
+		[DataMember(Name ="beta")]
 		float? Beta { get; set; }
 	}
 
 	public class HoltLinearModel : IHoltLinearModel
 	{
-		string IMovingAverageModel.Name { get; } = "holt";
-
 		public float? Alpha { get; set; }
 		public float? Beta { get; set; }
+		string IMovingAverageModel.Name { get; } = "holt";
 	}
 
 	public class HoltLinearModelDescriptor
 		: DescriptorBase<HoltLinearModelDescriptor, IHoltLinearModel>, IHoltLinearModel
 	{
-		string IMovingAverageModel.Name { get; } = "holt";
 		float? IHoltLinearModel.Alpha { get; set; }
 		float? IHoltLinearModel.Beta { get; set; }
+		string IMovingAverageModel.Name { get; } = "holt";
 
-		public HoltLinearModelDescriptor Alpha(float alpha) => Assign(a => a.Alpha = alpha);
+		public HoltLinearModelDescriptor Alpha(float? alpha) => Assign(alpha, (a, v) => a.Alpha = v);
 
-		public HoltLinearModelDescriptor Beta(float beta) => Assign(a => a.Beta = beta);
+		public HoltLinearModelDescriptor Beta(float? beta) => Assign(beta, (a, v) => a.Beta = v);
 	}
 }

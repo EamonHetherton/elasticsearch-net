@@ -1,42 +1,39 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IKeywordProperty : IDocValuesProperty
 	{
-		[JsonProperty("boost")]
+		[DataMember(Name ="boost")]
 		double? Boost { get; set; }
 
-		[JsonProperty("eager_global_ordinals")]
+		[DataMember(Name ="eager_global_ordinals")]
 		bool? EagerGlobalOrdinals { get; set; }
 
-		[JsonProperty("ignore_above")]
+		[DataMember(Name ="ignore_above")]
 		int? IgnoreAbove { get; set; }
 
-		[JsonProperty("include_in_all")]
-		bool? IncludeInAll { get; set; }
-
-		[JsonProperty("index")]
+		[DataMember(Name ="index")]
 		bool? Index { get; set; }
 
-		[JsonProperty("index_options")]
+		[DataMember(Name ="index_options")]
 		IndexOptions? IndexOptions { get; set; }
 
-		[JsonProperty("norms")]
+		[DataMember(Name ="normalizer")]
+		string Normalizer { get; set; }
+
+		[DataMember(Name ="norms")]
 		bool? Norms { get; set; }
 
-		[JsonProperty("null_value")]
+		[DataMember(Name ="null_value")]
 		string NullValue { get; set; }
 
-		[JsonProperty("normalizer")]
-		string Normalizer { get; set; }
+		/// <summary> Whether full text queries should split the input on whitespace when building a query for this field. </summary>
+		[DataMember(Name ="split_queries_on_whitespace")]
+		bool? SplitQueriesOnWhitespace { get; set; }
 	}
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -47,12 +44,14 @@ namespace Nest
 		public double? Boost { get; set; }
 		public bool? EagerGlobalOrdinals { get; set; }
 		public int? IgnoreAbove { get; set; }
-		public bool? IncludeInAll { get; set; }
 		public bool? Index { get; set; }
 		public IndexOptions? IndexOptions { get; set; }
+		public string Normalizer { get; set; }
 		public bool? Norms { get; set; }
 		public string NullValue { get; set; }
-		public string Normalizer { get; set; }
+
+		/// <inheritdoc cref="IKeywordProperty.SplitQueriesOnWhitespace" />
+		public bool? SplitQueriesOnWhitespace { get; set; }
 	}
 
 	[DebuggerDisplay("{DebugDisplay}")]
@@ -60,26 +59,36 @@ namespace Nest
 		: DocValuesPropertyDescriptorBase<KeywordPropertyDescriptor<T>, IKeywordProperty, T>, IKeywordProperty
 		where T : class
 	{
-		double? IKeywordProperty.Boost { get; set; }
-		bool? IKeywordProperty.EagerGlobalOrdinals{ get; set; }
-		int? IKeywordProperty.IgnoreAbove{ get; set; }
-		bool? IKeywordProperty.IncludeInAll{ get; set; }
-		bool? IKeywordProperty.Index{ get; set; }
-		IndexOptions? IKeywordProperty.IndexOptions{ get; set; }
-		bool? IKeywordProperty.Norms{ get; set; }
-		string IKeywordProperty.NullValue{ get; set; }
-		string IKeywordProperty.Normalizer{ get; set; }
-
 		public KeywordPropertyDescriptor() : base(FieldType.Keyword) { }
 
-		public KeywordPropertyDescriptor<T> Boost(double boost) => Assign(a => a.Boost = boost);
-		public KeywordPropertyDescriptor<T> EagerGlobalOrdinals(bool eagerGlobalOrdinals = true) => Assign(a => a.EagerGlobalOrdinals = eagerGlobalOrdinals);
-		public KeywordPropertyDescriptor<T> IgnoreAbove(int ignoreAbove) => Assign(a => a.IgnoreAbove = ignoreAbove);
-		public KeywordPropertyDescriptor<T> IncludeInAll(bool includeInAll = true) => Assign(a => a.IncludeInAll = includeInAll);
-		public KeywordPropertyDescriptor<T> Index(bool index = true) => Assign(a => a.Index = index);
-		public KeywordPropertyDescriptor<T> IndexOptions(IndexOptions indexOptions) => Assign(a => a.IndexOptions = indexOptions);
-		public KeywordPropertyDescriptor<T> Norms(bool enabled = true) => Assign(a => a.Norms = enabled);
-		public KeywordPropertyDescriptor<T> NullValue(string nullValue) => Assign(a => a.NullValue = nullValue);
-		public KeywordPropertyDescriptor<T> Normalizer(string normalizer) => Assign(a => a.Normalizer = normalizer);
+		double? IKeywordProperty.Boost { get; set; }
+		bool? IKeywordProperty.EagerGlobalOrdinals { get; set; }
+		int? IKeywordProperty.IgnoreAbove { get; set; }
+		bool? IKeywordProperty.Index { get; set; }
+		IndexOptions? IKeywordProperty.IndexOptions { get; set; }
+		string IKeywordProperty.Normalizer { get; set; }
+		bool? IKeywordProperty.Norms { get; set; }
+		string IKeywordProperty.NullValue { get; set; }
+		bool? IKeywordProperty.SplitQueriesOnWhitespace { get; set; }
+
+		public KeywordPropertyDescriptor<T> Boost(double? boost) => Assign(boost, (a, v) => a.Boost = v);
+
+		public KeywordPropertyDescriptor<T> EagerGlobalOrdinals(bool? eagerGlobalOrdinals = true) =>
+			Assign(eagerGlobalOrdinals, (a, v) => a.EagerGlobalOrdinals = v);
+
+		public KeywordPropertyDescriptor<T> IgnoreAbove(int? ignoreAbove) => Assign(ignoreAbove, (a, v) => a.IgnoreAbove = v);
+
+		public KeywordPropertyDescriptor<T> Index(bool? index = true) => Assign(index, (a, v) => a.Index = v);
+
+		public KeywordPropertyDescriptor<T> IndexOptions(IndexOptions? indexOptions) => Assign(indexOptions, (a, v) => a.IndexOptions = v);
+
+		public KeywordPropertyDescriptor<T> Norms(bool? enabled = true) => Assign(enabled, (a, v) => a.Norms = v);
+
+		/// <inheritdoc cref="IKeywordProperty.SplitQueriesOnWhitespace" />
+		public KeywordPropertyDescriptor<T> SplitQueriesOnWhitespace(bool? split = true) => Assign(split, (a, v) => a.SplitQueriesOnWhitespace = v);
+
+		public KeywordPropertyDescriptor<T> NullValue(string nullValue) => Assign(nullValue, (a, v) => a.NullValue = v);
+
+		public KeywordPropertyDescriptor<T> Normalizer(string normalizer) => Assign(normalizer, (a, v) => a.Normalizer = v);
 	}
 }

@@ -1,23 +1,22 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	public class Collector
 	{
-		[JsonProperty("name")]
-		public string Name { get; internal set; }
-
-		[JsonProperty("reason")]
-		public string Reason { get; internal set; }
-
-		[JsonProperty("time")]
-		public Time Time { get; internal set; }
-
-		[JsonProperty("children")]
+		[DataMember(Name ="children")]
 		public IReadOnlyCollection<Collector> Children { get; internal set; } =
 			EmptyReadOnly<Collector>.Collection;
 
+		[DataMember(Name ="name")]
+		public string Name { get; internal set; }
 
+		[DataMember(Name ="reason")]
+		public string Reason { get; internal set; }
+
+		[DataMember(Name ="time_in_nanos")]
+		public long TimeInNanoseconds { get; internal set; }
 	}
 }

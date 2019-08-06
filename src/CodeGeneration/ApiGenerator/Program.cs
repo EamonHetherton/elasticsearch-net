@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
+using ApiGenerator.Configuration;
 
 namespace ApiGenerator
 {
@@ -9,32 +9,32 @@ namespace ApiGenerator
 	{
 		private static readonly string DownloadBranch = "master";
 
-		static void Main(string[] args)
+		// ReSharper disable once UnusedParameter.Local
+		private static async Task Main(string[] args)
 		{
-			bool redownloadCoreSpecification = false;
-			string downloadBranch = DownloadBranch;
+			var redownloadCoreSpecification = false;
+			var generateCode = false;
+			var downloadBranch = DownloadBranch;
 
 			var answer = "invalid";
 			while (answer != "y" && answer != "n" && answer != "")
 			{
-				Console.Write("Download online rest specifications? [Y/N] (default N): ");
+				Console.Write("Download online rest specifications? [y/N] (default N): ");
 				answer = Console.ReadLine()?.Trim().ToLowerInvariant();
 				redownloadCoreSpecification = answer == "y";
 			}
 
 			if (redownloadCoreSpecification)
 			{
-				Console.Write("Branch to download specification from (default master): ");
+				Console.Write($"Branch to download specification from (default {downloadBranch}): ");
 				var readBranch = Console.ReadLine()?.Trim();
 				if (!string.IsNullOrEmpty(readBranch)) downloadBranch = readBranch;
 			}
 			else
 			{
 				// read last downloaded branch from file.
-				if (File.Exists(CodeConfiguration.LastDownloadedVersionFile))
-				{
-					downloadBranch = File.ReadAllText(CodeConfiguration.LastDownloadedVersionFile);
-				}
+				if (File.Exists(GeneratorLocations.LastDownloadedVersionFile))
+					downloadBranch = File.ReadAllText(GeneratorLocations.LastDownloadedVersionFile);
 			}
 
 			if (string.IsNullOrEmpty(downloadBranch))
@@ -43,10 +43,15 @@ namespace ApiGenerator
 			if (redownloadCoreSpecification)
 				RestSpecDownloader.Download(downloadBranch);
 
-			ApiGenerator.Generate(downloadBranch, "Core", "Graph", "License", "Security", "Watcher");
-
-			//ApiGenerator.Generate(); //generates everything under ApiSpecification
+			answer = "invalid";
+			while (answer != "y" && answer != "n" && answer != "")
+			{
+				Console.Write("Generate code from the specification files on disk? [Y/n] (default Y): ");
+				answer = Console.ReadLine()?.Trim().ToLowerInvariant();
+				generateCode = answer == "y" || answer == "";
+			}
+			if (generateCode)
+				await Generator.ApiGenerator.Generate(downloadBranch, "Core", "XPack");
 		}
-
 	}
 }

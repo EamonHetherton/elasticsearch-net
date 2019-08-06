@@ -1,41 +1,37 @@
-﻿using Newtonsoft.Json;
-
-// ReSharper disable UnusedMember.Global
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<ChildrenAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(ChildrenAggregation))]
 	public interface IChildrenAggregation : IBucketAggregation
 	{
-		[JsonProperty("type")]
-		TypeName Type { get; set; }
+		[DataMember(Name ="type")]
+		RelationName Type { get; set; }
 	}
 
 	public class ChildrenAggregation : BucketAggregationBase, IChildrenAggregation
 	{
-		public TypeName Type { get; set; }
-
 		internal ChildrenAggregation() { }
 
-		public ChildrenAggregation(string name, TypeName type) : base(name)
-		{
-			this.Type = type;
-		}
+		public ChildrenAggregation(string name, RelationName type) : base(name) => Type = type;
+
+		public RelationName Type { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.Children = this;
 	}
 
-	public class ChildrenAggregationDescriptor<T> 
+	public class ChildrenAggregationDescriptor<T>
 		: BucketAggregationDescriptorBase<ChildrenAggregationDescriptor<T>, IChildrenAggregation, T>, IChildrenAggregation
 		where T : class
 	{
-		TypeName IChildrenAggregation.Type { get; set; } = typeof(T);
+		RelationName IChildrenAggregation.Type { get; set; } = typeof(T);
 
-		public ChildrenAggregationDescriptor<T> Type(TypeName type) =>
-			Assign(a => a.Type = type);
+		public ChildrenAggregationDescriptor<T> Type(RelationName type) =>
+			Assign(type, (a, v) => a.Type = v);
 
 		public ChildrenAggregationDescriptor<T> Type<TChildType>() where TChildType : class =>
-			Assign(a => a.Type = typeof(TChildType));
+			Assign(typeof(TChildType), (a, v) => a.Type = v);
 	}
 }

@@ -1,20 +1,20 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class ValidationExplanation
 	{
-		[JsonProperty(PropertyName = "index")]
+		[DataMember(Name ="error")]
+		public string Error { get; internal set; }
+
+		[DataMember(Name ="explanation")]
+		public string Explanation { get; internal set; }
+
+		[DataMember(Name ="index")]
 		public string Index { get; internal set; }
 
-		[JsonProperty(PropertyName = "valid")]
+		[DataMember(Name ="valid")]
 		public bool Valid { get; internal set; }
-		
-		[JsonProperty(PropertyName = "error")]
-		public string Error { get; internal set; }
-		
-		[JsonProperty(PropertyName = "explanation")]
-		public string Explanation { get; internal set; }
 	}
 }

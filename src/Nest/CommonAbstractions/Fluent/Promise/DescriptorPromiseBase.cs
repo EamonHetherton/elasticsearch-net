@@ -8,37 +8,53 @@ namespace Nest
 		TValue Value { get; }
 	}
 
-	public abstract class DescriptorPromiseBase<TDescriptor, TValue> : IDescriptor, IPromise<TValue> 
+	public abstract class DescriptorPromiseBase<TDescriptor, TValue> : IDescriptor, IPromise<TValue>
 		where TDescriptor : DescriptorPromiseBase<TDescriptor, TValue>
 		where TValue : class
 	{
 		internal readonly TValue PromisedValue;
+
+		protected DescriptorPromiseBase(TValue instance)
+		{
+			PromisedValue = instance;
+			Self = (TDescriptor)this;
+		}
+
 		TValue IPromise<TValue>.Value => PromisedValue;
 
-		protected DescriptorPromiseBase(TValue instance) { this.PromisedValue = instance; }
+		protected TDescriptor Self { get; }
 
 		protected TDescriptor Assign(Action<TValue> assigner)
 		{
-			assigner(this.PromisedValue);
-			return (TDescriptor) this;
+			assigner(PromisedValue);
+			return Self;
+		}
+
+		protected TDescriptor Assign<TNewValue>(TNewValue value, Action<TValue, TNewValue> assigner)
+		{
+			assigner(PromisedValue, value);
+			return Self;
 		}
 
 		/// <summary>
-		/// Hides the <see cref="Equals"/> method.
+		/// Hides the <see cref="Equals" /> method.
 		/// </summary>
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
+		// ReSharper disable BaseObjectEqualsIsObjectEquals
 		public override bool Equals(object obj) => base.Equals(obj);
 
 		/// <summary>
-		/// Hides the <see cref="GetHashCode"/> method.
+		/// Hides the <see cref="GetHashCode" /> method.
 		/// </summary>
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
+		// ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
 		public override int GetHashCode() => base.GetHashCode();
+		// ReSharper restore BaseObjectEqualsIsObjectEquals
 
 		/// <summary>
-		/// Hides the <see cref="ToString"/> method.
+		/// Hides the <see cref="ToString" /> method.
 		/// </summary>
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]

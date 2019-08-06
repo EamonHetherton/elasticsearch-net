@@ -1,23 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IDeleteWatchResponse : IResponse
+	public class DeleteWatchResponse : ResponseBase
 	{
-		[JsonProperty("_id")]
-		string Id { get; }
-
-		[JsonProperty("_version")]
-		int Version { get; }
-
-		[JsonProperty("found")]
-		bool Found { get; }
-	}
-
-	public class DeleteWatchResponse : ResponseBase, IDeleteWatchResponse
-	{
-		public string Id { get; internal set; }
-		public int Version { get; internal set; }
+		[DataMember(Name ="found")]
 		public bool Found { get; internal set; }
+
+		[DataMember(Name ="_id")]
+		public string Id { get; internal set; }
+
+		[DataMember(Name ="_version")]
+		public int Version { get; internal set; }
 	}
 }

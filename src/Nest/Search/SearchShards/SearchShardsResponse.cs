@@ -1,54 +1,48 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	public interface ISearchShardsResponse : IResponse
+	public class SearchShardsResponse : ResponseBase
 	{
-		[JsonProperty("shards")]
-		IReadOnlyCollection<IReadOnlyCollection<SearchShard>> Shards { get; }
-
-		[JsonProperty("nodes")]
-		IReadOnlyDictionary<string, SearchNode> Nodes { get; }
-	}
-
-	public class SearchShardsResponse : ResponseBase, ISearchShardsResponse
-	{
-		public IReadOnlyCollection<IReadOnlyCollection<SearchShard>> Shards { get; internal set; } = EmptyReadOnly<IReadOnlyCollection<SearchShard>>.Collection;
-
+		[DataMember(Name = "nodes")]
 		public IReadOnlyDictionary<string, SearchNode> Nodes { get; internal set; } = EmptyReadOnly<string, SearchNode>.Dictionary;
+
+		[DataMember(Name = "shards")]
+		public IReadOnlyCollection<IReadOnlyCollection<SearchShard>> Shards { get; internal set; } =
+			EmptyReadOnly<IReadOnlyCollection<SearchShard>>.Collection;
 	}
 
-	[JsonObject(MemberSerialization.OptIn)]
+	[DataContract]
 	public class SearchNode
 	{
-		[JsonProperty("name")]
+		[DataMember(Name = "name")]
 		public string Name { get; internal set; }
 
-		[JsonProperty("transport_address")]
+		[DataMember(Name = "transport_address")]
 		public string TransportAddress { get; internal set; }
 	}
 
-	[JsonObject(MemberSerialization.OptIn)]
+	[DataContract]
 	public class SearchShard
 	{
-		[JsonProperty("state")]
-		public string State { get; internal set; }
+		[DataMember(Name = "index")]
+		public string Index { get; internal set; }
 
-		[JsonProperty("primary")]
-		public bool Primary { get; internal set; }
-
-		[JsonProperty("node")]
+		[DataMember(Name = "node")]
 		public string Node { get; internal set; }
 
-		[JsonProperty("relocating_node")]
+		[DataMember(Name = "primary")]
+		public bool Primary { get; internal set; }
+
+		[DataMember(Name = "relocating_node")]
 		public string RelocatingNode { get; internal set; }
 
-		[JsonProperty("shard")]
+		[DataMember(Name = "shard")]
 		public int Shard { get; internal set; }
 
-		[JsonProperty("index")]
-		public string Index { get; internal set; }
+		[DataMember(Name = "state")]
+		public string State { get; internal set; }
 	}
 }

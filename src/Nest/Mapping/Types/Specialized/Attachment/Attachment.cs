@@ -1,72 +1,72 @@
 using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net.Utf8Json.Internal;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(AttachmentConverter))]
+	/// <summary>
+	/// An attachment indexed with an ingest pipeline using the ingest-attachment plugin.
+	/// Convenience class for working with attachment fields.
+	/// </summary>
+	[JsonFormatter(typeof(AttachmentFormatter))]
 	public class Attachment
 	{
 		/// <summary>
-		/// The author.
+		/// The author
 		/// </summary>
-		[JsonProperty("author")]
+		[DataMember(Name = "author")]
 		public string Author { get; set; }
+
+		/// <summary>
+		/// Whether the attachment contains explicit metadata in addition to the
+		/// content. Used at indexing time to determine the serialized form of the
+		/// attachment.
+		/// </summary>
+		[IgnoreDataMember]
+		public bool ContainsMetadata =>
+			!Author.IsNullOrEmpty() ||
+			ContentLength.HasValue ||
+			!ContentType.IsNullOrEmpty() ||
+			Date.HasValue ||
+			DetectLanguage.HasValue ||
+			IndexedCharacters.HasValue ||
+			!Keywords.IsNullOrEmpty() ||
+			!Language.IsNullOrEmpty() ||
+			!Name.IsNullOrEmpty() ||
+			!Title.IsNullOrEmpty();
 
 		/// <summary>
 		/// The base64 encoded content. Can be explicitly set
 		/// </summary>
-		[JsonProperty("content")]
+		[DataMember(Name = "content")]
 		public string Content { get; set; }
 
 		/// <summary>
 		/// The length of the content before text extraction.
 		/// </summary>
-		[JsonProperty("content_length")]
+		[DataMember(Name = "content_length")]
 		public long? ContentLength { get; set; }
 
 		/// <summary>
 		/// The content type of the attachment. Can be explicitly set
 		/// </summary>
-		[JsonProperty("content_type")]
+		[DataMember(Name = "content_type")]
 		public string ContentType { get; set; }
 
 		/// <summary>
 		/// The date of the attachment.
 		/// </summary>
-		[JsonProperty("date")]
+		[DataMember(Name = "date")]
 		public DateTime? Date { get; set; }
-
-		/// <summary>
-		/// The keywords in the attachment.
-		/// </summary>
-		[JsonProperty("keywords")]
-		public string Keywords { get; set; }
-
-		/// <summary>
-		/// The language of the attachment. Can be explicitly set.
-		/// </summary>
-		[JsonProperty("language")]
-		public string Language { get; set; }
 
 		/// <summary>
 		/// Detect the language of the attachment. Language detection is
 		/// disabled by default.
 		/// </summary>
-		[JsonProperty("detect_language")]
+		[DataMember(Name = "detect_language")]
 		public bool? DetectLanguage { get; set; }
-
-		/// <summary>
-		/// The name of the attachment. Can be explicitly set
-		/// </summary>
-		[JsonProperty("name")]
-		public string Name { get; set; }
-
-		/// <summary>
-		/// The title of the attachment.
-		/// </summary>
-		[JsonProperty("title")]
-		public string Title { get; set; }
 
 		/// <summary>
 		/// Determines how many characters are extracted when indexing the content.
@@ -74,180 +74,209 @@ namespace Nest
 		/// -1 can be set to extract all text, but note that all the text needs to be
 		/// allowed to be represented in memory
 		/// </summary>
-		[JsonProperty("indexed_chars")]
+		[DataMember(Name = "indexed_chars")]
 		public long? IndexedCharacters { get; set; }
 
 		/// <summary>
-		/// Whether the attachment contains explicit metadata in addition to the
-		/// content. Used at indexing time to determine the serialized form of the
-		/// attachment.
+		/// The keywords in the attachment.
 		/// </summary>
-		[JsonIgnore]
-		public bool ContainsMetadata => !Name.IsNullOrEmpty() ||
-		                                !ContentType.IsNullOrEmpty() ||
-		                                !Language.IsNullOrEmpty() ||
-										DetectLanguage.HasValue ||
-										IndexedCharacters.HasValue;
+		[DataMember(Name = "keywords")]
+		public string Keywords { get; set; }
+
+		/// <summary>
+		/// The language of the attachment. Can be explicitly set.
+		/// </summary>
+		[DataMember(Name = "language")]
+		public string Language { get; set; }
+
+		/// <summary>
+		/// The name of the attachment. Can be explicitly set
+		/// </summary>
+		[DataMember(Name = "name")]
+		public string Name { get; set; }
+
+		/// <summary>
+		/// The title of the attachment.
+		/// </summary>
+		[DataMember(Name = "title")]
+		public string Title { get; set; }
 	}
 
-	internal class AttachmentConverter : JsonConverter
+	internal class AttachmentFormatter : IJsonFormatter<Attachment>
 	{
-		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+		private static readonly AutomataDictionary AutomataDictionary = new AutomataDictionary
 		{
-			var attachment = (Attachment)value;
-			if (!attachment.ContainsMetadata)
+			{ "_content", 0 },
+			{ "content", 0 },
+			{ "_name", 1 },
+			{ "name", 1 },
+			{ "author", 2 },
+			{ "keywords", 3 },
+			{ "date", 4 },
+			{ "_content_type", 5 },
+			{ "content_type", 5 },
+			{ "_content_length", 6 },
+			{ "content_length", 6 },
+			{ "contentlength", 6 },
+			{ "_language", 7 },
+			{ "language", 7 },
+			{ "_detect_language", 8 },
+			{ "detect_language", 8 },
+			{ "_indexed_chars", 9 },
+			{ "indexed_chars", 9 },
+			{ "title", 10 },
+		};
+
+		public Attachment Deserialize(ref JsonReader reader, IJsonFormatterResolver formatterResolver)
+		{
+			var token = reader.GetCurrentJsonToken();
+
+			if (token == JsonToken.String)
+				return new Attachment { Content = reader.ReadString() };
+
+			if (token == JsonToken.BeginObject)
 			{
-				writer.WriteValue(attachment.Content);
+				var attachment = new Attachment();
+				var count = 0;
+				while (reader.ReadIsInObject(ref count))
+				{
+					var propertyName = reader.ReadPropertyNameSegmentRaw();
+					if (AutomataDictionary.TryGetValue(propertyName, out var value))
+					{
+						switch (value)
+						{
+							case 0:
+								attachment.Content = reader.ReadString();
+								break;
+							case 1:
+								attachment.Name = reader.ReadString();
+								break;
+							case 2:
+								attachment.Author = reader.ReadString();
+								break;
+							case 3:
+								attachment.Keywords = reader.ReadString();
+								break;
+							case 4:
+								attachment.Date = formatterResolver.GetFormatter<DateTime?>()
+									.Deserialize(ref reader, formatterResolver);
+								break;
+							case 5:
+								attachment.ContentType = reader.ReadString();
+								break;
+							case 6:
+								attachment.ContentLength = reader.ReadNullableLong();
+								break;
+							case 7:
+								attachment.Language = reader.ReadString();
+								break;
+							case 8:
+								attachment.DetectLanguage = reader.ReadNullableBoolean();
+								break;
+							case 9:
+								attachment.IndexedCharacters = reader.ReadNullableLong();
+								break;
+							case 10:
+								attachment.Title = reader.ReadString();
+								break;
+						}
+					}
+				}
+
+				return attachment;
 			}
+
+			return null;
+		}
+
+		public void Serialize(ref JsonWriter writer, Attachment value, IJsonFormatterResolver formatterResolver)
+		{
+			if (value == null)
+			{
+				writer.WriteNull();
+				return;
+			}
+
+			if (!value.ContainsMetadata)
+				writer.WriteString(value.Content);
 			else
 			{
-				writer.WriteStartObject();
-				writer.WritePropertyName("_content");
-				writer.WriteValue(attachment.Content);
+				writer.WriteBeginObject();
+				writer.WritePropertyName("content");
+				writer.WriteString(value.Content);
 
-				if (!string.IsNullOrEmpty(attachment.Name))
+				if (!string.IsNullOrEmpty(value.Author))
 				{
-					writer.WritePropertyName("_name");
-					writer.WriteValue(attachment.Name);
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("author");
+					writer.WriteString(value.Author);
 				}
 
-				if (!string.IsNullOrEmpty(attachment.ContentType))
+				if (value.ContentLength.HasValue)
 				{
-					writer.WritePropertyName("_content_type");
-					writer.WriteValue(attachment.ContentType);
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("content_length");
+					writer.WriteInt64(value.ContentLength.Value);
 				}
 
-				if (!string.IsNullOrEmpty(attachment.Language))
+				if (!string.IsNullOrEmpty(value.ContentType))
 				{
-					writer.WritePropertyName("_language");
-					writer.WriteValue(attachment.Language);
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("content_type");
+					writer.WriteString(value.ContentType);
 				}
 
-				if (attachment.DetectLanguage.HasValue)
+				if (value.Date.HasValue)
 				{
-					writer.WritePropertyName("_detect_language");
-					writer.WriteValue(attachment.DetectLanguage.Value);
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("date");
+					formatterResolver.GetFormatter<DateTime?>().Serialize(ref writer, value.Date, formatterResolver);
 				}
 
-				if (attachment.IndexedCharacters.HasValue)
+				if (value.DetectLanguage.HasValue)
 				{
-					writer.WritePropertyName("_indexed_chars");
-					writer.WriteValue(attachment.IndexedCharacters.Value);
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("detect_language");
+					writer.WriteBoolean(value.DetectLanguage.Value);
+				}
+
+				if (value.IndexedCharacters.HasValue)
+				{
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("indexed_chars");
+					writer.WriteInt64(value.IndexedCharacters.Value);
+				}
+
+				if (!string.IsNullOrEmpty(value.Keywords))
+				{
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("keywords");
+					writer.WriteString(value.Keywords);
+				}
+
+				if (!string.IsNullOrEmpty(value.Language))
+				{
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("language");
+					writer.WriteString(value.Language);
+				}
+
+				if (!string.IsNullOrEmpty(value.Name))
+				{
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("name");
+					writer.WriteString(value.Name);
+				}
+
+				if (!string.IsNullOrEmpty(value.Title))
+				{
+					writer.WriteValueSeparator();
+					writer.WritePropertyName("title");
+					writer.WriteString(value.Title);
 				}
 
 				writer.WriteEndObject();
 			}
 		}
-
-		public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-		{
-			if (reader.TokenType == JsonToken.String)
-			{
-				return new Attachment { Content = (string)reader.Value };
-			}
-
-			if (reader.TokenType == JsonToken.StartObject)
-			{
-				var attachment = new Attachment();
-				while (reader.Read())
-				{
-					if (reader.TokenType == JsonToken.PropertyName)
-					{
-						var propertyName = (string)reader.Value;
-						switch (propertyName.ToLowerInvariant())
-						{
-							case "_content":
-							case "content":
-								attachment.Content = reader.ReadAsString();
-								break;
-							case "_name":
-							case "name":
-								attachment.Name = reader.ReadAsString();
-								break;
-							case "author":
-								attachment.Author = reader.ReadAsString();
-								break;
-							case "keywords":
-								attachment.Keywords = reader.ReadAsString();
-								break;
-							case "date":
-								reader.Read();
-								switch (reader.TokenType)
-								{
-									case JsonToken.String:
-										var value = (string)reader.Value;
-										if (!string.IsNullOrEmpty(value))
-											attachment.Date = Convert.ToDateTime(value);
-										break;
-									case JsonToken.Date:
-										attachment.Date = (DateTime?)reader.Value;
-										break;
-								}
-								break;
-							case "_content_type":
-							case "content_type":
-							case "contenttype":
-							case "contentType":
-								attachment.ContentType = reader.ReadAsString();
-								break;
-							case "_content_length":
-							case "content_length":
-							case "contentlength":
-							case "contentLength":
-								reader.Read();
-								switch (reader.TokenType)
-								{
-									case JsonToken.String:
-										var value = (string)reader.Value;
-										if (!string.IsNullOrEmpty(value))
-											attachment.ContentLength = Convert.ToInt64(value);
-										break;
-									case JsonToken.Integer:
-									case JsonToken.Float:
-										attachment.ContentLength = (long?)reader.Value;
-										break;
-
-								}
-								break;
-							case "_language":
-							case "language":
-								attachment.Language = reader.ReadAsString();
-								break;
-							case "_detect_language":
-								attachment.DetectLanguage = reader.ReadAsBoolean();
-								break;
-							case "_indexed_chars":
-							case "indexed_chars":
-								reader.Read();
-								switch (reader.TokenType)
-								{
-									case JsonToken.String:
-										var value = (string)reader.Value;
-										if (!string.IsNullOrEmpty(value))
-											attachment.IndexedCharacters = Convert.ToInt64(value);
-										break;
-									case JsonToken.Integer:
-									case JsonToken.Float:
-										attachment.IndexedCharacters = (long?)reader.Value;
-										break;
-
-								}
-								break;
-							case "title":
-								attachment.Title = reader.ReadAsString();
-								break;
-						}
-					}
-					if (reader.TokenType == JsonToken.EndObject)
-					{
-						break;
-					}
-				}
-				return attachment;
-			}
-			return null;
-		}
-
-		public override bool CanConvert(Type objectType) => objectType == typeof(Attachment);
 	}
 }

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,13 +7,13 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/CodeStandards/Responses.doc.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/CodeStandards/Responses.doc.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[responses]]
-== Responses
+=== Responses
 
 Every collection property on a Response type should be either IReadOnlyCollection or IReadOnlyDictionary
 
@@ -25,36 +25,60 @@ var exceptions = new HashSet<PropertyInfo>
     typeof(ITypeMapping).GetProperty(nameof(ITypeMapping.Meta)),
     typeof(TypeMapping).GetProperty(nameof(TypeMapping.DynamicDateFormats)),
     typeof(TypeMapping).GetProperty(nameof(TypeMapping.Meta)),
-#pragma warning disable 618
-    typeof(IMultiPercolateResponse).GetProperty(nameof(IMultiPercolateResponse.Responses)),
-#pragma warning restore 618
-    typeof(IBulkResponse).GetProperty(nameof(IBulkResponse.ItemsWithErrors)),
-    typeof(IMultiSearchResponse).GetProperty(nameof(IMultiSearchResponse.AllResponses)),
+    typeof(DynamicDictionary).GetProperty(nameof(DynamicDictionary.Keys)),
+    typeof(DynamicDictionary).GetProperty(nameof(DynamicDictionary.Values)),
+    typeof(BulkResponse).GetProperty(nameof(BulkResponse.ItemsWithErrors)),
+    typeof(StartBasicLicenseResponse).GetProperty(nameof(StartBasicLicenseResponse.Acknowledge)),
+    typeof(FieldCapabilitiesResponse).GetProperty(nameof(FieldCapabilitiesResponse.Fields)),
+    typeof(MultiSearchResponse).GetProperty(nameof(MultiSearchResponse.AllResponses)),
+    typeof(DynamicDictionary).GetProperty(nameof(DynamicDictionary.Keys)),
+    typeof(DynamicDictionary).GetProperty(nameof(DynamicDictionary.Values)),
 };
-var responseInterfaceTypes = from t in typeof(IResponse).Assembly().Types()
-                    where t.IsInterface() && typeof(IResponse).IsAssignableFrom(t)
+
+var responseInterfaceTypes = from t in typeof(IResponse).Assembly.Types()
+                    where t.IsInterface && typeof(IResponse).IsAssignableFrom(t)
                     select t;
+
 var ruleBreakers = new List<string>();
 var seenTypes = new HashSet<Type>();
-
 foreach (var responseType in responseInterfaceTypes)
 {
     FindPropertiesBreakingRule(responseType, exceptions, seenTypes, ruleBreakers);
 }
-----
 
-[source,csharp]
-----
-var properties = type.GetProperties();
-----
-
-[source,csharp]
-----
 ruleBreakers.Should().BeEmpty();
-----
 
-[source,csharp]
-----
+var responses = from t in typeof(IResponse).Assembly.ExportedTypes
+                where t.IsClass && typeof(IResponse).IsAssignableFrom(t)
+                select t;
+
+var offenders = new List<string>();
+foreach (var r in responses)
+{
+    var interfaces = r.GetInterfaces();
+    var sameNamedInterface = interfaces.FirstOrDefault(i => i.Name.StartsWith("I" + r.Name));
+    if (sameNamedInterface != null)
+    {
+        if (!sameNamedInterface.IsGenericType)
+        {
+            offenders.Add(sameNamedInterface.Name + " is not generic and thus can not be an allow covariant interface");
+            continue;
+        }
+        else
+        {
+            var generic = sameNamedInterface.GetGenericTypeDefinition();
+            var genericArg = generic.GetTypeInfo().GenericTypeParameters
+                .FirstOrDefault(a => a.GenericParameterAttributes.HasFlag(GenericParameterAttributes.Covariant));
+            if (genericArg == null)
+                offenders.Add(sameNamedInterface.Name + " is generic but not of its type arguments are covariant");
+        }
+    }
+}
+offenders.Should().BeEmpty("Responses may only have a same named interface if that interface is used to provide covariance");
+
+if (!seenTypes.Add(type)) return;
+
+var properties = type.GetProperties();
 foreach (var propertyInfo in properties)
 {
     if (exceptions.Contains(propertyInfo))
@@ -65,7 +89,7 @@ foreach (var propertyInfo in properties)
     {
         ruleBreakers.Add($"{type.FullName}.{propertyInfo.Name} is of type {propertyInfo.PropertyType.Name}");
     }
-    else if (propertyInfo.PropertyType.IsGenericType())
+    else if (propertyInfo.PropertyType.IsGenericType)
     {
         var genericTypeDefinition = propertyInfo.PropertyType.GetGenericTypeDefinition();
         if (genericTypeDefinition == typeof(IDictionary<,>) ||
@@ -77,8 +101,11 @@ foreach (var propertyInfo in properties)
             ruleBreakers.Add($"{type.FullName}.{propertyInfo.Name} is of type {propertyInfo.PropertyType.Name}");
         }
     }
-    else if (propertyInfo.PropertyType.IsClass() && (propertyInfo.PropertyType.Namespace.StartsWith("Nest") ||
-                                      propertyInfo.PropertyType.Namespace.StartsWith("Elasticsearch.Net")))
+    else if (propertyInfo.PropertyType.IsClass &&
+             (propertyInfo.PropertyType.Namespace.StartsWith("Nest") || propertyInfo.PropertyType.Namespace.StartsWith("Elasticsearch.Net"))
+             //Do not traverse known response dictionaries
+             && !ResponseDictionaries.Contains(propertyInfo.PropertyType)
+    )
     {
         FindPropertiesBreakingRule(propertyInfo.PropertyType, exceptions, seenTypes, ruleBreakers);
     }

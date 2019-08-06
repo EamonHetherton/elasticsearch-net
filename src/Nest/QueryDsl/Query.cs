@@ -41,54 +41,24 @@ namespace Nest
 		public static QueryContainer GeoDistance(Func<GeoDistanceQueryDescriptor<T>, IGeoDistanceQuery> selector) =>
 			new QueryContainerDescriptor<T>().GeoDistance(selector);
 
-		public static QueryContainer GeoDistanceRange(Func<GeoDistanceRangeQueryDescriptor<T>, IGeoDistanceRangeQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoDistanceRange(selector);
-
-		public static QueryContainer GeoHashCell(Func<GeoHashCellQueryDescriptor<T>, IGeoHashCellQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoHashCell(selector);
-
 		public static QueryContainer GeoPolygon(Func<GeoPolygonQueryDescriptor<T>, IGeoPolygonQuery> selector) =>
 			new QueryContainerDescriptor<T>().GeoPolygon(selector);
 
-		public static QueryContainer GeoShapeCircle(Func<GeoShapeCircleQueryDescriptor<T>, IGeoShapeCircleQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeCircle(selector);
-
-		public static QueryContainer GeoShapeEnvelope(Func<GeoShapeEnvelopeQueryDescriptor<T>, IGeoShapeEnvelopeQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeEnvelope(selector);
-
-		public static QueryContainer GeoShapeLineString(Func<GeoShapeLineStringQueryDescriptor<T>, IGeoShapeLineStringQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeLineString(selector);
-
-		public static QueryContainer GeoShapeMultiLineString(Func<GeoShapeMultiLineStringQueryDescriptor<T>, IGeoShapeMultiLineStringQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeMultiLineString(selector);
-
-		public static QueryContainer GeoShapeMultiPoint(Func<GeoShapeMultiPointQueryDescriptor<T>, IGeoShapeMultiPointQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeMultiPoint(selector);
-
-		public static QueryContainer GeoShapeMultiPolygon(Func<GeoShapeMultiPolygonQueryDescriptor<T>, IGeoShapeMultiPolygonQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeMultiPolygon(selector);
-
-		public static QueryContainer GeoShapePoint(Func<GeoShapePointQueryDescriptor<T>, IGeoShapePointQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapePoint(selector);
-
-		public static QueryContainer GeoShapePolygon(Func<GeoShapePolygonQueryDescriptor<T>, IGeoShapePolygonQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapePolygon(selector);
-
-		public static QueryContainer GeoShapeGeometryCollection(Func<GeoShapeGeometryCollectionQueryDescriptor<T>, IGeoShapeGeometryCollectionQuery> selector) =>
-			new QueryContainerDescriptor<T>().GeoShapeGeometryCollection(selector);
+		public static QueryContainer GeoShape(Func<GeoShapeQueryDescriptor<T>, IGeoShapeQuery> selector) =>
+			new QueryContainerDescriptor<T>().GeoShape(selector);
 
 		public static QueryContainer HasChild<TChild>(Func<HasChildQueryDescriptor<TChild>, IHasChildQuery> selector) where TChild : class =>
-			new QueryContainerDescriptor<T>().HasChild<TChild>(selector);
+			new QueryContainerDescriptor<T>().HasChild(selector);
 
 		public static QueryContainer HasParent<TParent>(Func<HasParentQueryDescriptor<TParent>, IHasParentQuery> selector) where TParent : class =>
-			new QueryContainerDescriptor<T>().HasParent<TParent>(selector);
+			new QueryContainerDescriptor<T>().HasParent(selector);
 
 		public static QueryContainer Ids(Func<IdsQueryDescriptor, IIdsQuery> selector) =>
 			new QueryContainerDescriptor<T>().Ids(selector);
 
-		[Obsolete("Deprecated. You can specify _index on the query to target specific indices")]
-		public static QueryContainer Indices(Func<IndicesQueryDescriptor<T>, IIndicesQuery> selector) =>
-			new QueryContainerDescriptor<T>().Indices(selector);
+		/// <inheritdoc cref="IIntervalsQuery"/>
+		public static QueryContainer Intervals(Func<IntervalsQueryDescriptor<T>, IIntervalsQuery> selector) =>
+			new QueryContainerDescriptor<T>().Intervals(selector);
 
 		public static QueryContainer Match(Func<MatchQueryDescriptor<T>, IMatchQuery> selector) =>
 			new QueryContainerDescriptor<T>().Match(selector);
@@ -120,10 +90,13 @@ namespace Nest
 		public static QueryContainer Percolate(Func<PercolateQueryDescriptor<T>, IPercolateQuery> selector) =>
 			new QueryContainerDescriptor<T>().Percolate(selector);
 
-		public static QueryContainer Prefix(Expression<Func<T, object>> fieldDescriptor, string value, double? boost = null, RewriteMultiTerm? rewrite = null, string name = null) =>
+		public static QueryContainer Prefix<TValue>(Expression<Func<T, TValue>> fieldDescriptor, string value, double? boost = null,
+			MultiTermQueryRewrite rewrite = null, string name = null
+		) =>
 			new QueryContainerDescriptor<T>().Prefix(fieldDescriptor, value, boost, rewrite, name);
 
-		public static QueryContainer Prefix(Field field, string value, double? boost = null, RewriteMultiTerm? rewrite = null, string name = null) =>
+		public static QueryContainer Prefix(Field field, string value, double? boost = null, MultiTermQueryRewrite rewrite = null, string name = null
+		) =>
 			new QueryContainerDescriptor<T>().Prefix(field, value, boost, rewrite, name);
 
 		public static QueryContainer Prefix(Func<PrefixQueryDescriptor<T>, IPrefixQuery> selector) =>
@@ -135,11 +108,22 @@ namespace Nest
 		public static QueryContainer Range(Func<NumericRangeQueryDescriptor<T>, INumericRangeQuery> selector) =>
 			new QueryContainerDescriptor<T>().Range(selector);
 
+		public static QueryContainer LongRange(Func<LongRangeQueryDescriptor<T>, ILongRangeQuery> selector) =>
+			new QueryContainerDescriptor<T>().LongRange(selector);
+
 		public static QueryContainer Regexp(Func<RegexpQueryDescriptor<T>, IRegexpQuery> selector) =>
 			new QueryContainerDescriptor<T>().Regexp(selector);
 
+		/// <inheritdoc cref="IRankFeatureQuery"/>
+		public static QueryContainer RankFeature(Func<RankFeatureQueryDescriptor<T>, IRankFeatureQuery> selector) =>
+			new QueryContainerDescriptor<T>().RankFeature(selector);
+
 		public static QueryContainer Script(Func<ScriptQueryDescriptor<T>, IScriptQuery> selector) =>
 			new QueryContainerDescriptor<T>().Script(selector);
+
+		/// <inheritdoc cref="IScriptScoreQuery"/>
+		public static QueryContainer ScriptScore(Func<ScriptScoreQueryDescriptor<T>, IScriptScoreQuery> selector) =>
+			new QueryContainerDescriptor<T>().ScriptScore(selector);
 
 		public static QueryContainer SimpleQueryString(Func<SimpleQueryStringQueryDescriptor<T>, ISimpleQueryStringQuery> selector) =>
 			new QueryContainerDescriptor<T>().SimpleQueryString(selector);
@@ -171,11 +155,7 @@ namespace Nest
 		public static QueryContainer SpanFieldMasking(Func<SpanFieldMaskingQueryDescriptor<T>, ISpanFieldMaskingQuery> selector) =>
 			new QueryContainerDescriptor<T>().SpanFieldMasking(selector);
 
-		[Obsolete("Deprecated in 5.0.0. Use Search Template API instead")]
-		public static QueryContainer Template(Func<TemplateQueryDescriptor<T>, ITemplateQuery> selector) =>
-			new QueryContainerDescriptor<T>().Template(selector);
-
-		public static QueryContainer Term(Expression<Func<T, object>> fieldDescriptor, object value, double? boost = null, string name = null) =>
+		public static QueryContainer Term<TValue>(Expression<Func<T, TValue>> fieldDescriptor, object value, double? boost = null, string name = null) =>
 			new QueryContainerDescriptor<T>().Term(fieldDescriptor, value, boost, name);
 
 		public static QueryContainer Term(Field field, object value, double? boost = null, string name = null) =>
@@ -190,15 +170,17 @@ namespace Nest
 		public static QueryContainer Terms(Func<TermsQueryDescriptor<T>, ITermsQuery> selector) =>
 			new QueryContainerDescriptor<T>().Terms(selector);
 
-		public static QueryContainer Type(Func<TypeQueryDescriptor, ITypeQuery> selector) =>
-			new QueryContainerDescriptor<T>().Type(selector);
+		public static QueryContainer TermsSet(Func<TermsSetQueryDescriptor<T>, ITermsSetQuery> selector) =>
+			new QueryContainerDescriptor<T>().TermsSet(selector);
 
-		public static QueryContainer Type<TOther>() => Type(q => q.Value<TOther>());
-
-		public static QueryContainer Wildcard(Expression<Func<T, object>> fieldDescriptor, string value, double? boost = null, RewriteMultiTerm? rewrite = null, string name = null) =>
+		public static QueryContainer Wildcard<TValue>(Expression<Func<T, TValue>> fieldDescriptor, string value, double? boost = null,
+			MultiTermQueryRewrite rewrite = null, string name = null
+		) =>
 			new QueryContainerDescriptor<T>().Wildcard(fieldDescriptor, value, boost, rewrite, name);
 
-		public static QueryContainer Wildcard(Field field, string value, double? boost = null, RewriteMultiTerm? rewrite = null, string name = null) =>
+		public static QueryContainer Wildcard(Field field, string value, double? boost = null, MultiTermQueryRewrite rewrite = null,
+			string name = null
+		) =>
 			new QueryContainerDescriptor<T>().Wildcard(field, value, boost, rewrite, name);
 
 		public static QueryContainer Wildcard(Func<WildcardQueryDescriptor<T>, IWildcardQuery> selector) =>

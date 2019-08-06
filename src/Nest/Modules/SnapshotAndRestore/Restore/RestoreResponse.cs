@@ -1,17 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IRestoreResponse : IResponse
+	[DataContract]
+	public class RestoreResponse : ResponseBase
 	{
-		[JsonProperty("snapshot")]
-		SnapshotRestore Snapshot { get; set; }
-	}
-
-	[JsonObject]
-	public class RestoreResponse : ResponseBase, IRestoreResponse
-	{
-		[JsonProperty("snapshot")]
+		[DataMember(Name ="snapshot")]
 		public SnapshotRestore Snapshot { get; set; }
 	}
 }

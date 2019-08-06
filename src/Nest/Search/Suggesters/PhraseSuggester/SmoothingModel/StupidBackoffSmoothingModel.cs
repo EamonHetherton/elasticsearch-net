@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<StupidBackoffSmoothingModel>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(StupidBackoffSmoothingModel))]
 	public interface IStupidBackoffSmoothingModel : ISmoothingModel
 	{
-		[JsonProperty("discount")]
+		[DataMember(Name = "discount")]
 		double? Discount { get; set; }
 	}
 
@@ -18,10 +18,11 @@ namespace Nest
 		internal override void WrapInContainer(ISmoothingModelContainer container) => container.StupidBackoff = this;
 	}
 
-	public class StupidBackoffSmoothingModelDescriptor : DescriptorBase<StupidBackoffSmoothingModelDescriptor, IStupidBackoffSmoothingModel>, IStupidBackoffSmoothingModel
+	public class StupidBackoffSmoothingModelDescriptor
+		: DescriptorBase<StupidBackoffSmoothingModelDescriptor, IStupidBackoffSmoothingModel>, IStupidBackoffSmoothingModel
 	{
-		double? IStupidBackoffSmoothingModel.Discount{ get; set; }
+		double? IStupidBackoffSmoothingModel.Discount { get; set; }
 
-		public StupidBackoffSmoothingModelDescriptor Discount(double? discount) => Assign(a => a.Discount = discount);
+		public StupidBackoffSmoothingModelDescriptor Discount(double? discount) => Assign(discount, (a, v) => a.Discount = v);
 	}
 }

@@ -1,35 +1,35 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public partial interface IValidateQueryRequest 
+	[MapsApi("indices.validate_query.json")]
+	public partial interface IValidateQueryRequest
 	{
-		[JsonProperty("query")]
+		[DataMember(Name = "query")]
 		QueryContainer Query { get; set; }
 	}
 
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	public interface IValidateQueryRequest<T> : IValidateQueryRequest
-		where T : class
-	{ }
+	[InterfaceDataContract]
+	// ReSharper disable once UnusedTypeParameter
+	public partial interface IValidateQueryRequest<TDocument> where TDocument : class { }
 
-	public partial class ValidateQueryRequest 
+	public partial class ValidateQueryRequest
 	{
 		public QueryContainer Query { get; set; }
 	}
 
-	public partial class ValidateQueryRequest<T> 
-		where T : class
+	// ReSharper disable once UnusedTypeParameter
+	public partial class ValidateQueryRequest<TDocument> where TDocument : class
 	{
-		public QueryContainer Query { get; set; }
 	}
 
-	[DescriptorFor("IndicesValidateQuery")]
-	public partial class ValidateQueryDescriptor<T> where T : class
+	public partial class ValidateQueryDescriptor<TDocument> where TDocument : class
 	{
 		QueryContainer IValidateQueryRequest.Query { get; set; }
 
-		public ValidateQueryDescriptor<T> Query(Func<QueryContainerDescriptor<T>, QueryContainer> querySelector) => Assign(a => a.Query = querySelector?.Invoke(new QueryContainerDescriptor<T>()));
+		public ValidateQueryDescriptor<TDocument> Query(Func<QueryContainerDescriptor<TDocument>, QueryContainer> querySelector)
+			=> Assign(querySelector, (a, v) => a.Query = v?.Invoke(new QueryContainerDescriptor<TDocument>()));
 	}
 }

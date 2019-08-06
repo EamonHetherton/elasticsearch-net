@@ -1,74 +1,73 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	/// <summary>
 	/// The percolate query can be used to match queries stored in an index
 	/// </summary>
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<PercolateQuery>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(PercolateQuery))]
 	public interface IPercolateQuery : IQuery
 	{
 		/// <summary>
-		/// The name of the field containing the percolated query on an existing document. This is a required parameter.
-		/// </summary>
-		[JsonProperty("field")]
-		Field Field { get; set; }
-
-		/// <summary>
-		/// The type / mapping of the document to percolate. This is a required parameter.
-		/// </summary>
-		[JsonProperty(PropertyName = "document_type")]
-		TypeName DocumentType { get; set; }
-
-		/// <summary>
 		/// The source of the document to percolate.
 		/// </summary>
-		[JsonProperty(PropertyName = "document")]
+		[DataMember(Name = "document")]
+		[JsonFormatter(typeof(SourceFormatter<object>))]
 		object Document { get; set; }
 
 		/// <summary>
-		/// The id of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
+		/// The source of the documents to percolate. Like <see cref="Document" /> but allows
+		/// multiple documents to be percolated.
 		/// </summary>
-		[JsonProperty(PropertyName = "id")]
+		[DataMember(Name = "documents")]
+		[JsonFormatter(typeof(SourceFormatter<IEnumerable<object>>))]
+		IEnumerable<object> Documents { get; set; }
+
+		/// <summary>
+		/// The name of the field containing the percolated query on an existing document. This is a required parameter.
+		/// </summary>
+		[DataMember(Name = "field")]
+		Field Field { get; set; }
+
+		/// <summary>
+		/// The id of the document to fetch for percolation.
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document" />
+		/// </summary>
+		[DataMember(Name = "id")]
 		Id Id { get; set; }
 
 		/// <summary>
 		/// The index the document resides in for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document" />
 		/// </summary>
-		[JsonProperty(PropertyName = "index")]
+		[DataMember(Name = "index")]
 		IndexName Index { get; set; }
 
 		/// <summary>
-		/// The type of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		[JsonProperty(PropertyName = "type")]
-		TypeName Type { get; set; }
-
-		/// <summary>
-		/// Routing to be used to fetch the document to percolate.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		[JsonProperty(PropertyName = "routing")]
-		string Routing { get; set; }
-
-		/// <summary>
 		/// Preference to be used to fetch the document to percolate.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document" />
 		/// </summary>
-		[JsonProperty(PropertyName = "preference")]
+		[DataMember(Name = "preference")]
 		string Preference { get; set; }
 
 		/// <summary>
-		/// The expected version of the document to be fetched for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
+		/// Routing to be used to fetch the document to percolate.
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document" />
 		/// </summary>
-		[JsonProperty(PropertyName = "version")]
+		[DataMember(Name = "routing")]
+		Routing Routing { get; set; }
+
+		/// <summary>
+		/// The expected version of the document to be fetched for percolation.
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document" />
+		/// </summary>
+		[DataMember(Name = "version")]
 		long? Version { get; set; }
 	}
 
@@ -77,76 +76,49 @@ namespace Nest
 	/// </summary>
 	public class PercolateQuery : QueryBase, IPercolateQuery
 	{
+		private Routing _routing;
+
+		/// <inheritdoc />
+		public object Document { get; set; }
+
+		/// <inheritdoc />
+		public IEnumerable<object> Documents { get; set; }
+
+		/// <inheritdoc />
+		public Field Field { get; set; }
+
+		/// <inheritdoc />
+		public Id Id { get; set; }
+
+		/// <inheritdoc />
+		public IndexName Index { get; set; }
+
+		/// <inheritdoc />
+		public string Preference { get; set; }
+
+		/// <inheritdoc />
+		public Routing Routing
+		{
+			get => _routing ?? (Document == null ? null : new Routing(Document));
+			set => _routing = value;
+		}
+
+		/// <inheritdoc />
+		public long? Version { get; set; }
+
 		protected override bool Conditionless => IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.Percolate = this;
 
 		internal static bool IsConditionless(IPercolateQuery q)
 		{
-			var docFields = q.DocumentType.IsConditionless() || q.Document == null;
+			var docFields = q.Document == null && q.Documents == null;
+			if (!docFields) return false;
 
-			if (!docFields)
-			{
-				return false;
-			}
-
-			return q.DocumentType.IsConditionless() ||
-			       q.Type.IsConditionless() ||
-			       q.Index == null ||
-			       q.Id.IsConditionless() ||
-			       q.Field.IsConditionless();
+			return q.Index == null ||
+				q.Id.IsConditionless() ||
+				q.Field.IsConditionless();
 		}
-
-		/// <summary>
-		/// The name fo the field containing the percolated query on an existing document. This is a required parameter.
-		/// </summary>
-		public Field Field { get; set; }
-
-		/// <summary>
-		/// The type / mapping of the document to percolate. This is a required parameter.
-		/// </summary>
-		public TypeName DocumentType { get; set; }
-
-		/// <summary>
-		/// The source of the document to percolate.
-		/// </summary>
-		public object Document { get; set; }
-
-		/// <summary>
-		/// The id of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		public Id Id { get; set; }
-
-		/// <summary>
-		/// The index the document resides in for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		public IndexName Index { get; set; }
-
-		/// <summary>
-		/// The type of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		public TypeName Type { get; set; }
-
-		/// <summary>
-		/// Routing to be used to fetch the document to percolate.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		public string Routing { get; set; }
-
-		/// <summary>
-		/// Preference to be used to fetch the document to percolate.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		public string Preference { get; set; }
-
-		/// <summary>
-		/// The expected version of the document to be fetched for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document"/>
-		/// </summary>
-		public long? Version { get; set; }
 	}
 
 	/// <summary>
@@ -155,95 +127,66 @@ namespace Nest
 	/// <typeparam name="T">The document type that contains the percolated query</typeparam>
 	public class PercolateQueryDescriptor<T>
 		: QueryDescriptorBase<PercolateQueryDescriptor<T>, IPercolateQuery>
-		, IPercolateQuery where T : class
+			, IPercolateQuery where T : class
 	{
-		Field IPercolateQuery.Field { get; set; }
-		TypeName IPercolateQuery.DocumentType { get; set; }
+		private Routing _routing;
+
+		protected override bool Conditionless => PercolateQuery.IsConditionless(this);
 		object IPercolateQuery.Document { get; set; }
+		IEnumerable<object> IPercolateQuery.Documents { get; set; }
+		Field IPercolateQuery.Field { get; set; }
 		Id IPercolateQuery.Id { get; set; }
 		IndexName IPercolateQuery.Index { get; set; }
-		TypeName IPercolateQuery.Type { get; set; }
-		string IPercolateQuery.Routing { get; set; }
+
 		string IPercolateQuery.Preference { get; set; }
+
+		Routing IPercolateQuery.Routing
+		{
+			get => _routing ?? (Self.Document == null ? null : new Routing(Self.Document));
+			set => _routing = value;
+		}
+
 		long? IPercolateQuery.Version { get; set; }
 
-		/// <summary>
-		/// Determines if the query is conditionless and should not be serialized
-		/// in the request
-		/// </summary>
-		protected override bool Conditionless => PercolateQuery.IsConditionless(this);
+		/// <inheritdoc cref="IPercolateQuery.Field" />
+		public PercolateQueryDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		/// <summary>
-		/// An expression for the name fo the field containing the percolated query on an existing document. This is a required parameter.
-		/// </summary>
-		public PercolateQueryDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		/// <inheritdoc cref="IPercolateQuery.Field" />
+		public PercolateQueryDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> objectPath) => Assign(objectPath, (a, v) => a.Field = v);
 
-		/// <summary>
-		/// The name fo the field containing the percolated query on an existing document. This is a required parameter.
-		/// </summary>
-		public PercolateQueryDescriptor<T> Field(Expression<Func<T, object>> objectPath) => Assign(a => a.Field = objectPath);
+		/// <inheritdoc cref="IPercolateQuery.Document" />
+		public PercolateQueryDescriptor<T> Document<TDocument>(TDocument document) => Assign(document, (a, v) => a.Document = v);
 
-		/// <summary>
-		/// The type / mapping of the document to percolate. This is a required parameter.
-		/// </summary>
-		public PercolateQueryDescriptor<T> DocumentType(TypeName type) => Assign(a => a.DocumentType = type);
+		/// <inheritdoc cref="IPercolateQuery.Documents" />
+		public PercolateQueryDescriptor<T> Documents<TDocument>(params TDocument[] documents) =>
+			Assign(documents.Cast<object>(), (a, v) => a.Documents = v);
 
-		/// <summary>
-		/// The type / mapping of the document to percolate. This is a required parameter.
-		/// </summary>
-		public PercolateQueryDescriptor<T> DocumentType<TDocument>() => Assign(a => a.DocumentType = typeof(TDocument));
+		/// <inheritdoc cref="IPercolateQuery.Documents" />
+		public PercolateQueryDescriptor<T> Documents<TDocument>(IEnumerable<TDocument> documents) =>
+			Assign(documents.Cast<object>(), (a, v) => a.Documents = v);
 
-		/// <summary>
-		/// The source of the document to percolate.
-		/// </summary>
-		public PercolateQueryDescriptor<T> Document<TDocument>(TDocument document) => Assign(a => a.Document = document);
-
-		/// <summary>
-		/// The id of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
-		/// </summary>
-		public PercolateQueryDescriptor<T> Id(string id) => Assign(a => a.Id = id);
+		/// <inheritdoc cref="IPercolateQuery.Id" />
+		public PercolateQueryDescriptor<T> Id(string id) => Assign(id, (a, v) => a.Id = v);
 
 		/// <summary>
 		/// The index the document resides in for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}" />
 		/// </summary>
-		public PercolateQueryDescriptor<T> Index(IndexName index) => Assign(a => a.Index = index);
+		public PercolateQueryDescriptor<T> Index(IndexName index) => Assign(index, (a, v) => a.Index = v);
 
 		/// <summary>
 		/// The index the document resides in for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
+		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}" />
 		/// </summary>
-		public PercolateQueryDescriptor<T> Index<TDocument>() => Assign(a => a.Index = typeof(TDocument));
+		public PercolateQueryDescriptor<T> Index<TDocument>() => Assign(typeof(TDocument), (a, v) => a.Index = v);
 
-		/// <summary>
-		/// The type of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
-		/// </summary>
-		public PercolateQueryDescriptor<T> Type(TypeName type) => Assign(a => a.Type = type);
+		/// <inheritdoc cref="IPercolateQuery.Routing" />
+		public PercolateQueryDescriptor<T> Routing(Routing routing) => Assign(routing, (a, v) => a.Routing = v);
 
-		/// <summary>
-		/// The type of the document to fetch for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
-		/// </summary>
-		public PercolateQueryDescriptor<T> Type<TDocument>() => Assign(a => a.Type = typeof(TDocument));
+		/// <inheritdoc cref="IPercolateQuery.Preference" />
+		public PercolateQueryDescriptor<T> Preference(string preference) => Assign(preference, (a, v) => a.Preference = v);
 
-		/// <summary>
-		/// Routing to be used to fetch the document to percolate.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
-		/// </summary>
-		public PercolateQueryDescriptor<T> Routing(string routing) => Assign(a => a.Routing = routing);
-
-		/// <summary>
-		/// Preference to be used to fetch the document to percolate.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
-		/// </summary>
-		public PercolateQueryDescriptor<T> Preference(string preference) => Assign(a => a.Preference = preference);
-
-		/// <summary>
-		/// The expected version of the document to be fetched for percolation.
-		/// Can be specified to percolate an existing document instead of providing <see cref="Document{TDocument}"/>
-		/// </summary>
-		public PercolateQueryDescriptor<T> Version(long version) => Assign(a => a.Version = version);
+		/// <inheritdoc cref="IPercolateQuery.Version" />
+		public PercolateQueryDescriptor<T> Version(long? version) => Assign(version, (a, v) => a.Version = v);
 	}
 }

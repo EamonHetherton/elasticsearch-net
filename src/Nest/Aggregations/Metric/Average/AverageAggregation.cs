@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<AverageAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(AverageAggregation))]
 	public interface IAverageAggregation : IMetricAggregation { }
 
 	public class AverageAggregation : MetricAggregationBase, IAverageAggregation
@@ -15,8 +15,8 @@ namespace Nest
 		internal override void WrapInContainer(AggregationContainer c) => c.Average = this;
 	}
 
-	public class AverageAggregationDescriptor<T> 
+	public class AverageAggregationDescriptor<T>
 		: MetricAggregationDescriptorBase<AverageAggregationDescriptor<T>, IAverageAggregation, T>
-			, IAverageAggregation 
+			, IAverageAggregation
 		where T : class { }
 }

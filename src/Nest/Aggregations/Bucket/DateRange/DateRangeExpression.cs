@@ -1,39 +1,42 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<DateRangeExpression>))]
-	public interface IDateRangeExpression 
+	[ReadAs(typeof(DateRangeExpression))]
+	public interface IDateRangeExpression
 	{
-		[JsonProperty(PropertyName = "from")]
+		[DataMember(Name ="from")]
 		DateMath From { get; set; }
 
-		[JsonProperty(PropertyName = "to")]
-		DateMath To { get; set; }
-
-		[JsonProperty(PropertyName = "key")]
+		[DataMember(Name ="key")]
 		string Key { get; set; }
+
+		[DataMember(Name ="to")]
+		DateMath To { get; set; }
 	}
 
 	public class DateRangeExpression : IDateRangeExpression
 	{
 		public DateMath From { get; set; }
 
-		public DateMath To { get; set; }
-
 		public string Key { get; set; }
+
+		public DateMath To { get; set; }
 	}
 
 	public class DateRangeExpressionDescriptor
 		: DescriptorBase<DateRangeExpressionDescriptor, IDateRangeExpression>, IDateRangeExpression
 	{
 		DateMath IDateRangeExpression.From { get; set; }
-		public DateRangeExpressionDescriptor From(DateMath from) => Assign(a => a.From = from);
-
-		DateMath IDateRangeExpression.To { get; set; }
-		public DateRangeExpressionDescriptor To(DateMath to) => Assign(a => a.To = to);
 
 		string IDateRangeExpression.Key { get; set; }
-		public DateRangeExpressionDescriptor Key(string key) => Assign(a => a.Key = key);
+
+		DateMath IDateRangeExpression.To { get; set; }
+
+		public DateRangeExpressionDescriptor From(DateMath from) => Assign(from, (a, v) => a.From = v);
+
+		public DateRangeExpressionDescriptor To(DateMath to) => Assign(to, (a, v) => a.To = v);
+
+		public DateRangeExpressionDescriptor Key(string key) => Assign(key, (a, v) => a.Key = v);
 	}
 }

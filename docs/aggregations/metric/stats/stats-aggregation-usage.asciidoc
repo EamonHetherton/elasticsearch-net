@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,56 +7,49 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Metric/Stats/StatsAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Metric/Stats/StatsAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[stats-aggregation-usage]]
-== Stats Aggregation Usage
+=== Stats Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Stats("commit_stats", st => st
-        .Field(p => p.NumberOfCommits)
-    )
+a => a
+.Stats("commit_stats", st => st
+    .Field(p => p.NumberOfCommits)
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
-{
-    Aggregations = new StatsAggregation("commit_stats", Field<Project>(p => p.NumberOfCommits))
-}
+new StatsAggregation("commit_stats", Field<Project>(p => p.NumberOfCommits))
 ----
 
 [source,javascript]
 .Example json output
 ----
 {
-  "aggs": {
-    "commit_stats": {
-      "stats": {
-        "field": "numberOfCommits"
-      }
+  "commit_stats": {
+    "stats": {
+      "field": "numberOfCommits"
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var commitStats = response.Aggs.Stats("commit_stats");
+var commitStats = response.Aggregations.Stats("commit_stats");
 commitStats.Should().NotBeNull();
 commitStats.Average.Should().BeGreaterThan(0);
 commitStats.Max.Should().BeGreaterThan(0);

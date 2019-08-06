@@ -1,213 +1,283 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<TypeMapping>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(TypeMapping))]
 	public interface ITypeMapping
 	{
-		[JsonProperty("dynamic_date_formats")]
-		IEnumerable<string> DynamicDateFormats { get; set; }
-
-		[JsonProperty("date_detection")]
-		bool? DateDetection { get; set; }
-
-		[JsonProperty("numeric_detection")]
-		bool? NumericDetection { get; set; }
-
-		[JsonProperty("include_in_all")]
-		bool? IncludeInAll { get; set; }
-
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		[JsonProperty("analyzer")]
-		string Analyzer { get; set; }
-
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		[JsonProperty("search_analyzer")]
-		string SearchAnalyzer { get; set; }
-
-		[JsonProperty("_source")]
-		ISourceField SourceField { get; set; }
-
-		[JsonProperty("_all")]
+		[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
+		[IgnoreDataMember]
 		IAllField AllField { get; set; }
 
-		[JsonProperty("_parent")]
-		IParentField ParentField { get; set; }
+		/// <summary>
+		/// If enabled (default), then new string fields are checked to see whether their contents match
+		/// any of the date patterns specified in <see cref="DynamicDateFormats"/>.
+		/// If a match is found, a new date field is added with the corresponding format.
+		/// </summary>
+		[DataMember(Name = "date_detection")]
+		bool? DateDetection { get; set; }
 
-		[JsonProperty("_routing")]
-		IRoutingField RoutingField { get; set; }
-
-		[JsonProperty("_index")]
-		IIndexField IndexField { get; set; }
-
-		[JsonProperty("_size")]
-		ISizeField SizeField { get; set; }
-
-		[JsonProperty("_field_names")]
-		IFieldNamesField FieldNamesField { get; set; }
-
-		[JsonProperty("_meta")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, object>))]
-		IDictionary<string, object> Meta { get; set; }
-
-		[JsonProperty("dynamic_templates")]
-		IDynamicTemplateContainer DynamicTemplates { get; set; }
-
-		[JsonProperty("dynamic")]
+		/// <summary>
+		/// Whether new unseen fields will be added to the mapping. Default is <c>true</c>.
+		/// A value of <c>false</c> will ignore unknown fields and a value of <see cref="DynamicMapping.Strict"/>
+		/// will result in an error if an unknown field is encountered in a document.
+		/// </summary>
+		[DataMember(Name = "dynamic")]
 		Union<bool, DynamicMapping> Dynamic { get; set; }
 
-		[JsonProperty("properties", TypeNameHandling = TypeNameHandling.None)]
+		/// <summary>
+		/// Date formats used by <see cref="DateDetection"/>
+		/// </summary>
+		[DataMember(Name = "dynamic_date_formats")]
+		IEnumerable<string> DynamicDateFormats { get; set; }
+
+		/// <summary>
+		/// Dynamic templates allow you to define custom mappings that can be applied to dynamically added fields based on
+		/// <para>- the datatype detected by Elasticsearch, with <see cref="IDynamicTemplate.MatchMappingType"/>.</para>
+		/// <para>- the name of the field, with <see cref="IDynamicTemplate.Match"/> and <see cref="IDynamicTemplate.Unmatch"/> or
+		/// <see cref="IDynamicTemplate.MatchPattern"/>.</para>
+		/// <para>- the full dotted path to the field, with <see cref="IDynamicTemplate.PathMatch"/> and
+		/// <see cref="IDynamicTemplate.PathUnmatch"/>.</para>
+		/// <para>The original field name <c>{name}</c> and the detected datatype <c>{dynamic_type}</c> template variables can be
+		/// used in the mapping specification as placeholders.</para>
+		/// </summary>
+		[DataMember(Name = "dynamic_templates")]
+		IDynamicTemplateContainer DynamicTemplates { get; set; }
+
+		/// <summary>
+		/// Used to index the names of every field in a document that contains any value other than null.
+		/// This field was used by the exists query to find documents that either have or don’t have any non-null value for a particular field.
+		/// Now, it only indexes the names of fields that have doc_values and norms disabled.
+		/// Can be disabled. Disabling _field_names is often not necessary because it no longer carries the index overhead it once did.
+		/// If you have a lot of fields which have doc_values and norms disabled and you do not need to execute exists queries
+		/// using those fields you might want to disable
+		/// </summary>
+		[DataMember(Name = "_field_names")]
+		IFieldNamesField FieldNamesField { get; set; }
+
+
+		[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
+		[IgnoreDataMember]
+		IIndexField IndexField { get; set; }
+
+		/// <summary>
+		/// Custom meta data to associate with a mapping. Not used by Elasticsearch,
+		/// but can be used to store application-specific metadata.
+		/// </summary>
+		[DataMember(Name = "_meta")]
+		[JsonFormatter(typeof(VerbatimDictionaryInterfaceKeysFormatter<string, object>))]
+		IDictionary<string, object> Meta { get; set; }
+
+		/// <summary>
+		/// If enabled (not enabled by default), then new string fields are checked to see whether
+		/// they wholly contain a numeric value and if so, to map as a numeric field.
+		/// </summary>
+		[DataMember(Name = "numeric_detection")]
+		bool? NumericDetection { get; set; }
+
+		/// <summary>
+		/// Specifies the mapping properties
+		/// </summary>
+		[DataMember(Name = "properties")]
 		IProperties Properties { get; set; }
+
+		/// <summary>
+		/// Specifies configuration for the _routing parameter
+		/// </summary>
+		[DataMember(Name = "_routing")]
+		IRoutingField RoutingField { get; set; }
+
+		/// <summary>
+		/// If enabled, indexes the size in bytes of the original _source field.
+		/// Requires mapper-size plugin be installed
+		/// </summary>
+		[DataMember(Name = "_size")]
+		ISizeField SizeField { get; set; }
+
+		/// <summary>
+		/// Specifies configuration for the _source field
+		/// </summary>
+		[DataMember(Name = "_source")]
+		ISourceField SourceField { get; set; }
 	}
 
 	public class TypeMapping : ITypeMapping
 	{
-		/// <inheritdoc/>
+		/// <inheritdoc />
+		[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
 		public IAllField AllField { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public bool? DateDetection { get; set; }
-		/// <inheritdoc/>
-		public bool? IncludeInAll { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public Union<bool, DynamicMapping> Dynamic { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public IEnumerable<string> DynamicDateFormats { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public IDynamicTemplateContainer DynamicTemplates { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public IFieldNamesField FieldNamesField { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
+		[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
 		public IIndexField IndexField { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public IDictionary<string, object> Meta { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public bool? NumericDetection { get; set; }
-		/// <inheritdoc/>
-		public IParentField ParentField { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public IProperties Properties { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public IRoutingField RoutingField { get; set; }
-		/// <inheritdoc/>
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		public string Analyzer { get; set; }
-		/// <inheritdoc/>
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		public string SearchAnalyzer { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public ISizeField SizeField { get; set; }
-		/// <inheritdoc/>
+
+		/// <inheritdoc />
 		public ISourceField SourceField { get; set; }
-		/// <inheritdoc/>
 	}
 
 
 	public class TypeMappingDescriptor<T> : DescriptorBase<TypeMappingDescriptor<T>, ITypeMapping>, ITypeMapping
 		where T : class
 	{
+		[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
 		IAllField ITypeMapping.AllField { get; set; }
 		bool? ITypeMapping.DateDetection { get; set; }
-		bool? ITypeMapping.IncludeInAll { get; set; }
 		Union<bool, DynamicMapping> ITypeMapping.Dynamic { get; set; }
 		IEnumerable<string> ITypeMapping.DynamicDateFormats { get; set; }
 		IDynamicTemplateContainer ITypeMapping.DynamicTemplates { get; set; }
 		IFieldNamesField ITypeMapping.FieldNamesField { get; set; }
+		[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
 		IIndexField ITypeMapping.IndexField { get; set; }
 		IDictionary<string, object> ITypeMapping.Meta { get; set; }
 		bool? ITypeMapping.NumericDetection { get; set; }
-		IParentField ITypeMapping.ParentField { get; set; }
 		IProperties ITypeMapping.Properties { get; set; }
 		IRoutingField ITypeMapping.RoutingField { get; set; }
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		string ITypeMapping.Analyzer { get; set; }
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		string ITypeMapping.SearchAnalyzer { get; set; }
 		ISizeField ITypeMapping.SizeField { get; set; }
 		ISourceField ITypeMapping.SourceField { get; set; }
 
 		/// <summary>
-		/// Convenience method to map as much as it can based on <see cref="ElasticsearchTypeAttribute"/> attributes set on the type.
+		/// Convenience method to map as much as it can based on <see cref="ElasticsearchTypeAttribute" /> attributes set on the
+		/// type, as well as inferring mappings from the CLR property types.
 		/// <pre>This method also automatically sets up mappings for known values types (int, long, double, datetime, etc)</pre>
 		/// <pre>Class types default to object and Enums to int</pre>
 		/// <pre>Later calls can override whatever is set is by this call.</pre>
 		/// </summary>
 		public TypeMappingDescriptor<T> AutoMap(IPropertyVisitor visitor = null, int maxRecursion = 0) =>
-			Assign(a => a.Properties = a.Properties.AutoMap<T>(visitor, maxRecursion));
+			Assign(Self.Properties.AutoMap<T>(visitor, maxRecursion), (a, v) => a.Properties = v);
 
-		/// <inheritdoc/>
+		/// <summary>
+		/// Convenience method to map as much as it can based on <see cref="ElasticsearchTypeAttribute" /> attributes set on the
+		/// type, as well as inferring mappings from the CLR property types.
+		/// This particular overload is useful for automapping any children
+		/// <pre>This method also automatically sets up mappings for known values types (int, long, double, datetime, etc)</pre>
+		/// <pre>Class types default to object and Enums to int</pre>
+		/// <pre>Later calls can override whatever is set is by this call.</pre>
+		/// </summary>
+		public TypeMappingDescriptor<T> AutoMap(Type documentType, IPropertyVisitor visitor = null, int maxRecursion = 0)
+		{
+			if (!documentType.IsClass) throw new ArgumentException("must be a reference type", nameof(documentType));
+			return Assign(Self.Properties.AutoMap(documentType, visitor, maxRecursion), (a, v) => a.Properties = v);
+		}
+
+		/// <summary>
+		/// Convenience method to map as much as it can based on <see cref="ElasticsearchTypeAttribute" /> attributes set on the
+		/// type, as well as inferring mappings from the CLR property types.
+		/// This particular overload is useful for automapping any children
+		/// <pre>This method also automatically sets up mappings for known values types (int, long, double, datetime, etc)</pre>
+		/// <pre>Class types default to object and Enums to int</pre>
+		/// <pre>Later calls can override whatever is set is by this call.</pre>
+		/// </summary>
+		public TypeMappingDescriptor<T> AutoMap<TDocument>(IPropertyVisitor visitor = null, int maxRecursion = 0)
+			where TDocument : class =>
+			Assign(Self.Properties.AutoMap<TDocument>(visitor, maxRecursion), (a, v) => a.Properties = v);
+
+		/// <summary>
+		/// Convenience method to map as much as it can based on <see cref="ElasticsearchTypeAttribute" /> attributes set on the
+		/// type, as well as inferring mappings from the CLR property types.
+		/// This overload determines how deep automapping should recurse on a complex CLR type.
+		/// </summary>
 		public TypeMappingDescriptor<T> AutoMap(int maxRecursion) => AutoMap(null, maxRecursion);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> Dynamic(Union<bool, DynamicMapping> dynamic) => Assign(a => a.Dynamic = dynamic);
+		/// <inheritdoc cref="ITypeMapping.Dynamic" />
+		public TypeMappingDescriptor<T> Dynamic(Union<bool, DynamicMapping> dynamic) => Assign(dynamic, (a, v) => a.Dynamic = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> Dynamic(bool dynamic = true) => Assign(a => a.Dynamic = dynamic);
+		/// <inheritdoc cref="ITypeMapping.Dynamic" />
+		public TypeMappingDescriptor<T> Dynamic(bool dynamic = true) => Assign(dynamic, (a, v) => a.Dynamic = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> IncludeInAll(bool include = true) => Assign(a => a.IncludeInAll = include);
+		[Obsolete("The _all field is no longer supported in Elasticsearch 7.x and will be removed in the next major release. The value will not be sent in a request. An _all like field can be achieved using copy_to")]
+		public TypeMappingDescriptor<T> AllField(Func<AllFieldDescriptor, IAllField> allFieldSelector) =>
+			Assign(allFieldSelector, (a, v) => a.AllField = v?.Invoke(new AllFieldDescriptor()));
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> Parent(TypeName parentType) => Assign(a => a.ParentField = new ParentField { Type = parentType });
+		[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
+		public TypeMappingDescriptor<T> IndexField(Func<IndexFieldDescriptor, IIndexField> indexFieldSelector) =>
+			Assign(indexFieldSelector, (a, v) => a.IndexField = v?.Invoke(new IndexFieldDescriptor()));
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> Parent<TOther>() where TOther : class => Assign(a => a.ParentField = new ParentField { Type = typeof(TOther) });
+		/// <inheritdoc cref="ITypeMapping.SizeField" />
+		public TypeMappingDescriptor<T> SizeField(Func<SizeFieldDescriptor, ISizeField> sizeFieldSelector) =>
+			Assign(sizeFieldSelector, (a, v) => a.SizeField = v?.Invoke(new SizeFieldDescriptor()));
 
-		/// <inheritdoc/>
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		public TypeMappingDescriptor<T> Analyzer(string analyzer) => Assign(a => a.Analyzer = analyzer);
+		/// <inheritdoc cref="ITypeMapping.SourceField" />
+		public TypeMappingDescriptor<T> SourceField(Func<SourceFieldDescriptor, ISourceField> sourceFieldSelector) =>
+			Assign(sourceFieldSelector, (a, v) => a.SourceField = v?.Invoke(new SourceFieldDescriptor()));
 
-		/// <inheritdoc/>
-		[Obsolete("Scheduled to be removed in 6.0. Default analyzers can no longer be specified at the type level.  Use an index or field level analyzer instead.")]
-		public TypeMappingDescriptor<T> SearchAnalyzer(string searchAnalyzer)=> Assign(a => a.SearchAnalyzer = searchAnalyzer);
+		/// <inheritdoc cref="ITypeMapping.SizeField" />
+		public TypeMappingDescriptor<T> DisableSizeField(bool? disabled = true) => Assign(new SizeField { Enabled = !disabled }, (a, v) => a.SizeField = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> AllField(Func<AllFieldDescriptor, IAllField> allFieldSelector) => Assign(a => a.AllField = allFieldSelector?.Invoke(new AllFieldDescriptor()));
+		[Obsolete("Configuration for the _index field is no longer supported in Elasticsearch 7.x and will be removed in the next major release.")]
+		public TypeMappingDescriptor<T> DisableIndexField(bool? disabled = true) =>
+			Assign(new IndexField { Enabled = !disabled }, (a, v) => a.IndexField = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> IndexField(Func<IndexFieldDescriptor, IIndexField> indexFieldSelector) => Assign(a => a.IndexField = indexFieldSelector?.Invoke(new IndexFieldDescriptor()));
+		/// <inheritdoc cref="ITypeMapping.DynamicDateFormats" />
+		public TypeMappingDescriptor<T> DynamicDateFormats(IEnumerable<string> dateFormats) => Assign(dateFormats, (a, v) => a.DynamicDateFormats = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> SizeField(Func<SizeFieldDescriptor, ISizeField> sizeFieldSelector) => Assign(a => a.SizeField = sizeFieldSelector?.Invoke(new SizeFieldDescriptor()));
+		/// <inheritdoc cref="ITypeMapping.DateDetection" />
+		public TypeMappingDescriptor<T> DateDetection(bool? detect = true) => Assign(detect, (a, v) => a.DateDetection = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> SourceField(Func<SourceFieldDescriptor, ISourceField> sourceFieldSelector) => Assign(a => a.SourceField = sourceFieldSelector?.Invoke(new SourceFieldDescriptor()));
+		/// <inheritdoc cref="ITypeMapping.NumericDetection" />
+		public TypeMappingDescriptor<T> NumericDetection(bool? detect = true) => Assign(detect, (a, v) => a.NumericDetection = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> DisableSizeField(bool disabled = true) => Assign(a => a.SizeField = new SizeField { Enabled = !disabled });
+		/// <inheritdoc cref="ITypeMapping.RoutingField" />
+		public TypeMappingDescriptor<T> RoutingField(Func<RoutingFieldDescriptor<T>, IRoutingField> routingFieldSelector) =>
+			Assign(routingFieldSelector, (a, v) => a.RoutingField = v?.Invoke(new RoutingFieldDescriptor<T>()));
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> DisableIndexField(bool disabled = true) => Assign(a => a.IndexField = new IndexField { Enabled = !disabled });
+		/// <inheritdoc cref="ITypeMapping.FieldNamesField" />
+		public TypeMappingDescriptor<T> FieldNamesField(Func<FieldNamesFieldDescriptor<T>, IFieldNamesField> fieldNamesFieldSelector) =>
+			Assign(fieldNamesFieldSelector.Invoke(new FieldNamesFieldDescriptor<T>()), (a, v) => a.FieldNamesField = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> DynamicDateFormats(IEnumerable<string> dateFormats) => Assign(a => a.DynamicDateFormats = dateFormats);
-
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> DateDetection(bool detect = true) => Assign(a => a.DateDetection = detect);
-
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> NumericDetection(bool detect = true) => Assign(a => a.NumericDetection = detect);
-
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> RoutingField(Func<RoutingFieldDescriptor<T>, IRoutingField> routingFieldSelector) => Assign(a => a.RoutingField = routingFieldSelector?.Invoke(new RoutingFieldDescriptor<T>()));
-
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> FieldNamesField(Func<FieldNamesFieldDescriptor<T>, IFieldNamesField> fieldNamesFieldSelector) => Assign(a => a.FieldNamesField = fieldNamesFieldSelector.Invoke(new FieldNamesFieldDescriptor<T>()));
-
-		/// <inheritdoc/>
+		/// <inheritdoc cref="ITypeMapping.Meta" />
 		public TypeMappingDescriptor<T> Meta(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> metaSelector) =>
-			Assign(a => a.Meta = metaSelector(new FluentDictionary<string, object>()));
+			Assign(metaSelector(new FluentDictionary<string, object>()), (a, v) => a.Meta = v);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> Meta(Dictionary<string, object> metaDictionary) => Assign(a => a.Meta = metaDictionary);
+		/// <inheritdoc cref="ITypeMapping.Meta" />
+		public TypeMappingDescriptor<T> Meta(Dictionary<string, object> metaDictionary) => Assign(metaDictionary, (a, v) => a.Meta = v);
 
+		/// <inheritdoc cref="ITypeMapping.Properties" />
 		public TypeMappingDescriptor<T> Properties(Func<PropertiesDescriptor<T>, IPromise<IProperties>> propertiesSelector) =>
-			Assign(a => a.Properties = propertiesSelector?.Invoke(new PropertiesDescriptor<T>(Self.Properties))?.Value);
+			Assign(propertiesSelector, (a, v) => a.Properties = v?.Invoke(new PropertiesDescriptor<T>(Self.Properties))?.Value);
 
-		/// <inheritdoc/>
-		public TypeMappingDescriptor<T> DynamicTemplates(Func<DynamicTemplateContainerDescriptor<T>, IPromise<IDynamicTemplateContainer>> dynamicTemplatesSelector) =>
-			Assign(a => a.DynamicTemplates = dynamicTemplatesSelector?.Invoke(new DynamicTemplateContainerDescriptor<T>())?.Value);
+		/// <inheritdoc cref="ITypeMapping.Properties" />
+		public TypeMappingDescriptor<T> Properties<TDocument>(Func<PropertiesDescriptor<TDocument>, IPromise<IProperties>> propertiesSelector)
+			where TDocument : class =>
+			Assign(propertiesSelector, (a, v) => a.Properties = v?.Invoke(new PropertiesDescriptor<TDocument>(Self.Properties))?.Value);
+
+		/// <inheritdoc cref="ITypeMapping.DynamicTemplates" />
+		public TypeMappingDescriptor<T> DynamicTemplates(
+			Func<DynamicTemplateContainerDescriptor<T>, IPromise<IDynamicTemplateContainer>> dynamicTemplatesSelector
+		) =>
+			Assign(dynamicTemplatesSelector, (a, v) => a.DynamicTemplates = v?.Invoke(new DynamicTemplateContainerDescriptor<T>())?.Value);
 	}
 }

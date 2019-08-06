@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace DocGenerator.Documentation.Files
 {
@@ -7,23 +8,27 @@ namespace DocGenerator.Documentation.Files
 	{
 		public ImageDocumentationFile(FileInfo fileLocation) : base(fileLocation) { }
 
-		public override void SaveToDocumentationFolder()
+		public override async Task SaveToDocumentationFolderAsync()
 		{
-			var docFileName = this.CreateDocumentationLocation();
+			var docFileName = CreateDocumentationLocation();
 
 			// copy for asciidoc to work when viewing a single asciidoc in the browser (path is relative to file)
-			this.FileLocation.CopyTo(docFileName.FullName, true);
+			var copyRelativeTask = CopyFileAsync(FileLocation.FullName, docFileName.FullName);
 
 			// copy to the root as well, for the doc generation process (path is relative to root)
-			this.FileLocation.CopyTo(Path.Combine(Program.OutputDirPath, docFileName.Name), true);
+			var copyRootTask = CopyFileAsync(FileLocation.FullName, Path.Combine(Program.OutputDirPath, docFileName.Name));
+
+			await copyRelativeTask;
+			await copyRootTask;
 		}
 
 		protected override FileInfo CreateDocumentationLocation()
 		{
-			var testFullPath = this.FileLocation.FullName;
+			var testFullPath = FileLocation.FullName;
 
-			var testInDocumenationFolder = Regex.Replace(testFullPath, @"(^.+\\Tests\\|\" + this.Extension + "$)", "")
-				.PascalToHyphen() + this.Extension;
+			var p = "\\" + Path.DirectorySeparatorChar.ToString();
+			var testInDocumenationFolder = Regex.Replace(testFullPath, $@"(^.+{p}Tests{p}|\" + Extension + "$)", "")
+				.PascalToHyphen() + Extension;
 
 			var documentationTargetPath = Path.GetFullPath(Path.Combine(Program.OutputDirPath, testInDocumenationFolder));
 

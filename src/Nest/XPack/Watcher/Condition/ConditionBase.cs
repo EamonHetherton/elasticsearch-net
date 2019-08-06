@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public interface ICondition {}
+	[InterfaceDataContract]
+	public interface ICondition { }
 
 	public abstract class ConditionBase : ICondition
 	{

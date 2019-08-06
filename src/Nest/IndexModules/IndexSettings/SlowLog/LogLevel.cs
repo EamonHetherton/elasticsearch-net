@@ -1,20 +1,23 @@
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum LogLevel
 	{
 		[EnumMember(Value = "error")]
 		Error,
+
 		[EnumMember(Value = "warn")]
 		Warn,
+
 		[EnumMember(Value = "info")]
 		Info,
+
 		[EnumMember(Value = "debug")]
 		Debug,
+
 		[EnumMember(Value = "trace")]
 		Trace
 	}

@@ -1,48 +1,24 @@
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	// TODO: ReindexOnServer and UpdateByQuery aggregate failures under a single failures property
-	// So the shape is a bit odd
-	// https://github.com/elastic/elasticsearch/issues/17539
-	// We could come up with abstractions and normalization here but we should fix this at the root for 5.0
-
-	[JsonObject]
+	[DataContract]
 	public class BulkIndexByScrollFailure
 	{
-		[JsonProperty("index")]
-		public string Index { get; set; }
+		[DataMember(Name = "cause")]
+		public Error Cause { get; set; }
 
-		[JsonProperty("type")]
-		public string Type { get; internal set; }
-
-		[JsonProperty("id")]
+		[DataMember(Name = "id")]
 		public string Id { get; internal set; }
 
-		[JsonProperty("cause")]
-		public BulkIndexFailureCause Cause { get; set; }
+		[DataMember(Name = "index")]
+		public string Index { get; set; }
 
-		[JsonProperty("status")]
+		[DataMember(Name = "status")]
 		public int Status { get; set; }
-	}
 
-	[JsonObject]
-	public class BulkIndexFailureCause : IFailureReason
-	{
+		[DataMember(Name = "type")]
 		public string Type { get; internal set; }
-
-		public string Reason { get; internal set; }
-
-		[JsonProperty("index_uuid")]
-		public string IndexUniqueId { get; internal set; }
-
-		[JsonProperty("shard")]
-		public string Shard { get; internal set; }
-
-		[JsonProperty("index")]
-		public string Index { get; internal set; }
-
-		[JsonProperty("caused_by")]
-		public CausedBy CausedBy { get; internal set; }
 	}
 }

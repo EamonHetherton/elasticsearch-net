@@ -1,28 +1,22 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IIndicesStatsResponse : IResponse
+
+	[DataContract]
+	public class IndicesStatsResponse : ResponseBase
 	{
-		ShardsMetaData Shards { get; }
-		IndicesStats Stats { get;}
-		IReadOnlyDictionary<string, IndicesStats> Indices { get; }
-	}
-
-	[JsonObject]
-	public class IndicesStatsResponse : ResponseBase, IIndicesStatsResponse
-	{
-
-		[JsonProperty(PropertyName = "_shards")]
-		public ShardsMetaData Shards { get; internal set; }
-
-		[JsonProperty(PropertyName = "_all")]
-		public IndicesStats Stats { get; internal set; }
-
-		[JsonProperty(PropertyName = "indices")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, IndicesStats>))]
+		[DataMember(Name ="indices")]
+		[JsonFormatter(typeof(VerbatimInterfaceReadOnlyDictionaryKeysFormatter<string, IndicesStats>))]
 		public IReadOnlyDictionary<string, IndicesStats> Indices { get; internal set; } = EmptyReadOnly<string, IndicesStats>.Dictionary;
 
+		[DataMember(Name ="_shards")]
+		public ShardStatistics Shards { get; internal set; }
+
+		[DataMember(Name ="_all")]
+		public IndicesStats Stats { get; internal set; }
 	}
 }

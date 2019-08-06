@@ -1,90 +1,127 @@
 ﻿using System;
 using System.Diagnostics;
 using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-
-	[ContractJsonConverter(typeof(IndexNameJsonConverter))]
+	[JsonFormatter(typeof(IndexNameFormatter))]
 	[DebuggerDisplay("{DebugDisplay,nq}")]
 	public class IndexName : IEquatable<IndexName>, IUrlParameter
 	{
-		public string Name { get; set; }
-		public Type Type { get; set; }
+		private const char ClusterSeparator = ':';
+
+		private IndexName(string index, string cluster = null)
+		{
+			Name = index;
+			Cluster = cluster;
+		}
+
+		private IndexName(Type type, string cluster = null)
+		{
+			Type = type;
+			Cluster = cluster;
+		}
+
+		private IndexName(string index, Type type, string cluster = null)
+		{
+			Name = index;
+			Type = type;
+			Cluster = cluster;
+		}
+
+		public string Cluster { get; }
+		public string Name { get; }
+		public Type Type { get; }
 
 		internal string DebugDisplay => Type == null ? Name : $"{nameof(IndexName)} for typeof: {Type?.Name}";
 
-		public static implicit operator IndexName(string typeName)
-		{
-			if (typeName.IsNullOrEmpty())
-				return null;
-			return new IndexName { Name = typeName.Trim() };
-		}
-		public static implicit operator IndexName(Type type)
-		{
-			if (type == null)
-				return null;
-			return new IndexName { Type = type };
-		}
+		private static int TypeHashCode { get; } = typeof(IndexName).GetHashCode();
 
-		bool IEquatable<IndexName>.Equals(IndexName other)
-		{
-			return Equals(other);
-		}
-
-		public override bool Equals(object obj)
-		{
-			var s = obj as string;
-			if (!s.IsNullOrEmpty()) return this.EqualsString(s);
-			var pp = obj as IndexName;
-			if (pp != null) return this.EqualsMarker(pp);
-			return base.Equals(obj);
-		}
-
-		public override int GetHashCode()
-		{
-			if (this.Name != null)
-				return this.Name.GetHashCode();
-			if (this.Type != null)
-				return this.Type.GetHashCode();
-			return 0;
-		}
-
-		public override string ToString()
-		{
-			if (!this.Name.IsNullOrEmpty())
-				return this.Name;
-			if (this.Type != null)
-				return this.Type.Name;
-			return string.Empty;
-		}
-
-		public bool EqualsString(string other)
-		{
-			return !other.IsNullOrEmpty() && other == this.Name;
-		}
-
-		public bool EqualsMarker(IndexName other)
-		{
-			if (!this.Name.IsNullOrEmpty() && other != null && !other.Name.IsNullOrEmpty())
-				return EqualsString(other.Name);
-			if (this.Type != null && other != null && other.Type != null)
-				return this.GetHashCode() == other.GetHashCode();
-			return false;
-		}
+		bool IEquatable<IndexName>.Equals(IndexName other) => EqualsMarker(other);
 
 		public string GetString(IConnectionConfigurationValues settings)
 		{
-			var nestSettings = settings as IConnectionSettingsValues;
-			if (nestSettings == null)
-				throw new Exception("Tried to pass index name on querysting but it could not be resolved because no nest settings are available");
+			if (!(settings is IConnectionSettingsValues nestSettings))
+				throw new Exception("Tried to pass index name on querystring but it could not be resolved because no nest settings are available");
 
 			return nestSettings.Inferrer.IndexName(this);
 		}
 
 		public static IndexName From<T>() => typeof(T);
 
-		public Indices And<T>() => new Indices(new IndexName[] { this, typeof(T) });
-		public Indices And(IndexName index) => new Indices(new IndexName[] { this, index });
+		public static IndexName From<T>(string clusterName) => From(typeof(T), clusterName);
+
+		private static IndexName From(Type type, string clusterName) => new IndexName(type, clusterName);
+
+		internal static IndexName Rebuild(string index, Type type, string clusterName = null) => new IndexName(index, type, clusterName);
+
+		public Indices And<T>() => new Indices(new[] { this, typeof(T) });
+
+		public Indices And<T>(string clusterName) => new Indices(new[] { this, From(typeof(T), clusterName) });
+
+		public Indices And(IndexName index) => new Indices(new[] { this, index });
+
+		private static IndexName Parse(string indexName)
+		{
+			if (string.IsNullOrWhiteSpace(indexName)) return null;
+
+			var separatorIndex = indexName.IndexOf(ClusterSeparator);
+
+			if (separatorIndex > -1)
+			{
+				var cluster = indexName.Substring(0, separatorIndex);
+				var index = indexName.Substring(separatorIndex + 1);
+				return new IndexName(index, cluster);
+			}
+
+			return new IndexName(indexName);
+		}
+
+		public static implicit operator IndexName(string indexName) => Parse(indexName);
+
+		public static implicit operator IndexName(Type type) => type == null ? null : new IndexName(type);
+
+		public override bool Equals(object obj) => obj is string s ? EqualsString(s) : obj is IndexName i && EqualsMarker(i);
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var result = TypeHashCode;
+				result = (result * 397) ^ (Name?.GetHashCode() ?? Type?.GetHashCode() ?? 0);
+				result = (result * 397) ^ (Cluster?.GetHashCode() ?? 0);
+				return result;
+			}
+		}
+
+		public static bool operator ==(IndexName left, IndexName right) => Equals(left, right);
+
+		public static bool operator !=(IndexName left, IndexName right) => !Equals(left, right);
+
+		public override string ToString()
+		{
+			if (!Name.IsNullOrEmpty())
+				return PrefixClusterName(Name);
+
+			return Type != null ? PrefixClusterName(Type.Name) : string.Empty;
+		}
+
+		private string PrefixClusterName(string name) => PrefixClusterName(this, name);
+
+		private static string PrefixClusterName(IndexName index, string name) => index.Cluster.IsNullOrEmpty() ? name : $"{index.Cluster}:{name}";
+
+		private bool EqualsString(string other) => !other.IsNullOrEmpty() && other == PrefixClusterName(Name);
+
+		private bool EqualsMarker(IndexName other)
+		{
+			if (other == null) return false;
+			if (!Name.IsNullOrEmpty() && !other.Name.IsNullOrEmpty())
+				return EqualsString(PrefixClusterName(other, other.Name));
+
+			if ((!Cluster.IsNullOrEmpty() || !other.Cluster.IsNullOrEmpty()) && Cluster != other.Cluster) return false;
+
+			return Type != null && other?.Type != null && Type == other.Type;
+		}
 	}
 }

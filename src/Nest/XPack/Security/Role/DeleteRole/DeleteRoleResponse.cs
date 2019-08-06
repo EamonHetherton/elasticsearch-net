@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IDeleteRoleResponse : IResponse
+	public class DeleteRoleResponse : ResponseBase
 	{
-		[JsonProperty("found")]
-		bool Found { get; }
-	}
-
-	public class DeleteRoleResponse : ResponseBase, IDeleteRoleResponse
-	{
+		[DataMember(Name ="found")]
 		public bool Found { get; internal set; }
+		
 	}
 }

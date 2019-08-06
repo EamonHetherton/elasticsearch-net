@@ -1,11 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IHDRHistogramMethod : IPercentilesMethod
 	{
-		[JsonProperty("number_of_significant_value_digits")]
+		[DataMember(Name ="number_of_significant_value_digits")]
 		int? NumberOfSignificantValueDigits { get; set; }
 	}
 
@@ -19,7 +20,7 @@ namespace Nest
 	{
 		int? IHDRHistogramMethod.NumberOfSignificantValueDigits { get; set; }
 
-		public HDRHistogramMethodDescriptor NumberOfSignificantValueDigits(int numDigits) =>
-			Assign(a => a.NumberOfSignificantValueDigits = numDigits);
+		public HDRHistogramMethodDescriptor NumberOfSignificantValueDigits(int? numDigits) =>
+			Assign(numDigits, (a, v) => a.NumberOfSignificantValueDigits = v);
 	}
 }

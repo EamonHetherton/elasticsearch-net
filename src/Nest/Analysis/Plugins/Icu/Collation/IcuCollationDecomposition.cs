@@ -1,6 +1,5 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
@@ -13,10 +12,13 @@ namespace Nest
 	/// great many of the world’s languages do not require text normalization, most locales
 	/// set no as the default decomposition mode.
 	/// </summary>
-	[JsonConverter(typeof(StringEnumConverter))]
+	/// <remarks>
+	/// Requires analysis-icu plugin to be installed
+	/// </remarks>
+	[StringEnum]
 	public enum IcuCollationDecomposition
 	{
-		[EnumMember(Value="no")] No,
-		[EnumMember(Value="identical")] Canonical
+		[EnumMember(Value = "no")] No,
+		[EnumMember(Value = "identical")] Canonical
 	}
 }

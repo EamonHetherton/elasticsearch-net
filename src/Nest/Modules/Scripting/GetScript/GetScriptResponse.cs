@@ -1,16 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IGetScriptResponse : IResponse
+	[DataContract]
+	public class GetScriptResponse : ResponseBase
 	{
-		string Script { get; }
-	}
-
-	[JsonObject(MemberSerialization.OptIn)]
-	public class GetScriptResponse : ResponseBase, IGetScriptResponse
-	{
-		[JsonProperty("script")]
-		public string Script { get; set; }
+		[DataMember(Name ="script")]
+		public IStoredScript Script { get; set; }
 	}
 }

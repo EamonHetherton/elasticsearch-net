@@ -1,19 +1,20 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<HttpAttachment>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HttpAttachment))]
 	public interface IHttpAttachment : IEmailAttachment
 	{
-		[JsonProperty("content_type")]
+		[DataMember(Name = "content_type")]
 		string ContentType { get; set; }
 
-		[JsonProperty("inline")]
+		[DataMember(Name = "inline")]
 		bool? Inline { get; set; }
 
-		[JsonProperty("request")]
+		[DataMember(Name = "request")]
 		IHttpInputRequest Request { get; set; }
 	}
 
@@ -33,10 +34,10 @@ namespace Nest
 		IHttpInputRequest IHttpAttachment.Request { get; set; }
 
 		public HttpAttachmentDescriptor Request(Func<HttpInputRequestDescriptor, IHttpInputRequest> selector) =>
-			Assign(a => a.Request = selector.InvokeOrDefault(new HttpInputRequestDescriptor()));
+			Assign(selector.InvokeOrDefault(new HttpInputRequestDescriptor()), (a, v) => a.Request = v);
 
-		public HttpAttachmentDescriptor Inline(bool inline = true) => Assign(a => a.Inline = inline);
+		public HttpAttachmentDescriptor Inline(bool? inline = true) => Assign(inline, (a, v) => a.Inline = v);
 
-		public HttpAttachmentDescriptor ContentType(string contentType) => Assign(a => a.ContentType = contentType);
+		public HttpAttachmentDescriptor ContentType(string contentType) => Assign(contentType, (a, v) => a.ContentType = v);
 	}
 }

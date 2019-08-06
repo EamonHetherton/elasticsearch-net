@@ -1,38 +1,63 @@
-﻿using System;
-using System.Diagnostics;
-using Newtonsoft.Json;
+﻿using System.Diagnostics;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(PropertyJsonConverter))]
+	/// <summary>
+	/// Core properties of a mapping for a property type to a document field in Elasticsearch
+	/// </summary>
+	[InterfaceDataContract]
 	public interface ICoreProperty : IProperty
 	{
-		[JsonProperty("store")]
-		bool? Store { get; set; }
+		/// <summary>
+		/// Copies the value of this field into another field, which can be queried as a single field.
+		/// Allows for the creation of custom _all fields
+		/// </summary>
+		[DataMember(Name = "copy_to")]
+		Fields CopyTo { get; set; }
 
-		[JsonProperty("fields", DefaultValueHandling = DefaultValueHandling.Ignore)]
+		/// <summary>
+		/// Configures multi-fields for this field. Allows one field to be indexed in different
+		/// ways to serve different search and analytics purposes
+		/// </summary>
+		[DataMember(Name = "fields")]
 		IProperties Fields { get; set; }
 
-		[JsonProperty("similarity")]
-		Union<SimilarityOption, string> Similarity { get; set; }
+		/// <summary>
+		/// Which relevancy scoring algorithm or similarity should be used.
+		/// Defaults to BM25
+		/// </summary>
+		[DataMember(Name = "similarity")]
+		string Similarity { get; set; }
 
-		[JsonProperty("copy_to")]
-		[JsonConverter(typeof(FieldsJsonConverter))]
-		Fields CopyTo { get; set; }
+		/// <summary>
+		/// Whether the field value should be stored and retrievable separately from the _source field
+		/// Default is <c>false</c>.
+		/// </summary>
+		/// <remarks>
+		/// Not valid on <see cref="ObjectProperty" />
+		/// </remarks>
+		[DataMember(Name = "store")]
+		bool? Store { get; set; }
 	}
 
+	/// <inheritdoc cref="ICoreProperty" />
 	[DebuggerDisplay("{DebugDisplay}")]
 	public abstract class CorePropertyBase : PropertyBase, ICoreProperty
 	{
-		[Obsolete("Please use overload taking FieldType")]
-		protected CorePropertyBase(TypeName typeName) : base(typeName) { }
 		protected CorePropertyBase(FieldType type) : base(type) { }
 
-
+		/// <inheritdoc />
 		public Fields CopyTo { get; set; }
+
+		/// <inheritdoc />
 		public IProperties Fields { get; set; }
-		public Union<SimilarityOption, string> Similarity { get; set; }
+
+		/// <inheritdoc />
+		public string Similarity { get; set; }
+
+		/// <inheritdoc />
 		public bool? Store { get; set; }
 	}
 }

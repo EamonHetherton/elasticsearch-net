@@ -1,37 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public partial interface IClusterPutSettingsRequest 
+	[MapsApi("cluster.put_settings.json")]
+	public partial interface IClusterPutSettingsRequest
 	{
-		[JsonProperty(PropertyName = "persistent")]
+		[DataMember(Name ="persistent")]
 		IDictionary<string, object> Persistent { get; set; }
 
-		[JsonProperty(PropertyName = "transient")]
+		[DataMember(Name ="transient")]
 		IDictionary<string, object> Transient { get; set; }
-
 	}
-	
-	public partial class ClusterPutSettingsRequest 
+
+	public partial class ClusterPutSettingsRequest
 	{
 		public IDictionary<string, object> Persistent { get; set; }
 
 		public IDictionary<string, object> Transient { get; set; }
 	}
 
-	[DescriptorFor("ClusterPutSettings")]
-	public partial class ClusterPutSettingsDescriptor 
+	public partial class ClusterPutSettingsDescriptor
 	{
 		IDictionary<string, object> IClusterPutSettingsRequest.Persistent { get; set; }
 
 		IDictionary<string, object> IClusterPutSettingsRequest.Transient { get; set; }
 
 		public ClusterPutSettingsDescriptor Persistent(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> selector) =>
-			Assign(a => a.Persistent = selector?.Invoke(new FluentDictionary<string, object>()));
+			Assign(selector, (a, v) => a.Persistent = v?.Invoke(new FluentDictionary<string, object>()));
 
 		public ClusterPutSettingsDescriptor Transient(Func<FluentDictionary<string, object>, FluentDictionary<string, object>> selector) =>
-			Assign(a => a.Transient = selector?.Invoke(new FluentDictionary<string, object>()));
+			Assign(selector, (a, v) => a.Transient = v?.Invoke(new FluentDictionary<string, object>()));
 	}
 }

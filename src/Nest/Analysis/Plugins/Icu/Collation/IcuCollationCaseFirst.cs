@@ -1,17 +1,19 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
 	/// <summary>
-	/// Sets the alternate handling for strength quaternary to be either shifted or non-ignorable.
-	/// Which boils down to ignoring punctuation and whitespace.
+	/// Controls which case is sorted first when case is not ignored for
+	/// strength tertiary. The default depends on the collation.
 	/// </summary>
-	[JsonConverter(typeof(StringEnumConverter))]
+	/// <remarks>
+	/// Requires analysis-icu plugin to be installed
+	/// </remarks>
+	[StringEnum]
 	public enum IcuCollationCaseFirst
 	{
-		[EnumMember(Value="lower")] Lower,
-		[EnumMember(Value="upper")] Upper
+		[EnumMember(Value = "lower")] Lower,
+		[EnumMember(Value = "upper")] Upper
 	}
 }

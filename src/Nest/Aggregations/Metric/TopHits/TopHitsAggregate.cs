@@ -1,48 +1,42 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
 	public class TopHitsAggregate : MetricAggregateBase
 	{
-		private readonly IEnumerable<JObject> _hits;
-
-		private readonly JsonSerializer _defaultSerializer;
-
-		public long Total { get; set; }
-
-		public double? MaxScore { get; set; }
+		private readonly IJsonFormatterResolver _formatterResolver;
+		private readonly IList<LazyDocument> _hits;
 
 		public TopHitsAggregate() { }
 
-		internal TopHitsAggregate(IEnumerable<JObject> hits)
+		internal TopHitsAggregate(IList<LazyDocument> hits, IJsonFormatterResolver formatterResolver)
 		{
-			_hits = hits ?? Enumerable.Empty<JObject>();
+			_hits = hits;
+			_formatterResolver = formatterResolver;
 		}
 
-		internal TopHitsAggregate(IEnumerable<JObject> hits, JsonSerializer serializer)
+		public double? MaxScore { get; set; }
+
+		public TotalHits Total { get; set; }
+
+		private IEnumerable<IHit<TDocument>> ConvertHits<TDocument>()
+			where TDocument : class
 		{
-			_hits = hits ?? Enumerable.Empty<JObject>();
-			_defaultSerializer = serializer;
+			var formatter = _formatterResolver.GetFormatter<IHit<TDocument>>();
+			return _hits.Select(h =>
+			{
+				var reader = new JsonReader(h.Bytes);
+				return formatter.Deserialize(ref reader, _formatterResolver);
+			});
 		}
 
-		private IEnumerable<Hit<T>> ConvertHits<T>(JsonSerializer serializer = null)
-			where T : class
-		{
-			var s = serializer ?? _defaultSerializer;
+		public IReadOnlyCollection<IHit<TDocument>> Hits<TDocument>()
+			where TDocument : class =>
+			ConvertHits<TDocument>().ToList().AsReadOnly();
 
-			return s != null
-				? _hits.Select(h => h.ToObject<Hit<T>>(s))
-				: _hits.Select(h => h.ToObject<Hit<T>>());
-		}
-
-		public IReadOnlyCollection<Hit<T>> Hits<T>(JsonSerializer serializer = null)
-			where T : class =>
-			this.ConvertHits<T>(serializer).ToList().AsReadOnly();
-
-		public IReadOnlyCollection<T> Documents<T>(JsonSerializer serializer = null) where T : class =>
-			this.ConvertHits<T>(serializer).Select(h => h.Source).ToList().AsReadOnly();
+		public IReadOnlyCollection<TDocument> Documents<TDocument>() where TDocument : class =>
+			ConvertHits<TDocument>().Select(h => h.Source).ToList().AsReadOnly();
 	}
 }

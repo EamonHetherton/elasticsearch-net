@@ -1,17 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(KeyValueJsonConverter<TermsOrder, SortOrder>))]
-	public class TermsOrder
+	[JsonFormatter(typeof(SortOrderFormatter<TermsOrder>))]
+	public class TermsOrder : ISortOrder
 	{
-		public string Key { get; set; }
-		public SortOrder Order { get; set; }
-
 		public static TermsOrder CountAscending => new TermsOrder { Key = "_count", Order = SortOrder.Ascending };
 		public static TermsOrder CountDescending => new TermsOrder { Key = "_count", Order = SortOrder.Descending };
 
-		public static TermsOrder TermAscending => new TermsOrder { Key = "_term", Order = SortOrder.Ascending };
-		public static TermsOrder TermDescending => new TermsOrder { Key = "_term", Order = SortOrder.Descending };
+		public string Key { get; set; }
+
+		public static TermsOrder KeyAscending => new TermsOrder { Key = "_key", Order = SortOrder.Ascending };
+		public static TermsOrder KeyDescending => new TermsOrder { Key = "_key", Order = SortOrder.Descending };
+		public SortOrder Order { get; set; }
 	}
 }

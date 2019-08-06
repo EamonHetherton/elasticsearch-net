@@ -1,17 +1,18 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum SamplerAggregationExecutionHint
 	{
 		[EnumMember(Value = "map")]
 		Map,
-        [EnumMember(Value = "global_ordinals")]
+
+		[EnumMember(Value = "global_ordinals")]
 		GlobalOrdinals,
-        [EnumMember(Value = "bytes_hash")]
+
+		[EnumMember(Value = "bytes_hash")]
 		BytesHash
 	}
 }

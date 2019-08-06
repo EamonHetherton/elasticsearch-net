@@ -1,42 +1,49 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<SuggestBucket>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(SuggestBucket))]
 	public interface ISuggestBucket
 	{
-		[JsonProperty("text")]
-		string Text { get; set; }
+		[DataMember(Name = "completion")]
+		ICompletionSuggester Completion { get; set; }
 
-		[JsonProperty("prefix")]
-		string Prefix { get; set; }
-
-		[JsonProperty("regex")]
-		string Regex { get; set; }
-
-		[JsonProperty("term")]
-		ITermSuggester Term { get; set; }
-
-		[JsonProperty("phrase")]
+		[DataMember(Name = "phrase")]
 		IPhraseSuggester Phrase { get; set; }
 
-		[JsonProperty("completion")]
-		ICompletionSuggester Completion { get; set; }
+		[DataMember(Name = "prefix")]
+		string Prefix { get; set; }
+
+		[DataMember(Name = "regex")]
+		string Regex { get; set; }
+
+		[DataMember(Name = "term")]
+		ITermSuggester Term { get; set; }
+
+		[DataMember(Name = "text")]
+		string Text { get; set; }
 	}
 
 	public class SuggestBucket : ISuggestBucket
 	{
-		public string Text { get; set; }
+		[DataMember(Name = "completion")]
+		public ICompletionSuggester Completion { get; set; }
 
-		public string Prefix { get; set; }
-
-		public string Regex { get; set; }
-
-		public ITermSuggester Term { get; set; }
-
+		[DataMember(Name = "phrase")]
 		public IPhraseSuggester Phrase { get; set; }
 
-		public ICompletionSuggester Completion { get; set; }
+		[DataMember(Name = "prefix")]
+		public string Prefix { get; set; }
+
+		[DataMember(Name = "regex")]
+		public string Regex { get; set; }
+
+		[DataMember(Name = "term")]
+		public ITermSuggester Term { get; set; }
+
+		[DataMember(Name = "text")]
+		public string Text { get; set; }
 	}
 }

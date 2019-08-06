@@ -1,25 +1,39 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
+// ReSharper disable InconsistentNaming
 
 namespace Nest
 {
-
+	/// <summary>
+	/// A similarity with Bayesian smoothing using Dirichlet priors.
+	/// </summary>
 	public interface ILMDirichletSimilarity : ISimilarity
 	{
-		[JsonProperty("mu")]
+		/// <summary>
+		/// The mu parameter. Defaults to 2000.
+		/// </summary>
+		[DataMember(Name ="mu")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? Mu { get; set; }
 	}
+
+	/// <inheritdoc />
 	public class LMDirichletSimilarity : ILMDirichletSimilarity
 	{
-		public string Type => "LMDirichlet";
-
+		/// <inheritdoc />
 		public int? Mu { get; set; }
+
+		public string Type => "LMDirichlet";
 	}
-	public class LMDirichletSimilarityDescriptor 
+
+	/// <inheritdoc />
+	public class LMDirichletSimilarityDescriptor
 		: DescriptorBase<LMDirichletSimilarityDescriptor, ILMDirichletSimilarity>, ILMDirichletSimilarity
 	{
-		string ISimilarity.Type => "LMDirichlet";
 		int? ILMDirichletSimilarity.Mu { get; set; }
+		string ISimilarity.Type => "LMDirichlet";
 
-		public LMDirichletSimilarityDescriptor Mu(int? mu) => Assign(a => a.Mu = mu);
+		/// <inheritdoc />
+		public LMDirichletSimilarityDescriptor Mu(int? mu) => Assign(mu, (a, v) => a.Mu = v);
 	}
 }

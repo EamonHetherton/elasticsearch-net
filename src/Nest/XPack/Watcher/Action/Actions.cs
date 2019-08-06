@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IActions : IIsADictionary<string, IAction> {}
+	[JsonFormatter(typeof(ActionsFormatter))]
+	public interface IActions : IIsADictionary<string, IAction> { }
 
-	[JsonConverter(typeof(ActionsJsonConverter))]
+	[JsonFormatter(typeof(ActionsFormatter))]
 	public class Actions : IsADictionaryBase<string, IAction>, IActions
 	{
+		public Actions() { }
+
+		public Actions(IDictionary<string, IAction> actions) : base(ReduceCombinators(actions)) { }
+
 		private static IDictionary<string, IAction> ReduceCombinators(IDictionary<string, IAction> actions)
 		{
 			if (!actions.Values.OfType<ActionCombinator>().Any())
@@ -25,6 +30,7 @@ namespace Nest
 					{
 						if (combinatorAction.Name.IsNullOrEmpty())
 							throw new ArgumentException($"{combinatorAction.GetType().Name}.Name is not set!");
+
 						reducedActions.Add(combinatorAction.Name, combinatorAction);
 					}
 				}
@@ -33,10 +39,6 @@ namespace Nest
 
 			return reducedActions;
 		}
-
-		public Actions() {}
-
-		public Actions(IDictionary<string, IAction> actions) : base(ReduceCombinators(actions)) {}
 
 		public static implicit operator Actions(ActionBase action)
 		{
@@ -51,6 +53,7 @@ namespace Nest
 				{
 					if (actionBase.Name.IsNullOrEmpty())
 						throw new ArgumentException($"{actionBase.GetType().Name}.Name is not set!");
+
 					actions.Add(actionBase.Name, actionBase);
 				}
 				return new Actions(actions);
@@ -59,20 +62,17 @@ namespace Nest
 			if (action.Name.IsNullOrEmpty())
 				throw new ArgumentException($"{action.GetType().Name}.Name is not set!");
 
-			actions = new Dictionary<string, IAction>{{ action.Name, action }};
+			actions = new Dictionary<string, IAction> { { action.Name, action } };
 			return new Actions(actions);
 		}
 	}
 
 	public class ActionsDescriptor : IsADictionaryDescriptorBase<ActionsDescriptor, Actions, string, IAction>
 	{
-		public ActionsDescriptor() : base(new Actions()) {}
+		public ActionsDescriptor() : base(new Actions()) { }
 
 		public ActionsDescriptor Email(string name, Func<EmailActionDescriptor, IEmailAction> selector) =>
 			Assign(name, selector.InvokeOrDefault(new EmailActionDescriptor(name)));
-
-		public ActionsDescriptor HipChat(string name, Func<HipChatActionDescriptor, IHipChatAction> selector) =>
-			Assign(name, selector.InvokeOrDefault(new HipChatActionDescriptor(name)));
 
 		public ActionsDescriptor Index(string name, Func<IndexActionDescriptor, IIndexAction> selector) =>
 			Assign(name, selector.InvokeOrDefault(new IndexActionDescriptor(name)));

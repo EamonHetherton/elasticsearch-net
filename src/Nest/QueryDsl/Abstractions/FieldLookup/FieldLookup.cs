@@ -1,68 +1,56 @@
 ﻿using System;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<FieldLookup>))]
+	[ReadAs(typeof(FieldLookup))]
 	public interface IFieldLookup
 	{
-		[JsonProperty("index")]
-		IndexName Index { get; set; }
-
-		[JsonProperty("type")]
-		TypeName Type { get; set; }
-
-		[JsonProperty("id")]
+		[DataMember(Name ="id")]
 		Id Id { get; set; }
 
-		[JsonProperty("path")]
+		[DataMember(Name ="index")]
+		IndexName Index { get; set; }
+
+		[DataMember(Name ="path")]
 		Field Path { get; set; }
 
-		[JsonProperty("routing")]
-		string Routing { get; set; }
+		[DataMember(Name ="routing")]
+		Routing Routing { get; set; }
 	}
 
 	public class FieldLookup : IFieldLookup
 	{
-		public IndexName Index { get; set; }
-		public TypeName Type { get; set; }
 		public Id Id { get; set; }
+		public IndexName Index { get; set; }
 		public Field Path { get; set; }
-		public string Routing { get; set; }
+		public Routing Routing { get; set; }
 	}
 
-	public class FieldLookupDescriptor<T> : DescriptorBase<FieldLookupDescriptor<T>,IFieldLookup>, IFieldLookup
+	public class FieldLookupDescriptor<T> : DescriptorBase<FieldLookupDescriptor<T>, IFieldLookup>, IFieldLookup
 		where T : class
 	{
-		internal Type _ClrType => typeof(T);
+		public FieldLookupDescriptor() => Self.Index = ClrType;
 
-		IndexName IFieldLookup.Index { get; set; }
-
-		TypeName IFieldLookup.Type { get; set; }
+		private static Type ClrType => typeof(T);
 
 		Id IFieldLookup.Id { get; set; }
 
+		IndexName IFieldLookup.Index { get; set; }
+
 		Field IFieldLookup.Path { get; set; }
 
-		string IFieldLookup.Routing { get; set; }
+		Routing IFieldLookup.Routing { get; set; }
 
-		public FieldLookupDescriptor()
-		{
-			Self.Type = new TypeName { Type = this._ClrType };
-			Self.Index = new IndexName { Type = this._ClrType };
-		}
+		public FieldLookupDescriptor<T> Index(IndexName index) => Assign(index, (a, v) => a.Index = v);
 
-		public FieldLookupDescriptor<T> Index(IndexName index) => Assign(a => a.Index = index);
+		public FieldLookupDescriptor<T> Id(Id id) => Assign(id, (a, v) => a.Id = v);
 
-		public FieldLookupDescriptor<T> Id(Id id) => Assign(a => a.Id = id);
+		public FieldLookupDescriptor<T> Path(Field path) => Assign(path, (a, v) => a.Path = v);
 
-		public FieldLookupDescriptor<T> Type(TypeName type) => Assign(a => a.Type = type);
+		public FieldLookupDescriptor<T> Path<TValue>(Expression<Func<T, TValue>> objectPath) => Assign(objectPath, (a, v) => a.Path = v);
 
-		public FieldLookupDescriptor<T> Path(Field path) => Assign(a => a.Path = path);
-
-		public FieldLookupDescriptor<T> Path(Expression<Func<T, object>> objectPath) => Assign(a => a.Path = objectPath);
-
-		public FieldLookupDescriptor<T> Routing(string routing) => Assign(a => a.Routing = routing);
+		public FieldLookupDescriptor<T> Routing(Routing routing) => Assign(routing, (a, v) => a.Routing = v);
 	}
 }

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,42 +7,37 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Bucket/Global/GlobalAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Bucket/Global/GlobalAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[global-aggregation-usage]]
-== Global Aggregation Usage
+=== Global Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Global("all_projects", g => g
-        .Aggregations(aa => aa
-            .Terms("names", t => t
-                .Field(p => p.Name)
-            )
+a => a
+.Global("all_projects", g => g
+    .Aggregations(aa => aa
+        .Terms("names", t => t
+            .Field(p => p.Name)
         )
     )
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new GlobalAggregation("all_projects")
 {
-    Aggregations = new GlobalAggregation("all_projects")
+    Aggregations = new TermsAggregation("names")
     {
-        Aggregations = new TermsAggregation("names")
-        {
-            Field = Field<Project>(p => p.Name)
-        }
+        Field = Field<Project>(p => p.Name)
     }
 }
 ----
@@ -51,14 +46,12 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "all_projects": {
-      "global": {},
-      "aggs": {
-        "names": {
-          "terms": {
-            "field": "name"
-          }
+  "all_projects": {
+    "global": {},
+    "aggs": {
+      "names": {
+        "terms": {
+          "field": "name"
         }
       }
     }
@@ -66,12 +59,12 @@ new SearchRequest<Project>
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var allProjects = response.Aggs.Global("all_projects");
+var allProjects = response.Aggregations.Global("all_projects");
 allProjects.Should().NotBeNull();
 var names = allProjects.Terms("names");
 names.Should().NotBeNull();

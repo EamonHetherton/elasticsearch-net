@@ -2,37 +2,34 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<RangeAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(RangeAggregation))]
 	public interface IRangeAggregation : IBucketAggregation
 	{
-		[JsonProperty("field")]
+		[DataMember(Name ="field")]
 		Field Field { get; set; }
 
-		[JsonProperty("script")]
-		IScript Script { get; set; }
+		[DataMember(Name ="ranges")]
+		IEnumerable<IAggregationRange> Ranges { get; set; }
 
-		[JsonProperty(PropertyName = "ranges")]
-#pragma warning disable 618
-		IEnumerable<IRange> Ranges { get; set; }
-#pragma warning restore 618
+		[DataMember(Name ="script")]
+		IScript Script { get; set; }
 	}
 
 	public class RangeAggregation : BucketAggregationBase, IRangeAggregation
 	{
-		public Field Field { get; set; }
-		public IScript Script { get; set; }
-#pragma warning disable 618
-		public IEnumerable<IRange> Ranges { get; set; }
-#pragma warning restore 618
-
 		internal RangeAggregation() { }
 
 		public RangeAggregation(string name) : base(name) { }
+
+		public Field Field { get; set; }
+		public IEnumerable<IAggregationRange> Ranges { get; set; }
+		public IScript Script { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.Range = this;
 	}
@@ -43,24 +40,20 @@ namespace Nest
 	{
 		Field IRangeAggregation.Field { get; set; }
 
+		IEnumerable<IAggregationRange> IRangeAggregation.Ranges { get; set; }
+
 		IScript IRangeAggregation.Script { get; set; }
 
-#pragma warning disable 618
-		IEnumerable<IRange> IRangeAggregation.Ranges { get; set; }
-#pragma warning restore 618
+		public RangeAggregationDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public RangeAggregationDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		public RangeAggregationDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
 
-		public RangeAggregationDescriptor<T> Field(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
-
-		public RangeAggregationDescriptor<T> Script(string script) => Assign(a => a.Script = (InlineScript)script);
+		public RangeAggregationDescriptor<T> Script(string script) => Assign((InlineScript)script, (a, v) => a.Script = v);
 
 		public RangeAggregationDescriptor<T> Script(Func<ScriptDescriptor, IScript> scriptSelector) =>
-			Assign(a => a.Script = scriptSelector?.Invoke(new ScriptDescriptor()));
+			Assign(scriptSelector, (a, v) => a.Script = v?.Invoke(new ScriptDescriptor()));
 
-#pragma warning disable 618
-		public RangeAggregationDescriptor<T> Ranges(params Func<RangeDescriptor, IRange>[] ranges) =>
-			Assign(a => a.Ranges = ranges.Select(r => r(new RangeDescriptor())));
-#pragma warning restore 618
+		public RangeAggregationDescriptor<T> Ranges(params Func<AggregationRangeDescriptor, IAggregationRange>[] ranges) =>
+			Assign(ranges.Select(r => r(new AggregationRangeDescriptor())), (a, v) => a.Ranges = v);
 	}
 }

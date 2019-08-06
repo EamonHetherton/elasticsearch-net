@@ -1,34 +1,34 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<SerialDifferencingAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(SerialDifferencingAggregation))]
 	public interface ISerialDifferencingAggregation : IPipelineAggregation
 	{
-		[JsonProperty("lag")]
+		[DataMember(Name ="lag")]
 		int? Lag { get; set; }
 	}
 
 	public class SerialDifferencingAggregation : PipelineAggregationBase, ISerialDifferencingAggregation
 	{
-		public int? Lag { get; set; }
-
 		internal SerialDifferencingAggregation() { }
 
 		public SerialDifferencingAggregation(string name, SingleBucketsPath bucketsPath)
-			: base(name, bucketsPath)
-		{ }
+			: base(name, bucketsPath) { }
+
+		public int? Lag { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.SerialDifferencing = this;
 	}
 
 	public class SerialDifferencingAggregationDescriptor
 		: PipelineAggregationDescriptorBase<SerialDifferencingAggregationDescriptor, ISerialDifferencingAggregation, SingleBucketsPath>
-		, ISerialDifferencingAggregation
+			, ISerialDifferencingAggregation
 	{
 		int? ISerialDifferencingAggregation.Lag { get; set; }
 
-		public SerialDifferencingAggregationDescriptor Lag(int lag) => Assign(a => a.Lag = lag);
+		public SerialDifferencingAggregationDescriptor Lag(int? lag) => Assign(lag, (a, v) => a.Lag = v);
 	}
 }

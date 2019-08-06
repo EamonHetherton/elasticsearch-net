@@ -1,0 +1,62 @@
+jobs:
+- job: LinuxUnitTests
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - script: ./build.sh test-one skipdocs
+    displayName: 'build and unit test'
+  - task: PublishTestResults@2
+    inputs:
+        testRunner: VSTest
+        testResultsFiles: 'src/Tests/Tests/**/*.trx'
+        testRunTitle: Linux Unit Tests
+
+- job: WindowsCanaryTests
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - script: build.bat canary skipdocs
+    displayName: 'build and unit test'
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: VSTest
+      testResultsFiles: 'src/Tests/Tests/**/*.trx'
+      testRunTitle: Windows Unit Tests
+
+- job: WindowsIntegrationTests
+  dependsOn: WindowsCanaryTests
+  pool:
+      vmImage: 'vs2017-win2016'
+  strategy:
+    maxParallel: 5
+    matrix:
+      latest:
+        esVersion: 'latest'
+  steps:
+      - script: 'build.bat integrate-one $(esVersion) "readonly,writable,bool,xpack" skipdocs'
+        displayName: '$(esVersion) windows integration tests'
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+            testRunner: VSTest
+            testResultsFiles: 'src/Tests/Tests/**/*.trx'
+            testRunTitle: '$(esVersion) Windows Integration Tests'
+            
+- job: LinuxIntegrationTests
+  dependsOn: LinuxUnitTests
+  pool:
+      vmImage: 'ubuntu-16.04'
+  strategy:
+      maxParallel: 5
+      matrix:
+          latest:
+              esVersion: 'latest'
+  steps:
+      - script: './build.sh integrate-one $(esVersion) "readonly,writable" skipdocs'
+        displayName: '$(esVersion) linux integration tests'
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+            testRunner: VSTest
+            testResultsFiles: 'src/Tests/Tests/**/*.trx'
+            testRunTitle: '$(esVersion) Linux Integration Tests'

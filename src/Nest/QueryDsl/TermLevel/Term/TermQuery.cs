@@ -1,28 +1,34 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof (FieldNameQueryJsonConverter<TermQuery>))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(FieldNameQueryFormatter<TermQuery, ITermQuery>))]
 	public interface ITermQuery : IFieldNameQuery
 	{
-		[JsonProperty("value")]
+		[DataMember(Name = "value")]
+		[JsonFormatter(typeof(SourceWriteFormatter<object>))]
 		object Value { get; set; }
 	}
 
+	[DataContract]
 	public class TermQuery : FieldNameQueryBase, ITermQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
 		public object Value { get; set; }
+
+		protected override bool Conditionless => IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.Term = this;
 
 		internal static bool IsConditionless(ITermQuery q) => q.Value == null || q.Value.ToString().IsNullOrEmpty() || q.Field.IsConditionless();
 	}
 
-	public abstract class TermQueryDescriptorBase<TDescriptor, T> : FieldNameQueryDescriptorBase<TDescriptor, ITermQuery, T>
-		, ITermQuery
-		where TDescriptor : TermQueryDescriptorBase<TDescriptor, T>
+	public abstract class TermQueryDescriptorBase<TDescriptor, TInterface, T>
+		: FieldNameQueryDescriptorBase<TDescriptor, TInterface, T>
+			, ITermQuery
+		where TDescriptor : TermQueryDescriptorBase<TDescriptor, TInterface, T>, TInterface
+		where TInterface : class, ITermQuery
 		where T : class
 	{
 		protected override bool Conditionless => TermQuery.IsConditionless(this);
@@ -35,8 +41,6 @@ namespace Nest
 		}
 	}
 
-	public class TermQueryDescriptor<T> : TermQueryDescriptorBase<TermQueryDescriptor<T>, T>
-		where T : class
-	{	
-	}
+	public class TermQueryDescriptor<T> : TermQueryDescriptorBase<TermQueryDescriptor<T>, ITermQuery, T>
+		where T : class { }
 }

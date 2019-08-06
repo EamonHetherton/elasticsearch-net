@@ -1,30 +1,21 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IPostLicenseResponse : IResponse
+	public class PostLicenseResponse : ResponseBase
 	{
-		[JsonProperty("acknowledged")]
-		bool Acknowledged { get; }
-
-		[JsonProperty("license_status")]
-		LicenseStatus LicenseStatus { get; }
-
 		/// <summary>
-		/// If the license is valid but is older or has less capabilities this will list out the reasons why a resubmission with acknowledge=true is required.
+		/// If the license is valid but is older or has less capabilities this will list out the reasons why a resubmission with acknowledge=true is
+		/// required.
 		/// null if no acknowledge resubmission is needed
 		/// </summary>
-		[JsonProperty("acknowledge")]
-		LicenseAcknowledgement Acknowledge { get; }
-	}
+		[DataMember(Name ="acknowledge")]
+		public LicenseAcknowledgement Acknowledge { get; internal set; }
 
-	public class PostLicenseResponse : ResponseBase, IPostLicenseResponse
-	{
+		[DataMember(Name ="acknowledged")]
 		public bool Acknowledged { get; internal set; }
 
+		[DataMember(Name ="license_status")]
 		public LicenseStatus LicenseStatus { get; internal set; }
-
-		public LicenseAcknowledgement Acknowledge { get; internal set; }
 	}
 }

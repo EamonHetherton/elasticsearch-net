@@ -1,43 +1,41 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<PercentilesBucketAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(PercentilesBucketAggregation))]
 	public interface IPercentilesBucketAggregation : IPipelineAggregation
 	{
-		[JsonProperty("percents")]
+		[DataMember(Name ="percents")]
 		IEnumerable<double> Percents { get; set; }
 	}
 
 	public class PercentilesBucketAggregation
 		: PipelineAggregationBase, IPercentilesBucketAggregation
 	{
-		public IEnumerable<double> Percents { get; set; }
-
 		internal PercentilesBucketAggregation() { }
 
 		public PercentilesBucketAggregation(string name, SingleBucketsPath bucketsPath)
-			: base(name, bucketsPath)
-		{ }
+			: base(name, bucketsPath) { }
+
+		public IEnumerable<double> Percents { get; set; }
 
 		internal override void WrapInContainer(AggregationContainer c) => c.PercentilesBucket = this;
 	}
 
 	public class PercentilesBucketAggregationDescriptor
 		: PipelineAggregationDescriptorBase<PercentilesBucketAggregationDescriptor, IPercentilesBucketAggregation, SingleBucketsPath>
-		, IPercentilesBucketAggregation
+			, IPercentilesBucketAggregation
 	{
 		IEnumerable<double> IPercentilesBucketAggregation.Percents { get; set; }
 
 		public PercentilesBucketAggregationDescriptor Percents(IEnumerable<double> percentages) =>
-			Assign(a => a.Percents = percentages?.ToList());
+			Assign(percentages?.ToList(), (a, v) => a.Percents = v);
 
 		public PercentilesBucketAggregationDescriptor Percents(params double[] percentages) =>
-			Assign(a => a.Percents = percentages?.ToList());
-
+			Assign(percentages?.ToList(), (a, v) => a.Percents = v);
 	}
 }

@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(BulkResponseItemJsonConverter))]
+	[DataContract]
+	[JsonFormatter(typeof(ConcreteBulkIndexResponseItemFormatter<BulkDeleteResponseItem>))]
 	public class BulkDeleteResponseItem : BulkResponseItemBase
 	{
-		public override string Operation { get; internal set; }
-		[JsonProperty("found")]
-		public bool Found { get; internal set; }
+		public override string Operation { get; } = "delete";
 	}
 }

@@ -1,12 +1,16 @@
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<HttpInputProxy>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(HttpInputProxy))]
 	public interface IHttpInputProxy
 	{
+		[DataMember(Name = "host")]
 		string Host { get; set; }
+
+		[DataMember(Name = "port")]
 		int? Port { get; set; }
 	}
 
@@ -23,8 +27,8 @@ namespace Nest
 		string IHttpInputProxy.Host { get; set; }
 		int? IHttpInputProxy.Port { get; set; }
 
-		public HttpInputProxyDescriptor Host(string host) => Assign(a => a.Host = host);
+		public HttpInputProxyDescriptor Host(string host) => Assign(host, (a, v) => a.Host = v);
 
-		public HttpInputProxyDescriptor Port(int port) => Assign(a => a.Port = port);
+		public HttpInputProxyDescriptor Port(int? port) => Assign(port, (a, v) => a.Port = v);
 	}
 }

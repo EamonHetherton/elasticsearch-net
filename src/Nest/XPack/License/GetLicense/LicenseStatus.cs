@@ -1,19 +1,22 @@
 ﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
 	public enum LicenseStatus
 	{
-		[EnumMember(Value="active")]
+		[EnumMember(Value = "active")]
 		Active,
+
 		[EnumMember(Value = "valid")]
 		Valid,
-		[EnumMember(Value="invalid")]
+
+		[EnumMember(Value = "invalid")]
 		Invalid,
-		[EnumMember(Value="expired")]
+
+		[EnumMember(Value = "expired")]
 		Expired
 	}
 }

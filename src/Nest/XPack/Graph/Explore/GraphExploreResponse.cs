@@ -1,33 +1,24 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using Elasticsearch.Net;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	public interface IGraphExploreResponse : IResponse
+	public class GraphExploreResponse : ResponseBase
 	{
-		[JsonProperty("took")]
-		long Took { get; }
+		[DataMember(Name ="connections")]
+		public IReadOnlyCollection<GraphConnection> Connections { get; internal set; } = EmptyReadOnly<GraphConnection>.Collection;
 
-		[JsonProperty("timed_out")]
-		bool TimedOut { get; }
+		[DataMember(Name ="failures")]
+		public IReadOnlyCollection<ShardFailure> Failures { get; internal set; } = EmptyReadOnly<ShardFailure>.Collection;
 
-		[JsonProperty("vertices")]
-		IReadOnlyCollection<GraphVertex> Vertices { get; }
+		[DataMember(Name ="timed_out")]
+		public bool TimedOut { get; internal set; }
 
-		[JsonProperty("connections")]
-		IReadOnlyCollection<GraphConnection> Connections { get; }
-
-		[JsonProperty("failures")]
-		IReadOnlyCollection<ShardFailure> Failures { get; }
-	}
-
-	public class GraphExploreResponse : ResponseBase, IGraphExploreResponse
-	{
+		[DataMember(Name ="took")]
 		public long Took { get; internal set; }
 
-		public bool TimedOut { get; internal set; }
-		public IReadOnlyCollection<GraphConnection> Connections { get; internal set; } = EmptyReadOnly<GraphConnection>.Collection;
+		[DataMember(Name ="vertices")]
 		public IReadOnlyCollection<GraphVertex> Vertices { get; internal set; } = EmptyReadOnly<GraphVertex>.Collection;
-		public IReadOnlyCollection<ShardFailure> Failures { get; internal set; } = EmptyReadOnly<ShardFailure>.Collection;
 	}
 }

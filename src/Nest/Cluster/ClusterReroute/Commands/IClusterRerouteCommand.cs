@@ -1,11 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(ClusterRerouteCommandJsonConverter))]
+	[JsonFormatter(typeof(ClusterRerouteCommandFormatter))]
 	public interface IClusterRerouteCommand
 	{
-		[JsonIgnore]
+		[IgnoreDataMember]
 		string Name { get; }
 	}
 }

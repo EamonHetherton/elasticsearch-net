@@ -1,29 +1,28 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[ContractJsonConverter(typeof(AnalyzerJsonConverter))]
+	[JsonFormatter(typeof(AnalyzerFormatter))]
 	public interface IAnalyzer
 	{
-		[JsonProperty(PropertyName = "version")]
-		string Version { get; set; }
-
-		[JsonProperty(PropertyName = "type")]
+		[DataMember(Name = "type")]
 		string Type { get; }
+
+		[DataMember(Name = "version")]
+		string Version { get; set; }
 	}
 
 	public abstract class AnalyzerBase : IAnalyzer
 	{
 		internal AnalyzerBase() { }
 
-		protected AnalyzerBase(string type)
-		{
-			Type = type;
-		}
-
-		public string Version { get; set; }
+		// ReSharper disable once VirtualMemberCallInConstructor
+		protected AnalyzerBase(string type) => Type = type;
 
 		public virtual string Type { get; protected set; }
+
+		public string Version { get; set; }
 	}
 
 	public abstract class AnalyzerDescriptorBase<TAnalyzer, TAnalyzerInterface>
@@ -31,11 +30,10 @@ namespace Nest
 		where TAnalyzer : AnalyzerDescriptorBase<TAnalyzer, TAnalyzerInterface>, TAnalyzerInterface
 		where TAnalyzerInterface : class, IAnalyzer
 	{
-		string IAnalyzer.Version { get; set; }
-		string IAnalyzer.Type => this.Type;
 		protected abstract string Type { get; }
+		string IAnalyzer.Type => Type;
+		string IAnalyzer.Version { get; set; }
 
-		public TAnalyzer Version(string version) => Assign(a => a.Version = version);
+		public TAnalyzer Version(string version) => Assign(version, (a, v) => a.Version = v);
 	}
-
 }

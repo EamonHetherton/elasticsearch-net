@@ -1,42 +1,41 @@
 ﻿using System;
 using System.Reflection;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
 	[AttributeUsage(AttributeTargets.Property)]
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[DataContract]
 	public abstract class ElasticsearchCorePropertyAttributeBase : ElasticsearchPropertyAttributeBase, ICoreProperty
 	{
 		protected ElasticsearchCorePropertyAttributeBase(FieldType type) : base(type) { }
-		[Obsolete("Please use overload taking FieldType")]
-		protected ElasticsearchCorePropertyAttributeBase(string typeName) : base(typeName) { }
-		[Obsolete("Please use overload taking FieldType")]
-		protected ElasticsearchCorePropertyAttributeBase(Type type) : base(type) { }
 
-		private ICoreProperty Self => this;
+		/// <inheritdoc cref="ICoreProperty" />
+		public string Similarity
+		{
+			set => Self.Similarity = value;
+			get => Self.Similarity;
+		}
 
-		bool? ICoreProperty.Store { get; set; }
-
-		IProperties ICoreProperty.Fields { get; set; }
+		/// <inheritdoc cref="ICoreProperty" />
+		public bool Store
+		{
+			get => Self.Store.GetValueOrDefault();
+			set => Self.Store = value;
+		}
 
 		Fields ICoreProperty.CopyTo { get; set; }
 
-		Union<SimilarityOption, string> ICoreProperty.Similarity { get; set; }
+		IProperties ICoreProperty.Fields { get; set; }
 
-		public string Similarity {
-			set { Self.Similarity = value; }
-			get
-			{
-				return Self.Similarity?.Match(f => f.GetStringValue(), str => str);
-			}
-		}
-		public bool Store { get { return Self.Store.GetValueOrDefault(); } set { Self.Store = value; } }
+		private ICoreProperty Self => this;
 
-		public new static ElasticsearchCorePropertyAttributeBase From(MemberInfo memberInfo)
-		{
-			return memberInfo.GetCustomAttribute<ElasticsearchCorePropertyAttributeBase>(true);
-		}
+		string ICoreProperty.Similarity { get; set; }
+
+		bool? ICoreProperty.Store { get; set; }
+
+		public static new ElasticsearchCorePropertyAttributeBase From(MemberInfo memberInfo) =>
+			memberInfo.GetCustomAttribute<ElasticsearchCorePropertyAttributeBase>(true);
 	}
 }

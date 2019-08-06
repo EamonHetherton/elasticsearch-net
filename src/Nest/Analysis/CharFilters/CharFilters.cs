@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<CharFilters, string, ICharFilter>))]
+	[JsonFormatter(typeof(VerbatimDictionaryKeysFormatter<CharFilters, ICharFilters, string, ICharFilter>))]
 	public interface ICharFilters : IIsADictionary<string, ICharFilter> { }
 
 	public class CharFilters : IsADictionaryBase<string, ICharFilter>, ICharFilters
 	{
-		public CharFilters() {}
+		public CharFilters() { }
+
 		public CharFilters(IDictionary<string, ICharFilter> container) : base(container) { }
-		public CharFilters(Dictionary<string, ICharFilter> container)
-			: base(container.Select(kv => kv).ToDictionary(kv => kv.Key, kv => kv.Value))
-		{}
+
+		public CharFilters(Dictionary<string, ICharFilter> container) : base(container) { }
 
 		public void Add(string name, ICharFilter analyzer) => BackingDictionary.Add(name, analyzer);
 	}
@@ -45,16 +44,20 @@ namespace Nest
 
 		/// <summary>
 		/// The kuromoji_iteration_mark normalizes Japanese horizontal iteration marks (odoriji) to their expanded form.
-		/// Part of the `analysis-kuromoji` plugin: https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-kuromoji.html
+		/// Part of the `analysis-kuromoji` plugin:
+		/// https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-kuromoji.html
 		/// </summary>
-		public CharFiltersDescriptor KuromojiIterationMark(string name, Func<KuromojiIterationMarkCharFilterDescriptor, IKuromojiIterationMarkCharFilter> selector = null) =>
+		public CharFiltersDescriptor KuromojiIterationMark(string name,
+			Func<KuromojiIterationMarkCharFilterDescriptor, IKuromojiIterationMarkCharFilter> selector = null
+		) =>
 			Assign(name, selector?.InvokeOrDefault(new KuromojiIterationMarkCharFilterDescriptor()));
 
 		/// <summary>
 		/// Normalizes as defined here: http://userguide.icu-project.org/transforms/normalization
 		/// Part of the `analysis-icu` plugin: https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-icu.html
 		/// </summary>
-		public CharFiltersDescriptor IcuNormalization(string name, Func<IcuNormalizationCharFilterDescriptor, IIcuNormalizationCharFilter> selector) =>
+		public CharFiltersDescriptor IcuNormalization(string name, Func<IcuNormalizationCharFilterDescriptor, IIcuNormalizationCharFilter> selector
+		) =>
 			Assign(name, selector?.Invoke(new IcuNormalizationCharFilterDescriptor()));
 	}
 }

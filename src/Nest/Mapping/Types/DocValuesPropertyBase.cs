@@ -1,26 +1,28 @@
-﻿using System;
-using Elasticsearch.Net;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(PropertyJsonConverter))]
+	/// <summary>
+	/// Properties of a mapping for a property type to a document field that has doc_values in Elasticsearch
+	/// </summary>
+	[InterfaceDataContract]
 	public interface IDocValuesProperty : ICoreProperty
 	{
-		[JsonProperty("doc_values")]
+		/// <summary>
+		/// Whether to persist the value at index time in a columnar data structure (referred to as doc_values in Lucene)
+		/// which makes the value available for efficient sorting and aggregations. Default is <c>true</c>.
+		/// </summary>
+		[DataMember(Name ="doc_values")]
 		bool? DocValues { get; set; }
 	}
 
+	/// <inheritdoc cref="IDocValuesProperty" />
 	public abstract class DocValuesPropertyBase : CorePropertyBase, IDocValuesProperty
 	{
-		[Obsolete("Please use overload taking FieldType")]
-		protected DocValuesPropertyBase(TypeName typeName) : base(typeName) { }
+		protected DocValuesPropertyBase(FieldType type) : base(type) { }
 
-#pragma warning disable 618
-		protected DocValuesPropertyBase(FieldType type) : this(type.GetStringValue()) { }
-#pragma warning restore 618
-
+		/// <inheritdoc />
 		public bool? DocValues { get; set; }
 	}
 }

@@ -1,19 +1,23 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	/// <summary>
+	/// How suggestions should be sorted per suggest text term.
+	/// </summary>
+	[StringEnum]
 	public enum SuggestSort
 	{
+		/// <summary>
+		/// Sort by score first, then document frequency and then the term itself
+		/// </summary>
 		[EnumMember(Value = "score")]
 		Score,
+
+		/// <summary>
+		/// Sort by document frequency first, then similarity score and then the term itself
+		/// </summary>
 		[EnumMember(Value = "frequency")]
 		Frequency
 	}

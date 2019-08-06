@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -14,20 +13,21 @@ namespace Nest
 		/// <summary>
 		/// Katakana words shorter than the minimum length are not stemmed (default is 4).
 		/// </summary>
-		[JsonProperty("minimum_length")]
+		[DataMember(Name ="minimum_length")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? MinimumLength { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class KuromojiStemmerTokenFilter : TokenFilterBase, IKuromojiStemmerTokenFilter
 	{
 		public KuromojiStemmerTokenFilter() : base("kuromoji_stemmer") { }
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public int? MinimumLength { get; set; }
 	}
 
-	///<inheritdoc/>
+	/// <inheritdoc />
 	public class KuromojiStemmerTokenFilterDescriptor
 		: TokenFilterDescriptorBase<KuromojiStemmerTokenFilterDescriptor, IKuromojiStemmerTokenFilter>, IKuromojiStemmerTokenFilter
 	{
@@ -35,7 +35,7 @@ namespace Nest
 
 		int? IKuromojiStemmerTokenFilter.MinimumLength { get; set; }
 
-		///<inheritdoc/>
-		public KuromojiStemmerTokenFilterDescriptor MinimumLength(int? minimumLength) => Assign(a => a.MinimumLength = minimumLength);
+		/// <inheritdoc />
+		public KuromojiStemmerTokenFilterDescriptor MinimumLength(int? minimumLength) => Assign(minimumLength, (a, v) => a.MinimumLength = v);
 	}
 }

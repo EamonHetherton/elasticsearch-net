@@ -1,42 +1,37 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IBulkResponse : IResponse
+	[DataContract]
+	public class BulkResponse : ResponseBase
 	{
-		long Took { get; }
-		bool Errors { get; }
-		IReadOnlyCollection<BulkResponseItemBase> Items { get; }
-		IEnumerable<BulkResponseItemBase> ItemsWithErrors { get; }
-	}
-
-	[JsonObject]
-	public class BulkResponse : ResponseBase, IBulkResponse
-	{
-		public override bool IsValid => base.IsValid && !this.Errors && !this.ItemsWithErrors.HasAny();
-		protected override void DebugIsValid(StringBuilder sb)
-		{
-			if (this.Items == null) return;
-			sb.AppendLine($"# Invalid Bulk items:");
-			foreach(var i in Items.Select((item, i) => new { item, i}).Where(i=>!i.item.IsValid))
-				sb.AppendLine($"  operation[{i.i}]: {i.item}");
-		}
-
-		[JsonProperty("took")]
-		public long Took { get; internal set; }
-
-		[JsonProperty("errors")]
+		[DataMember(Name ="errors")]
 		public bool Errors { get; internal set; }
 
-		[JsonProperty("items")]
-		public IReadOnlyCollection<BulkResponseItemBase> Items { get; internal set; } = EmptyReadOnly<BulkResponseItemBase>.Collection;
+		public override bool IsValid => base.IsValid && !Errors && !ItemsWithErrors.HasAny();
 
-		[JsonIgnore]
-		public IEnumerable<BulkResponseItemBase> ItemsWithErrors => !this.Items.HasAny()
+		[DataMember(Name ="items")]
+		public IReadOnlyList<BulkResponseItemBase> Items { get; internal set; } = EmptyReadOnly<BulkResponseItemBase>.List;
+
+		[IgnoreDataMember]
+		public IEnumerable<BulkResponseItemBase> ItemsWithErrors => !Items.HasAny()
 			? Enumerable.Empty<BulkResponseItemBase>()
-			: this.Items.Where(i => !i.IsValid);
+			: Items.Where(i => !i.IsValid);
+
+		[DataMember(Name ="took")]
+		public long Took { get; internal set; }
+
+		protected override void DebugIsValid(StringBuilder sb)
+		{
+			if (Items == null) return;
+
+			sb.AppendLine($"# Invalid Bulk items:");
+			foreach (var i in Items.Select((item, i) => new { item, i }).Where(i => !i.item.IsValid))
+				sb.AppendLine($"  operation[{i.i}]: {i.item}");
+		}
 	}
 }

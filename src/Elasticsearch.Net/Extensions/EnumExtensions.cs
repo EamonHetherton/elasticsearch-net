@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Elasticsearch.Net
+namespace Elasticsearch.Net.Extensions
 {
-	public static class EnumExtensions
+	internal static class EnumExtensions
 	{
-		public static string GetStringValue(this HttpMethod enumValue)
+		internal static string GetStringValue(this HttpMethod enumValue)
 		{
 			switch (enumValue)
 			{

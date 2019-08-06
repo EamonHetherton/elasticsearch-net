@@ -1,81 +1,116 @@
 using System;
-using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(SortJsonConverter))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(SortFormatter))]
 	public interface ISort
 	{
-		Field SortKey { get; }
+		/// <summary>
+		/// Specifies how documents which are missing the sort field should
+		/// be treated.
+		/// </summary>
+		[DataMember(Name ="missing")]
+		object Missing { get; set; }
 
-		[JsonProperty("missing")]
-		string Missing { get; set; }
-
-		[JsonProperty("order")]
-		SortOrder? Order { get; set; }
-
-		[JsonProperty("mode")]
+		/// <summary>
+		/// Controls what collection value is picked for sorting a document
+		/// when the field is a collection
+		/// </summary>
+		[DataMember(Name ="mode")]
 		SortMode? Mode { get; set; }
 
-		[JsonProperty("nested_filter")]
-		QueryContainer NestedFilter { get; set; }
+		/// <summary>
+		/// Specifies the path and filter to apply when sorting on a nested field
+		/// </summary>
+		[DataMember(Name ="nested")]
+		INestedSort Nested { get; set; }
 
-		[JsonProperty("nested_path")]
-		Field NestedPath { get; set; }
+		/// <summary>
+		/// Controls the order of sorting
+		/// </summary>
+		[DataMember(Name ="order")]
+		SortOrder? Order { get; set; }
+
+		/// <summary>
+		/// The field on which to sort
+		/// </summary>
+		[IgnoreDataMember]
+		Field SortKey { get; }
 	}
 
 	public abstract class SortBase : ISort
 	{
-		public string Missing { get; set; }
-		public SortOrder? Order { get; set; }
+		/// <inheritdoc />
+		public object Missing { get; set; }
+
+		/// <inheritdoc />
 		public SortMode? Mode { get; set; }
-		public QueryContainer NestedFilter { get; set; }
-		public Field NestedPath { get; set; }
-		Field ISort.SortKey => this.SortKey;
+
+		/// <inheritdoc />
+		public INestedSort Nested { get; set; }
+
+		/// <inheritdoc />
+		public SortOrder? Order { get; set; }
+
+		/// <summary>
+		/// The field on which to sort
+		/// </summary>
 		protected abstract Field SortKey { get; }
+
+		/// <inheritdoc />
+		Field ISort.SortKey => SortKey;
 	}
 
-	public abstract class SortDescriptorBase<TDescriptor, TInterface, T> : DescriptorBase<TDescriptor, TInterface>, ISort 
-		where T : class 
+	public abstract class SortDescriptorBase<TDescriptor, TInterface, T> : DescriptorBase<TDescriptor, TInterface>, ISort
+		where T : class
 		where TDescriptor : SortDescriptorBase<TDescriptor, TInterface, T>, TInterface, ISort
 		where TInterface : class, ISort
 	{
-		Field ISort.SortKey => this.SortKey;
-
-		string ISort.Missing { get; set; }
-
-		SortOrder? ISort.Order { get; set; }
-
-		SortMode? ISort.Mode { get; set; }
-
-		QueryContainer ISort.NestedFilter { get; set; }
-
-		Field ISort.NestedPath { get; set; }
-
+		/// <summary>
+		/// The field on which to sort
+		/// </summary>
 		protected abstract Field SortKey { get; }
 
-		public virtual TDescriptor Ascending() => Assign(a => a.Order = SortOrder.Ascending);
+		object ISort.Missing { get; set; }
+		SortMode? ISort.Mode { get; set; }
+		INestedSort ISort.Nested { get; set; }
+		SortOrder? ISort.Order { get; set; }
+		Field ISort.SortKey => SortKey;
 
-		public virtual TDescriptor Descending() => Assign(a => a.Order = SortOrder.Descending);
+		/// <summary>
+		/// Sorts by ascending sort order
+		/// </summary>
+		public virtual TDescriptor Ascending() => Assign(SortOrder.Ascending, (a, v) => a.Order = v);
 
-		public virtual TDescriptor Order(SortOrder order) => Assign(a => a.Order = order);
+		/// <summary>
+		/// Sorts by descending sort order
+		/// </summary>
+		public virtual TDescriptor Descending() => Assign(SortOrder.Descending, (a, v) => a.Order = v);
 
-		public virtual TDescriptor Mode(SortMode? mode) => Assign(a => a.Mode = mode);
+		/// <inheritdoc cref="ISort.Order" />
+		public virtual TDescriptor Order(SortOrder? order) => Assign(order, (a, v) => a.Order = v);
 
-		public virtual TDescriptor NestedFilter(Func<QueryContainerDescriptor<T>, QueryContainer> filterSelector) =>
-			Assign(a => a.NestedFilter = filterSelector?.Invoke(new QueryContainerDescriptor<T>()));
+		/// <inheritdoc cref="ISort.Mode" />
+		public virtual TDescriptor Mode(SortMode? mode) => Assign(mode, (a, v) => a.Mode = v);
 
-		public virtual TDescriptor NestedPath(Field path) => Assign(a => a.NestedPath = path);
+		/// <summary>
+		/// Specifies that documents which are missing the sort field should be ordered last
+		/// </summary>
+		public virtual TDescriptor MissingLast() => Assign("_last", (a, v) => a.Missing = v);
 
-		public virtual TDescriptor NestedPath(Expression<Func<T, object>> objectPath) => Assign(a => a.NestedPath = objectPath);
+		/// <summary>
+		/// Specifies that documents which are missing the sort field should be ordered first
+		/// </summary>
+		public virtual TDescriptor MissingFirst() => Assign("_first", (a, v) => a.Missing = v);
 
-		public virtual TDescriptor MissingLast() => Assign(a => a.Missing = "_last");
+		/// <inheritdoc cref="ISort.Missing" />
+		public virtual TDescriptor Missing(object value) => Assign(value, (a, v) => a.Missing = v);
 
-		public virtual TDescriptor MissingFirst() => Assign(a => a.Missing = "_first");
-
-		public virtual TDescriptor MissingValue(string value) => Assign(a => a.Missing = value);
-
+		/// <inheritdoc cref="ISort.Nested" />
+		public virtual TDescriptor Nested(Func<NestedSortDescriptor<T>, INestedSort> selector) =>
+			Assign(selector, (a, v) => a.Nested = v?.Invoke(new NestedSortDescriptor<T>()));
 	}
 }

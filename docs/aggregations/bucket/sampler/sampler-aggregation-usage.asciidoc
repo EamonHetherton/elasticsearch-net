@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,44 +7,39 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Bucket/Sampler/SamplerAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Bucket/Sampler/SamplerAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[sampler-aggregation-usage]]
-== Sampler Aggregation Usage
+=== Sampler Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(aggs => aggs
-    .Sampler("sample", sm => sm
-        .ShardSize(200)
-        .Aggregations(aa => aa
-            .SignificantTerms("significant_names", st => st
-                .Field(p => p.Name)
-            )
+a => a
+.Sampler("sample", sm => sm
+    .ShardSize(200)
+    .Aggregations(aa => aa
+        .SignificantTerms("significant_names", st => st
+            .Field(p => p.Name)
         )
     )
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new SamplerAggregation("sample")
 {
-    Aggregations = new SamplerAggregation("sample")
+    ShardSize = 200,
+    Aggregations = new SignificantTermsAggregation("significant_names")
     {
-        ShardSize = 200,
-        Aggregations = new SignificantTermsAggregation("significant_names")
-        {
-            Field = "name"
-        }
+        Field = "name"
     }
 }
 ----
@@ -53,16 +48,14 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "sample": {
-      "sampler": {
-        "shard_size": 200
-      },
-      "aggs": {
-        "significant_names": {
-          "significant_terms": {
-            "field": "name"
-          }
+  "sample": {
+    "sampler": {
+      "shard_size": 200
+    },
+    "aggs": {
+      "significant_names": {
+        "significant_terms": {
+          "field": "name"
         }
       }
     }
@@ -70,14 +63,18 @@ new SearchRequest<Project>
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var sample = response.Aggs.Sampler("sample");
+
+var sample = response.Aggregations.Sampler("sample");
 sample.Should().NotBeNull();
 var sigTags = sample.SignificantTerms("significant_names");
 sigTags.Should().NotBeNull();
+sigTags.DocCount.Should().BeGreaterThan(0);
+if (TestConfiguration.Instance.InRange(">=5.5.0"))
+    sigTags.BgCount.Should().BeGreaterThan(0);
 ----
 

@@ -1,10 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<ValueCountAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(ValueCountAggregation))]
 	public interface IValueCountAggregation : IMetricAggregation { }
 
 	public class ValueCountAggregation : MetricAggregationBase, IValueCountAggregation
@@ -16,8 +15,8 @@ namespace Nest
 		internal override void WrapInContainer(AggregationContainer c) => c.ValueCount = this;
 	}
 
-	public class ValueCountAggregationDescriptor<T> 
+	public class ValueCountAggregationDescriptor<T>
 		: MetricAggregationDescriptorBase<ValueCountAggregationDescriptor<T>, IValueCountAggregation, T>
-			, IValueCountAggregation 
+			, IValueCountAggregation
 		where T : class { }
 }

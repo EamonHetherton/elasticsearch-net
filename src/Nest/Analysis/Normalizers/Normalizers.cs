@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<Normalizers, string, INormalizer>))]
+	[JsonFormatter(typeof(VerbatimDictionaryKeysFormatter<Normalizers, INormalizers, string, INormalizer>))]
 	public interface INormalizers : IIsADictionary<string, INormalizer> { }
 
 	public class Normalizers : IsADictionaryBase<string, INormalizer>, INormalizers
 	{
-		public Normalizers() {}
+		public Normalizers() { }
+
 		public Normalizers(IDictionary<string, INormalizer> container) : base(container) { }
-		public Normalizers(Dictionary<string, INormalizer> container)
-			: base(container.ToDictionary(kv => kv.Key, kv => kv.Value))
-		{ }
+
+		public Normalizers(Dictionary<string, INormalizer> container) : base(container) { }
 
 		public void Add(string name, INormalizer analyzer) => BackingDictionary.Add(name, analyzer);
 	}

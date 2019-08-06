@@ -1,16 +1,11 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IGetIndexResponse : IResponse
+	[JsonFormatter(typeof(ResolvableDictionaryResponseFormatter<GetIndexResponse, IndexName, IndexState>))]
+	public class GetIndexResponse : DictionaryResponseBase<IndexName, IndexState>
 	{
-		IReadOnlyDictionary<string, IndexState> Indices { get; }
-	}
-
-	[JsonConverter(typeof(DictionaryResponseJsonConverter<GetIndexResponse, string, IndexState>))]
-	public class GetIndexResponse : DictionaryResponseBase<string, IndexState>, IGetIndexResponse
-	{
-		public IReadOnlyDictionary<string, IndexState> Indices => Self.BackingDictionary;
+		public IReadOnlyDictionary<IndexName, IndexState> Indices => Self.BackingDictionary;
 	}
 }

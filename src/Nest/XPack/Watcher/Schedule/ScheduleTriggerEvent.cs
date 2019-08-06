@@ -1,24 +1,24 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<ScheduleTriggerEvent>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(ScheduleTriggerEvent))]
 	public interface IScheduleTriggerEvent : ITriggerEvent
 	{
-		[JsonProperty("triggered_time")]
-		Union<DateTimeOffset, string> TriggeredTime { get; set; }
-
-		[JsonProperty("scheduled_time")]
+		[DataMember(Name = "scheduled_time")]
 		Union<DateTimeOffset, string> ScheduledTime { get; set; }
+
+		[DataMember(Name = "triggered_time")]
+		Union<DateTimeOffset, string> TriggeredTime { get; set; }
 	}
 
 	public class ScheduleTriggerEvent : TriggerEventBase, IScheduleTriggerEvent
 	{
-		public Union<DateTimeOffset,string> TriggeredTime { get; set; }
-
 		public Union<DateTimeOffset, string> ScheduledTime { get; set; }
+		public Union<DateTimeOffset, string> TriggeredTime { get; set; }
 
 		internal override void WrapInContainer(ITriggerEventContainer container) => container.Schedule = this;
 	}
@@ -26,19 +26,19 @@ namespace Nest
 	public class ScheduleTriggerEventDescriptor
 		: DescriptorBase<ScheduleTriggerEventDescriptor, IScheduleTriggerEvent>, IScheduleTriggerEvent
 	{
-		Union<DateTimeOffset, string> IScheduleTriggerEvent.TriggeredTime { get; set; }
 		Union<DateTimeOffset, string> IScheduleTriggerEvent.ScheduledTime { get; set; }
+		Union<DateTimeOffset, string> IScheduleTriggerEvent.TriggeredTime { get; set; }
 
-		public ScheduleTriggerEventDescriptor TriggeredTime(DateTimeOffset triggeredTime) =>
-			Assign(a => a.TriggeredTime = triggeredTime);
+		public ScheduleTriggerEventDescriptor TriggeredTime(DateTimeOffset? triggeredTime) =>
+			Assign(triggeredTime, (a, v) => a.TriggeredTime = v);
 
 		public ScheduleTriggerEventDescriptor TriggeredTime(string triggeredTime) =>
-			Assign(a => a.TriggeredTime = triggeredTime);
+			Assign(triggeredTime, (a, v) => a.TriggeredTime = v);
 
-		public ScheduleTriggerEventDescriptor ScheduledTime(DateTimeOffset scheduledTime) =>
-			Assign(a => a.ScheduledTime = scheduledTime);
+		public ScheduleTriggerEventDescriptor ScheduledTime(DateTimeOffset? scheduledTime) =>
+			Assign(scheduledTime, (a, v) => a.ScheduledTime = v);
 
 		public ScheduleTriggerEventDescriptor ScheduledTime(string scheduledTime) =>
-			Assign(a => a.ScheduledTime = scheduledTime);
+			Assign(scheduledTime, (a, v) => a.ScheduledTime = v);
 	}
 }

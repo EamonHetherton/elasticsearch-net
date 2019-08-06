@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,42 +7,37 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Bucket/GeoHashGrid/GeoHashGridAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Bucket/GeoHashGrid/GeoHashGridAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[geo-hash-grid-aggregation-usage]]
-== Geo Hash Grid Aggregation Usage
+=== Geo Hash Grid Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .GeoHash("my_geohash_grid", g => g
-        .Field(p => p.Location)
-        .GeoHashPrecision(GeoHashPrecision.Precision3)
-        .Size(1000)
-        .ShardSize(100)
-    )
+a => a
+.GeoHash("my_geohash_grid", g => g
+    .Field(p => p.LocationPoint)
+    .GeoHashPrecision(GeoHashPrecision.Precision3)
+    .Size(1000)
+    .ShardSize(100)
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new GeoHashGridAggregation("my_geohash_grid")
 {
-    Aggregations = new GeoHashGridAggregation("my_geohash_grid")
-    {
-        Field = Field<Project>(p => p.Location),
-        Precision = GeoHashPrecision.Precision3,
-        Size = 1000,
-        ShardSize = 100
-    }
+    Field = Field<Project>(p => p.LocationPoint),
+    Precision = GeoHashPrecision.Precision3,
+    Size = 1000,
+    ShardSize = 100
 }
 ----
 
@@ -50,25 +45,23 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "my_geohash_grid": {
-      "geohash_grid": {
-        "field": "location",
-        "precision": 3,
-        "size": 1000,
-        "shard_size": 100
-      }
+  "my_geohash_grid": {
+    "geohash_grid": {
+      "field": "locationPoint",
+      "precision": 3,
+      "size": 1000,
+      "shard_size": 100
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var myGeoHashGrid = response.Aggs.GeoHash("my_geohash_grid");
+var myGeoHashGrid = response.Aggregations.GeoHash("my_geohash_grid");
 myGeoHashGrid.Should().NotBeNull();
 ----
 

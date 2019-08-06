@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Nest
+﻿namespace Nest
 {
+	[MapsApi("cat.tasks.json")]
 	public partial interface ICatTasksRequest { }
 
 	public partial class CatTasksRequest { }

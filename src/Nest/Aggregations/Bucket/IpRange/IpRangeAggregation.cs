@@ -2,47 +2,48 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[ContractJsonConverter(typeof(AggregationJsonConverter<IpRangeAggregation>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(IpRangeAggregation))]
 	public interface IIpRangeAggregation : IBucketAggregation
 	{
-		[JsonProperty("field")]
+		[DataMember(Name ="field")]
 		Field Field { get; set; }
 
-		[JsonProperty(PropertyName = "ranges")]
-		IEnumerable<IIpRange> Ranges { get; set; }
+		[DataMember(Name ="ranges")]
+		IEnumerable<IIpRangeAggregationRange> Ranges { get; set; }
 	}
 
 	public class IpRangeAggregation : BucketAggregationBase, IIpRangeAggregation
 	{
-		public Field Field { get; set; }
-		public IEnumerable<IIpRange> Ranges { get; set; }
-
 		internal IpRangeAggregation() { }
 
 		public IpRangeAggregation(string name) : base(name) { }
 
+		public Field Field { get; set; }
+		public IEnumerable<IIpRangeAggregationRange> Ranges { get; set; }
+
 		internal override void WrapInContainer(AggregationContainer c) => c.IpRange = this;
 	}
 
-	public class IpRangeAggregationDescriptor<T> :
-		BucketAggregationDescriptorBase<IpRangeAggregationDescriptor<T>,IIpRangeAggregation, T>
+	public class IpRangeAggregationDescriptor<T>
+		: BucketAggregationDescriptorBase<IpRangeAggregationDescriptor<T>, IIpRangeAggregation, T>
 			, IIpRangeAggregation
 		where T : class
 	{
 		Field IIpRangeAggregation.Field { get; set; }
 
-		IEnumerable<IIpRange> IIpRangeAggregation.Ranges { get; set; }
+		IEnumerable<IIpRangeAggregationRange> IIpRangeAggregation.Ranges { get; set; }
 
-		public IpRangeAggregationDescriptor<T> Field(Field field) => Assign(a => a.Field = field);
+		public IpRangeAggregationDescriptor<T> Field(Field field) => Assign(field, (a, v) => a.Field = v);
 
-		public IpRangeAggregationDescriptor<T> Field(Expression<Func<T, object>> field) => Assign(a => a.Field = field);
+		public IpRangeAggregationDescriptor<T> Field<TValue>(Expression<Func<T, TValue>> field) => Assign(field, (a, v) => a.Field = v);
 
-		public IpRangeAggregationDescriptor<T> Ranges(params Func<IpRangeDescriptor, IIpRange>[] ranges) =>
-			Assign(a => a.Ranges = ranges?.Select(r => r(new IpRangeDescriptor())));
+		public IpRangeAggregationDescriptor<T> Ranges(params Func<IpRangeAggregationRangeDescriptor, IIpRangeAggregationRange>[] ranges) =>
+			Assign(ranges?.Select(r => r(new IpRangeAggregationRangeDescriptor())), (a, v) => a.Ranges = v);
 	}
 }

@@ -1,22 +1,13 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	public interface ICreateIndexResponse : IAcknowledgedResponse
+	public class CreateIndexResponse : AcknowledgedResponseBase
 	{
-		[JsonProperty("shards_acknowledged")]
-		bool ShardsAcknowledged { get; }
-	}
-
-	public class CreateIndexResponse : AcknowledgedResponseBase, ICreateIndexResponse
-	{
+		[DataMember(Name = "shards_acknowledged")]
 		public bool ShardsAcknowledged { get; set; }
+
+		[DataMember(Name = "index")]
+		public string Index { get; set; }
 	}
 }

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,18 +7,18 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/ClientConcepts/HighLevel/Inference/IdsInference.doc.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/ClientConcepts/HighLevel/Inference/IdsInference.doc.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[ids-inference]]
-== Ids Inference
+=== Ids inference
 
-=== Implicit Conversions
+==== Implicit conversion
 
-Several places in the Elasticsearch API expect an `Id` object to be passed.
-This is a special box type that you can implicitly convert to from the following types
+Several places in the Elasticsearch API expect an instance of the `Id` type to be passed.
+This is a special type that you can implicitly convert to from the following types
 
 * `Int32`
 
@@ -28,7 +28,7 @@ This is a special box type that you can implicitly convert to from the following
 
 * `Guid`
 
-Methods that take an `Id` can be passed any of these types and it will be implicitly converted to an `Id`
+Methods that take an `Id` can be passed any of these types and they will be implicitly converted to an instance of `Id`
 
 [source,csharp]
 ----
@@ -36,16 +36,18 @@ Id idFromInt = 1;
 Id idFromLong = 2L;
 Id idFromString = "hello-world";
 Id idFromGuid = new Guid("D70BD3CF-4E38-46F3-91CA-FCBEF29B148E");
+
 Expect(1).WhenSerializing(idFromInt);
 Expect(2).WhenSerializing(idFromLong);
 Expect("hello-world").WhenSerializing(idFromString);
 Expect("d70bd3cf-4e38-46f3-91ca-fcbef29b148e").WhenSerializing(idFromGuid);
 ----
 
-=== Inferring from a Type
+==== Inferring Id from a type
 
-Sometimes a method takes an object and we need an Id from that object to build up a path.
-There is no implicit conversion from any object to Id but we can call `Id.From`.
+Sometimes a method takes an object instance and the client requires an `Id` from that
+instance to build up a path.
+There is no implicit conversion from any object to `Id`, but we can call `Id.From`.
 
 Imagine your codebase has the following type that we want to index into Elasticsearch
 
@@ -60,7 +62,7 @@ class MyDTO
 ----
 
 By default NEST will try to find a property called `Id` on the class using reflection
-and create a cached fast func delegate based on the properties getter
+and create a cached delegate based on the property getter
 
 [source,csharp]
 ----
@@ -74,13 +76,13 @@ var dto = new MyDTO
 Expect("d70bd3cf-4e38-46f3-91ca-fcbef29b148e").WhenInferringIdOn(dto);
 ----
 
-Using the connection settings you can specify a different property that NEST should use to infer the document Id.
+Using connection settings, you can specify a different property that NEST should use to infer Id for the document.
 Here we instruct NEST to infer the Id for `MyDTO` based on its `Name` property
 
 [source,csharp]
 ----
 WithConnectionSettings(x => x
-    .InferMappingFor<MyDTO>(m => m
+    .DefaultMappingFor<MyDTO>(m => m
         .IdProperty(p => p.Name)
     )
 ).Expect("x").WhenInferringIdOn(dto);
@@ -94,15 +96,26 @@ with different inference rules
 [source,csharp]
 ----
 WithConnectionSettings(x => x
-    .InferMappingFor<MyDTO>(m => m
+    .DefaultMappingFor<MyDTO>(m => m
         .IdProperty(p => p.OtherName)
     )
 ).Expect("y").WhenInferringIdOn(dto);
 ----
 
-=== Using the ElasticsearchType attribute
+DefaultMappingFor also has a non generic overload for the more dynamic use-cases.
 
-Another way is to mark the type with an `ElasticsearchType` attribute, setting `IdProperty`
+[source,csharp]
+----
+WithConnectionSettings(x => x
+    .DefaultMappingFor(typeof(MyDTO), m => m
+        .IdProperty(typeof(MyDTO).GetProperty(nameof(MyDTO.Name)).Name)
+    )
+).Expect("x").WhenInferringIdOn(dto);
+----
+
+==== Using the ElasticsearchType attribute
+
+Another way to control Id inference is to mark the type with an `ElasticsearchType` attribute, setting `IdProperty`
 to the name of the property that should be used for the document id
 
 [source,csharp]
@@ -130,18 +143,53 @@ var dto = new MyOtherDTO
 Expect("x").WhenInferringIdOn(dto);
 ----
 
-=== Using Mapping inference on ConnectionSettings
+==== Using Mapping inference on ConnectionSettings
 
-This attribute *is* cached statically/globally, however an inference rule on the `ConnectionSettings` for the type will
-still win over the attribute. Here we demonstrate this by creating a different `ConnectionSettings` instance
+This attribute *is* cached statically/globally, however an inference rule on `ConnectionSettings` for the type will
+still win over the attribute.
+
+Here we demonstrate this by creating a different `ConnectionSettings` instance
 that will infer the document id from the property `OtherName`:
 
 [source,csharp]
 ----
 WithConnectionSettings(x => x
-    .InferMappingFor<MyOtherDTO>(m => m
+    .DefaultMappingFor<MyOtherDTO>(m => m
         .IdProperty(p => p.OtherName)
     )
 ).Expect("y").WhenInferringIdOn(dto);
+----
+
+==== Disabling Id inference
+
+You can configure the client to disable Id inference on a CLR type basis
+
+[source,csharp]
+----
+WithConnectionSettings(x => x
+    .DefaultMappingFor<MyOtherDTO>(m => m
+        .DisableIdInference()
+    )
+).Expect(null).WhenInferringIdOn(dto);
+----
+
+or globally for all types
+
+[source,csharp]
+----
+WithConnectionSettings(x => x.DefaultDisableIdInference())
+    .Expect(null).WhenInferringIdOn(dto);
+----
+
+Once disabled globally, Id inference cannot be enabled per type
+
+[source,csharp]
+----
+WithConnectionSettings(x => x
+    .DefaultDisableIdInference()
+    .DefaultMappingFor<MyOtherDTO>(m => m
+        .DisableIdInference(disable: false)
+    )
+).Expect(null).WhenInferringIdOn(dto);
 ----
 

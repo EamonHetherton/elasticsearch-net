@@ -1,29 +1,33 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class PluginStats
 	{
-		[JsonProperty("name")]
-		public string Name { get; set; }
-
-		[JsonProperty("version")]
-		public string Version { get; set; }
-
-		[JsonProperty("description")]
-		public string Description { get; set; }
-
-		[JsonProperty("classname")]
+		[DataMember(Name ="classname")]
 		public string ClassName { get; set; }
 
-		[JsonProperty("jvm")]
-		public bool Jvm { get; set; }
+		[DataMember(Name ="description")]
+		public string Description { get; set; }
 
-		[JsonProperty("isolated")]
-		public bool Isolated { get; set; }
+		[DataMember(Name ="elasticsearch_version")]
+		public string ElasticsearchVersion { get; set; }
 
-		[JsonProperty("site")]
-		public bool Site { get; set; }
+		[DataMember(Name ="extended_plugins")]
+		public IReadOnlyCollection<string> ExtendedPlugins { get; set; }
+
+		[DataMember(Name ="name")]
+		public string Name { get; set; }
+
+		[DataMember(Name = "has_native_controller")]
+		public bool? HasNativeController { get; set; }
+
+		[DataMember(Name ="java_version")]
+		public string JavaVersion { get; set; }
+
+		[DataMember(Name ="version")]
+		public string Version { get; set; }
 	}
 }

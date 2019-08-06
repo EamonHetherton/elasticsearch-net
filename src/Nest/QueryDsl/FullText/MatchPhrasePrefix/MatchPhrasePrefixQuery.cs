@@ -1,33 +1,45 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(FieldNameQueryJsonConverter<MatchPhrasePrefixQuery>))]
+	[InterfaceDataContract]
+	[JsonFormatter(typeof(FieldNameQueryFormatter<MatchPhrasePrefixQuery, IMatchPhrasePrefixQuery>))]
 	public interface IMatchPhrasePrefixQuery : IFieldNameQuery
 	{
-		[JsonProperty(PropertyName = "query")]
-		string Query { get; set; }
-
-		[JsonProperty(PropertyName = "analyzer")]
+		[DataMember(Name = "analyzer")]
 		string Analyzer { get; set; }
 
-		[JsonProperty(PropertyName = "max_expansions")]
+		[DataMember(Name = "max_expansions")]
 		int? MaxExpansions { get; set; }
 
-		[JsonProperty(PropertyName = "slop")]
+		[DataMember(Name = "query")]
+		string Query { get; set; }
+
+		[DataMember(Name = "slop")]
 		int? Slop { get; set; }
+
+		/// <summary>
+		/// If the analyzer used removes all tokens in a query like a stop filter does, the default behavior is
+		/// to match no documents at all. In order to change that, <see cref="Nest.ZeroTermsQuery" /> can be used,
+		/// which accepts <see cref="Nest.ZeroTermsQuery.None" /> (default) and <see cref="Nest.ZeroTermsQuery.All" />
+		/// which corresponds to a match_all query.
+		/// </summary>
+		[DataMember(Name = "zero_terms_query")]
+		ZeroTermsQuery? ZeroTermsQuery { get; set; }
 	}
 
 	public class MatchPhrasePrefixQuery : FieldNameQueryBase, IMatchPhrasePrefixQuery
 	{
-		protected override bool Conditionless => IsConditionless(this);
-
 		public string Analyzer { get; set; }
 		public int? MaxExpansions { get; set; }
 		public string Query { get; set; }
 		public int? Slop { get; set; }
+
+		/// <inheritdoc />
+		public ZeroTermsQuery? ZeroTermsQuery { get; set; }
+
+		protected override bool Conditionless => IsConditionless(this);
 
 		internal override void InternalWrapInContainer(IQueryContainer c) => c.MatchPhrasePrefix = this;
 
@@ -39,18 +51,22 @@ namespace Nest
 		where T : class
 	{
 		protected override bool Conditionless => MatchPhrasePrefixQuery.IsConditionless(this);
-
-		string IMatchPhrasePrefixQuery.Query { get; set; }
 		string IMatchPhrasePrefixQuery.Analyzer { get; set; }
 		int? IMatchPhrasePrefixQuery.MaxExpansions { get; set; }
+
+		string IMatchPhrasePrefixQuery.Query { get; set; }
 		int? IMatchPhrasePrefixQuery.Slop { get; set; }
+		ZeroTermsQuery? IMatchPhrasePrefixQuery.ZeroTermsQuery { get; set; }
 
-		public MatchPhrasePrefixQueryDescriptor<T> Query(string query) => Assign(a => a.Query = query);
+		public MatchPhrasePrefixQueryDescriptor<T> Query(string query) => Assign(query, (a, v) => a.Query = v);
 
-		public MatchPhrasePrefixQueryDescriptor<T> Analyzer(string analyzer) => Assign(a => a.Analyzer = analyzer);
+		public MatchPhrasePrefixQueryDescriptor<T> Analyzer(string analyzer) => Assign(analyzer, (a, v) => a.Analyzer = v);
 
-		public MatchPhrasePrefixQueryDescriptor<T> MaxExpansions(int? maxExpansions) => Assign(a => a.MaxExpansions = maxExpansions);
+		public MatchPhrasePrefixQueryDescriptor<T> MaxExpansions(int? maxExpansions) => Assign(maxExpansions, (a, v) => a.MaxExpansions = v);
 
-		public MatchPhrasePrefixQueryDescriptor<T> Slop(int? slop) => Assign(a => a.Slop = slop);
+		public MatchPhrasePrefixQueryDescriptor<T> Slop(int? slop) => Assign(slop, (a, v) => a.Slop = v);
+
+		/// <inheritdoc cref="IMatchQuery.ZeroTermsQuery" />
+		public MatchPhrasePrefixQueryDescriptor<T> ZeroTermsQuery(ZeroTermsQuery? zeroTermsQuery) => Assign(zeroTermsQuery, (a, v) => a.ZeroTermsQuery = v);
 	}
 }

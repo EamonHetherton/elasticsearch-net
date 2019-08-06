@@ -1,20 +1,17 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IClusterRerouteResponse : IResponse
+	[DataContract]
+	public class ClusterRerouteResponse : ResponseBase
 	{
-		[JsonProperty("state")]
-		ClusterRerouteState State { get; }
+		[DataMember(Name ="explanations")]
+		public IReadOnlyCollection<ClusterRerouteExplanation> Explanations { get; internal set; } =
+			EmptyReadOnly<ClusterRerouteExplanation>.Collection;
 
-		[JsonProperty("explanations")]
-		IReadOnlyCollection<ClusterRerouteExplanation> Explanations { get; }
-	}
-
-	public class ClusterRerouteResponse : ResponseBase, IClusterRerouteResponse
-	{
-		public ClusterRerouteState State { get; internal set; }
-		public IReadOnlyCollection<ClusterRerouteExplanation> Explanations { get; internal set; } = EmptyReadOnly<ClusterRerouteExplanation>.Collection;
+		[DataMember(Name ="state")]
+		public DynamicDictionary State { get; internal set; }
 	}
 }

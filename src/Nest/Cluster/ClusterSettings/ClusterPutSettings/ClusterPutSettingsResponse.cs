@@ -1,24 +1,17 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IClusterPutSettingsResponse : IResponse
+	[DataContract]
+	public class ClusterPutSettingsResponse : ResponseBase
 	{
-		[JsonProperty(PropertyName = "acknowledged")]
-		bool Acknowledged { get; }
-
-		[JsonProperty(PropertyName = "persistent")]
-		IReadOnlyDictionary<string, object> Persistent { get; }
-
-		[JsonProperty(PropertyName = "transient")]
-		IReadOnlyDictionary<string, object> Transient { get; }
-	}
-
-	public class ClusterPutSettingsResponse : ResponseBase, IClusterPutSettingsResponse
-	{
+		[DataMember(Name ="acknowledged")]
 		public bool Acknowledged { get; internal set; }
+		[DataMember(Name ="persistent")]
 		public IReadOnlyDictionary<string, object> Persistent { get; internal set; } = EmptyReadOnly<string, object>.Dictionary;
+		[DataMember(Name ="transient")]
 		public IReadOnlyDictionary<string, object> Transient { get; internal set; } = EmptyReadOnly<string, object>.Dictionary;
 	}
 }

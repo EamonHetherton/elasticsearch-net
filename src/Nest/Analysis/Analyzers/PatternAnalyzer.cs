@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -8,59 +9,58 @@ namespace Nest
 	/// </summary>
 	public interface IPatternAnalyzer : IAnalyzer
 	{
-		[JsonProperty("lowercase")]
+		[DataMember(Name ="flags")]
+		string Flags { get; set; }
+
+		[DataMember(Name ="lowercase")]
+		[JsonFormatter(typeof(NullableStringBooleanFormatter))]
 		bool? Lowercase { get; set; }
 
-		[JsonProperty("pattern")]
+		[DataMember(Name ="pattern")]
 		string Pattern { get; set; }
-
-		[JsonProperty("flags")]
-		string Flags { get; set; }
 
 		/// <summary>
 		/// A list of stopword to initialize the stop filter with. Defaults to an empty list
 		/// </summary>
-		[JsonProperty("stopwords")]
+		[DataMember(Name ="stopwords")]
 		StopWords StopWords { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class PatternAnalyzer : AnalyzerBase, IPatternAnalyzer
 	{
-		public PatternAnalyzer() : base("pattern") {}
+		public PatternAnalyzer() : base("pattern") { }
+
+		public string Flags { get; set; }
 
 		public bool? Lowercase { get; set; }
 
 		public string Pattern { get; set; }
 
-		public string Flags { get; set; }
-
 		public StopWords StopWords { get; set; }
 	}
 
-	/// <inheritdoc/>
-	public class PatternAnalyzerDescriptor :
-		AnalyzerDescriptorBase<PatternAnalyzerDescriptor, IPatternAnalyzer>, IPatternAnalyzer
+	/// <inheritdoc />
+	public class PatternAnalyzerDescriptor : AnalyzerDescriptorBase<PatternAnalyzerDescriptor, IPatternAnalyzer>, IPatternAnalyzer
 	{
 		protected override string Type => "pattern";
-
-		StopWords IPatternAnalyzer.StopWords { get; set; }
-		string IPatternAnalyzer.Pattern { get; set; }
 		string IPatternAnalyzer.Flags { get; set; }
 		bool? IPatternAnalyzer.Lowercase { get; set; }
+		string IPatternAnalyzer.Pattern { get; set; }
 
-		public PatternAnalyzerDescriptor StopWords(params string[] stopWords) => Assign(a => a.StopWords = stopWords);
+		StopWords IPatternAnalyzer.StopWords { get; set; }
+
+		public PatternAnalyzerDescriptor StopWords(params string[] stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
 		public PatternAnalyzerDescriptor StopWords(IEnumerable<string> stopWords) =>
-			Assign(a => a.StopWords = stopWords.ToListOrNullIfEmpty());
+			Assign(stopWords.ToListOrNullIfEmpty(), (a, v) => a.StopWords = v);
 
-		public PatternAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(a => a.StopWords = stopWords);
+		public PatternAnalyzerDescriptor StopWords(StopWords stopWords) => Assign(stopWords, (a, v) => a.StopWords = v);
 
-		public PatternAnalyzerDescriptor Pattern(string pattern) => Assign(a => a.Pattern = pattern);
+		public PatternAnalyzerDescriptor Pattern(string pattern) => Assign(pattern, (a, v) => a.Pattern = v);
 
-		public PatternAnalyzerDescriptor Flags(string flags) => Assign(a => a.Flags = flags);
+		public PatternAnalyzerDescriptor Flags(string flags) => Assign(flags, (a, v) => a.Flags = v);
 
-		public PatternAnalyzerDescriptor Lowercase(bool lowercase = true) => Assign(a => a.Lowercase = lowercase);
-
+		public PatternAnalyzerDescriptor Lowercase(bool? lowercase = true) => Assign(lowercase, (a, v) => a.Lowercase = v);
 	}
 }

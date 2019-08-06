@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,31 +7,29 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Bucket/ReverseNested/ReverseNestedAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Bucket/ReverseNested/ReverseNestedAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[reverse-nested-aggregation-usage]]
-== Reverse Nested Aggregation Usage
+=== Reverse Nested Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .Nested("tags", n => n
-        .Path(p => p.Tags)
-        .Aggregations(aa => aa
-            .Terms("tag_names", t => t
-                .Field(p => p.Tags.Suffix("name"))
-                .Aggregations(aaa => aaa
-                    .ReverseNested("tags_to_project", r => r
-                        .Aggregations(aaaa => aaaa
-                            .Terms("top_projects_per_tag", tt => tt
-                                .Field(p => p.Name)
-                            )
+a => a
+.Nested("tags", n => n
+    .Path(p => p.Tags)
+    .Aggregations(aa => aa
+        .Terms("tag_names", t => t
+            .Field(p => p.Tags.Suffix("name"))
+            .Aggregations(aaa => aaa
+                .ReverseNested("tags_to_project", r => r
+                    .Aggregations(aaaa => aaaa
+                        .Terms("top_projects_per_tag", tt => tt
+                            .Field(p => p.Name)
                         )
                     )
                 )
@@ -41,24 +39,21 @@ s => s
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new NestedAggregation("tags")
 {
-    Aggregations = new NestedAggregation("tags")
+    Path = "tags",
+    Aggregations = new TermsAggregation("tag_names")
     {
-        Path = "tags",
-        Aggregations = new TermsAggregation("tag_names")
+        Field = "tags.name",
+        Aggregations = new ReverseNestedAggregation("tags_to_project")
         {
-            Field = "tags.name",
-            Aggregations = new ReverseNestedAggregation("tags_to_project")
+            Aggregations = new TermsAggregation("top_projects_per_tag")
             {
-                Aggregations = new TermsAggregation("top_projects_per_tag")
-                {
-                    Field = Field<Project>(p => p.Name)
-                }
+                Field = Field<Project>(p => p.Name)
             }
         }
     }
@@ -69,24 +64,22 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "tags": {
-      "nested": {
-        "path": "tags"
-      },
-      "aggs": {
-        "tag_names": {
-          "terms": {
-            "field": "tags.name"
-          },
-          "aggs": {
-            "tags_to_project": {
-              "reverse_nested": {},
-              "aggs": {
-                "top_projects_per_tag": {
-                  "terms": {
-                    "field": "name"
-                  }
+  "tags": {
+    "nested": {
+      "path": "tags"
+    },
+    "aggs": {
+      "tag_names": {
+        "terms": {
+          "field": "tags.name"
+        },
+        "aggs": {
+          "tags_to_project": {
+            "reverse_nested": {},
+            "aggs": {
+              "top_projects_per_tag": {
+                "terms": {
+                  "field": "name"
                 }
               }
             }
@@ -98,17 +91,16 @@ new SearchRequest<Project>
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var tags = response.Aggs.Nested("tags");
+var tags = response.Aggregations.Nested("tags");
 tags.Should().NotBeNull();
 var tagNames = tags.Terms("tag_names");
 tagNames.Should().NotBeNull();
-
-foreach(var tagName in tagNames.Buckets)
+foreach (var tagName in tagNames.Buckets)
 {
     tagName.Key.Should().NotBeNullOrEmpty();
     tagName.DocCount.Should().BeGreaterThan(0);
@@ -116,7 +108,7 @@ foreach(var tagName in tagNames.Buckets)
     tagsToProjects.Should().NotBeNull();
     var topProjectsPerTag = tagsToProjects.Terms("top_projects_per_tag");
     topProjectsPerTag.Should().NotBeNull();
-    foreach(var topProject in topProjectsPerTag.Buckets)
+    foreach (var topProject in topProjectsPerTag.Buckets)
     {
         topProject.Key.Should().NotBeNullOrEmpty();
         topProject.DocCount.Should().BeGreaterThan(0);

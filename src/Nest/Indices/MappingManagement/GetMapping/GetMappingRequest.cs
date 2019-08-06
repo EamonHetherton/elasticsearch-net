@@ -1,9 +1,10 @@
 ﻿namespace Nest
 {
+	[MapsApi("indices.get_mapping.json")]
 	public partial interface IGetMappingRequest { }
 
 	public partial class GetMappingRequest { }
-	
-	[DescriptorFor("IndicesGetMapping")]
-	public partial class GetMappingDescriptor<T> where T : class { }
+
+	// ReSharper disable once UnusedTypeParameter
+	public partial class GetMappingDescriptor<TDocument> where TDocument : class { }
 }

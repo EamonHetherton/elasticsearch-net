@@ -1,111 +1,191 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
 
 namespace Nest
 {
-	public interface ISearchResponse<T> : IResponse where T : class
+	/// <summary>
+	/// A response to a search request
+	/// </summary>
+	/// <typeparam name="TDocument">The document type</typeparam>
+	public interface ISearchResponse<out TDocument> : IResponse where TDocument : class
 	{
-		ShardsMetaData Shards { get; }
-		HitsMetaData<T> HitsMetaData { get; }
-		IReadOnlyDictionary<string, IAggregate> Aggregations { get; }
-		Profile Profile { get; }
-		AggregationsHelper Aggs { get; }
-		IReadOnlyDictionary<string, Suggest<T>[]> Suggest { get; }
-		long Took { get; }
-		bool TimedOut { get; }
-		bool TerminatedEarly { get; }
-		string ScrollId { get; }
-		long Total { get; }
+		/// <summary>
+		/// Gets the collection of aggregations
+		/// </summary>
+		AggregateDictionary Aggregations { get; }
+
+		/// <summary>
+		/// Gets the statistics about the clusters on which the search query was executed.
+		/// </summary>
+		/// <remarks>
+		/// Valid for cross cluster searches and Elasticsearch 6.1.0+
+		/// </remarks>
+		ClusterStatistics Clusters { get; }
+
+		/// <summary>
+		/// Gets the documents inside the hits, by deserializing <see cref="IHitMetadata{T}.Source" /> into <typeparamref name="TDocument" />
+		/// <para>
+		/// NOTE: if you use <see cref="ISearchRequest.StoredFields" /> on the search request,
+		/// <see cref="Documents" /> will be empty and you should use <see cref="Fields" />
+		/// instead to get the field values. As an alternative to
+		/// <see cref="Fields" />, try source filtering using <see cref="ISearchRequest.Source" /> on the
+		/// search request to return <see cref="Documents" /> with partial fields selected
+		/// </para>
+		/// </summary>
+		IReadOnlyCollection<TDocument> Documents { get; }
+
+		/// <summary>
+		/// Gets the field values inside the hits, when the search request uses
+		/// <see cref="SearchRequest.StoredFields" />.
+		/// </summary>
+		IReadOnlyCollection<FieldValues> Fields { get; }
+
+		/// <summary>
+		/// Gets the collection of hits that matched the query
+		/// </summary>
+		/// <value>
+		/// The hits.
+		/// </value>
+		IReadOnlyCollection<IHit<TDocument>> Hits { get; }
+
+		/// <summary>
+		/// Gets the meta data about the hits that match the search query criteria.
+		/// </summary>
+		IHitsMetadata<TDocument> HitsMetadata { get; }
+
+		/// <summary>
+		/// Gets the maximum score for documents matching the search query criteria
+		/// </summary>
 		double MaxScore { get; }
 
 		/// <summary>
-		/// Returns a view on the documents inside the hits that are returned.
-		/// <para>NOTE: if you use Fields() on the search descriptor, .Documents will be empty. Use
-		/// .Fields instead or try Source Filtering using .Source() on the Search call
-		/// to get Documents with partial fields selected
-		/// </para>
+		/// Number of times the server performed an incremental reduce phase
 		/// </summary>
-		IReadOnlyCollection<T> Documents { get; }
-		IReadOnlyCollection<IHit<T>> Hits { get; }
+		long NumberOfReducePhases { get; }
 
 		/// <summary>
-		/// Will return the field values inside the hits when the search descriptor specified .Fields.
-		/// Otherwise this will always be an empty collection.
+		/// Gets the results of profiling the search query. Has a value only when
+		/// <see cref="ISearchRequest.Profile" /> is set to <c>true</c> on the search request.
 		/// </summary>
-		IReadOnlyCollection<FieldValues> Fields { get; }
+		Profile Profile { get; }
+
+		/// <summary>
+		/// Gets the scroll id which can be passed to the Scroll API in order to retrieve the next batch
+		/// of results. Has a value only when <see cref="SearchRequest.Scroll" /> is specified on the
+		/// search request
+		/// </summary>
+		string ScrollId { get; }
+
+		/// <summary>
+		/// Gets the statistics about the shards on which the search query was executed.
+		/// </summary>
+		ShardStatistics Shards { get; }
+
+		/// <summary>
+		/// Gets the suggester results.
+		/// </summary>
+		ISuggestDictionary<TDocument> Suggest { get; }
+
+		/// <summary>
+		/// Gets a value indicating whether the search was terminated early
+		/// </summary>
+		bool TerminatedEarly { get; }
+
+		/// <summary>
+		/// Gets a value indicating whether the search timed out or not
+		/// </summary>
+		bool TimedOut { get; }
+
+		/// <summary>
+		/// Time in milliseconds for Elasticsearch to execute the search
+		/// </summary>
+		long Took { get; }
+
+		/// <summary>
+		/// Gets the total number of documents matching the search query criteria
+		/// </summary>
+		long Total { get; }
 	}
 
-	[JsonObject]
-	public class SearchResponse<T> : ResponseBase, ISearchResponse<T> where T : class
+	public class SearchResponse<TDocument> : ResponseBase, ISearchResponse<TDocument> where TDocument : class
 	{
-		internal ServerError MultiSearchError { get; set; }
-		protected override IApiCallDetails ApiCall => MultiSearchError != null ? new ApiCallDetailsOverride(base.ApiCall, MultiSearchError) : base.ApiCall;
-
-		[JsonProperty(PropertyName = "_shards")]
-		public ShardsMetaData Shards { get; internal set; }
-
-		[JsonProperty(PropertyName = "aggregations")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, IAggregate>))]
-		public IReadOnlyDictionary<string, IAggregate> Aggregations { get; internal set; } = EmptyReadOnly<string, IAggregate>.Dictionary;
-
-		[JsonProperty(PropertyName = "profile")]
-		public Profile Profile { get; internal set; }
-
-		private AggregationsHelper _agg = null;
-		[JsonIgnore]
-		public AggregationsHelper Aggs => _agg ?? (_agg = new AggregationsHelper(this.Aggregations));
-
-		[JsonProperty(PropertyName = "suggest")]
-		public IReadOnlyDictionary<string, Suggest<T>[]> Suggest { get; internal set; } =
-			EmptyReadOnly<string, Suggest<T>[]>.Dictionary;
-
-		[JsonProperty(PropertyName = "took")]
-		public long Took { get; internal set; }
-
-		[JsonProperty("timed_out")]
-		public bool TimedOut { get; internal set; }
-
-		[JsonProperty("terminated_early")]
-		public bool TerminatedEarly { get; internal set; }
-
-		/// <summary>
-		/// Only set when search type = scan and scroll specified
-		/// </summary>
-		[JsonProperty(PropertyName = "_scroll_id")]
-		public string ScrollId { get; internal set; }
-
-		[JsonProperty(PropertyName = "hits")]
-		public HitsMetaData<T> HitsMetaData { get; internal set; }
-
-		[JsonIgnore]
-		public long Total => this.HitsMetaData?.Total ?? 0;
-
-		[JsonIgnore]
-		public double MaxScore => this.HitsMetaData?.MaxScore ?? 0;
-
-		private IReadOnlyCollection<T> _documents;
-		/// <inheritdoc/>
-		[JsonIgnore]
-		public IReadOnlyCollection<T> Documents =>
-			this._documents ?? (this._documents = this.Hits
-				.Select(h => h.Source)
-				.ToList());
-
-		private IReadOnlyCollection<IHit<T>> _hits;
-		[JsonIgnore]
-		public IReadOnlyCollection<IHit<T>> Hits =>
-			this._hits ?? (this._hits = this.HitsMetaData?.Hits ?? EmptyReadOnly<IHit<T>>.Collection);
+		private IReadOnlyCollection<TDocument> _documents;
 
 		private IReadOnlyCollection<FieldValues> _fields;
 
-		/// <inheritdoc/>
-		public IReadOnlyCollection<FieldValues> Fields =>
-				this._fields ?? (this._fields = this.Hits
-					.Select(h => h.Fields)
-					.ToList());
+		private IReadOnlyCollection<IHit<TDocument>> _hits;
 
+		/// <inheritdoc />
+		[DataMember(Name ="aggregations")]
+		public AggregateDictionary Aggregations { get; internal set; } = AggregateDictionary.Default;
+
+		/// <inheritdoc />
+		[DataMember(Name = "_clusters")]
+		public ClusterStatistics Clusters { get; internal set; }
+
+		/// <inheritdoc />
+		[IgnoreDataMember]
+		public IReadOnlyCollection<TDocument> Documents =>
+			_documents ?? (_documents = Hits
+				.Select(h => h.Source)
+				.ToList());
+
+		/// <inheritdoc />
+		[IgnoreDataMember]
+		public IReadOnlyCollection<FieldValues> Fields =>
+			_fields ?? (_fields = Hits
+				.Select(h => h.Fields)
+				.ToList());
+
+		/// <inheritdoc />
+		[IgnoreDataMember]
+		public IReadOnlyCollection<IHit<TDocument>> Hits =>
+			_hits ?? (_hits = HitsMetadata?.Hits ?? EmptyReadOnly<IHit<TDocument>>.Collection);
+
+		/// <inheritdoc />
+		[DataMember(Name ="hits")]
+		public IHitsMetadata<TDocument> HitsMetadata { get; internal set; }
+
+		/// <inheritdoc />
+		[IgnoreDataMember]
+		public double MaxScore => HitsMetadata?.MaxScore ?? 0;
+
+		/// <inheritdoc />
+		[DataMember(Name ="num_reduce_phases")]
+		public long NumberOfReducePhases { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="profile")]
+		public Profile Profile { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name = "_scroll_id")]
+		public string ScrollId { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="_shards")]
+		public ShardStatistics Shards { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="suggest")]
+		public ISuggestDictionary<TDocument> Suggest { get; internal set; } = SuggestDictionary<TDocument>.Default;
+
+		/// <inheritdoc />
+		[DataMember(Name ="terminated_early")]
+		public bool TerminatedEarly { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="timed_out")]
+		public bool TimedOut { get; internal set; }
+
+		/// <inheritdoc />
+		[DataMember(Name ="took")]
+		public long Took { get; internal set; }
+
+		/// <inheritdoc />
+		[IgnoreDataMember]
+		public long Total => HitsMetadata?.Total.Value ?? -1;
 	}
 }

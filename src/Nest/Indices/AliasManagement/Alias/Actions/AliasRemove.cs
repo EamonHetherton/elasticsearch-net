@@ -1,13 +1,13 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IAliasRemoveAction : IAliasAction
 	{
-		[JsonProperty("remove")]
+		[DataMember(Name = "remove")]
 		AliasRemoveOperation Remove { get; set; }
 	}
 
@@ -18,28 +18,28 @@ namespace Nest
 
 	public class AliasRemoveDescriptor : DescriptorBase<AliasRemoveDescriptor, IAliasRemoveAction>, IAliasRemoveAction
 	{
-		AliasRemoveOperation IAliasRemoveAction.Remove { get; set; }
+		public AliasRemoveDescriptor() => Self.Remove = new AliasRemoveOperation();
 
-		public AliasRemoveDescriptor()
-		{
-			Self.Remove = new AliasRemoveOperation();
-		}
+		AliasRemoveOperation IAliasRemoveAction.Remove { get; set; }
 
 		public AliasRemoveDescriptor Index(string index)
 		{
 			Self.Remove.Index = index;
 			return this;
 		}
+
 		public AliasRemoveDescriptor Index(Type index)
 		{
 			Self.Remove.Index = index;
 			return this;
 		}
+
 		public AliasRemoveDescriptor Index<T>() where T : class
 		{
 			Self.Remove.Index = typeof(T);
 			return this;
 		}
+
 		public AliasRemoveDescriptor Alias(string alias)
 		{
 			Self.Remove.Alias = alias;

@@ -1,53 +1,61 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	public interface IClusterHealthResponse : IResponse
+	[DataContract]
+	public class ClusterHealthResponse : ResponseBase
 	{
-		string ClusterName { get; }
-		string Status { get; }
-		bool TimedOut { get; }
-		int NumberOfNodes { get; }
-		int NumberOfDataNodes { get; }
-		int ActivePrimaryShards { get; }
-		int ActiveShards { get; }
-		int RelocatingShards { get; }
-		int InitializingShards { get; }
-		int UnassignedShards { get; }
-		int NumberOfPendingTasks { get; }
-		IReadOnlyDictionary<string, IndexHealthStats> Indices { get; }
-	}
+		[DataMember(Name = "active_primary_shards")]
+		public int ActivePrimaryShards { get; internal set; }
 
-	[JsonObject]
-	public class ClusterHealthResponse : ResponseBase, IClusterHealthResponse
-	{
-		[JsonProperty(PropertyName = "cluster_name")]
+		[DataMember(Name = "active_shards")]
+		public int ActiveShards { get; internal set; }
+
+		[DataMember(Name = "active_shards_percent_as_number")]
+		public double ActiveShardsPercentAsNumber { get; internal set; }
+
+		[DataMember(Name = "cluster_name")]
 		public string ClusterName { get; internal set; }
-		[JsonProperty(PropertyName = "status")]
-		public string Status { get; internal set; }
-		[JsonProperty(PropertyName = "timed_out")]
-		public bool TimedOut { get; internal set; }
 
-		[JsonProperty(PropertyName = "number_of_nodes")]
-		public int NumberOfNodes { get; internal set; }
-		[JsonProperty(PropertyName = "number_of_data_nodes")]
+		[DataMember(Name = "delayed_unassigned_shards")]
+		public int DelayedUnassignedShards { get; internal set; }
+
+		[DataMember(Name = "indices")]
+		[JsonFormatter(typeof(ResolvableReadOnlyDictionaryFormatter<IndexName, IndexHealthStats>))]
+		public IReadOnlyDictionary<IndexName, IndexHealthStats> Indices { get; internal set; } =
+			EmptyReadOnly<IndexName, IndexHealthStats>.Dictionary;
+
+		[DataMember(Name = "initializing_shards")]
+		public int InitializingShards { get; internal set; }
+
+		[DataMember(Name = "number_of_data_nodes")]
 		public int NumberOfDataNodes { get; internal set; }
 
-		[JsonProperty(PropertyName = "active_primary_shards")]
-		public int ActivePrimaryShards { get; internal set; }
-		[JsonProperty(PropertyName = "active_shards")]
-		public int ActiveShards { get; internal set; }
-		[JsonProperty(PropertyName = "relocating_shards")]
-		public int RelocatingShards { get; internal set; }
-		[JsonProperty(PropertyName = "initializing_shards")]
-		public int InitializingShards { get; internal set; }
-		[JsonProperty(PropertyName = "unassigned_shards")]
-		public int UnassignedShards { get; internal set; }
-		[JsonProperty(PropertyName="number_of_pending_tasks")]
+		[DataMember(Name = "number_of_in_flight_fetch")]
+		public int NumberOfInFlightFetch { get; internal set; }
+
+		[DataMember(Name = "number_of_nodes")]
+		public int NumberOfNodes { get; internal set; }
+
+		[DataMember(Name = "number_of_pending_tasks")]
 		public int NumberOfPendingTasks { get; internal set; }
-		[JsonProperty(PropertyName = "indices")]
-		[JsonConverter(typeof(VerbatimDictionaryKeysJsonConverter<string, IndexHealthStats>))]
-		public IReadOnlyDictionary<string, IndexHealthStats> Indices { get; internal set; } = EmptyReadOnly<string, IndexHealthStats>.Dictionary;
+
+		[DataMember(Name = "relocating_shards")]
+		public int RelocatingShards { get; internal set; }
+
+		[DataMember(Name = "status")]
+		public Health Status { get; internal set; }
+
+		[DataMember(Name = "task_max_waiting_in_queue_millis")]
+		public long TaskMaxWaitTimeInQueueInMilliseconds { get; internal set; }
+
+		[DataMember(Name = "timed_out")]
+		public bool TimedOut { get; internal set; }
+
+		[DataMember(Name = "unassigned_shards")]
+		public int UnassignedShards { get; internal set; }
 	}
 }

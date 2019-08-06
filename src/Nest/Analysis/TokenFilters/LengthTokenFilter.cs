@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
@@ -8,43 +9,45 @@ namespace Nest
 	public interface ILengthTokenFilter : ITokenFilter
 	{
 		/// <summary>
-		/// The minimum number. Defaults to 0. 
-		/// </summary>
-		[JsonProperty("min")]
-		int? Min { get; set; }
-
-		/// <summary>
 		/// The maximum number. Defaults to Integer.MAX_VALUE.
 		/// </summary>
-		[JsonProperty("max")]
+		[DataMember(Name ="max")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
 		int? Max { get; set; }
+
+		/// <summary>
+		/// The minimum number. Defaults to 0.
+		/// </summary>
+		[DataMember(Name ="min")]
+		[JsonFormatter(typeof(NullableStringIntFormatter))]
+		int? Min { get; set; }
 	}
-	/// <inheritdoc/>
+
+	/// <inheritdoc />
 	public class LengthTokenFilter : TokenFilterBase, ILengthTokenFilter
 	{
 		public LengthTokenFilter() : base("length") { }
 
-		/// <inheritdoc/>
-		public int? Min { get; set; }
-
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public int? Max { get; set; }
+
+		/// <inheritdoc />
+		public int? Min { get; set; }
 	}
-	///<inheritdoc/>
-	public class LengthTokenFilterDescriptor 
+
+	/// <inheritdoc />
+	public class LengthTokenFilterDescriptor
 		: TokenFilterDescriptorBase<LengthTokenFilterDescriptor, ILengthTokenFilter>, ILengthTokenFilter
 	{
 		protected override string Type => "length";
-
-		int? ILengthTokenFilter.Min { get; set; }
 		int? ILengthTokenFilter.Max { get; set; }
 
-		///<inheritdoc/>
-		public LengthTokenFilterDescriptor Min(int? minimum) => Assign(a => a.Min = minimum);
+		int? ILengthTokenFilter.Min { get; set; }
 
-		///<inheritdoc/>
-		public LengthTokenFilterDescriptor Max(int? maximum) => Assign(a => a.Max = maximum);
+		/// <inheritdoc />
+		public LengthTokenFilterDescriptor Min(int? minimum) => Assign(minimum, (a, v) => a.Min = v);
 
+		/// <inheritdoc />
+		public LengthTokenFilterDescriptor Max(int? maximum) => Assign(maximum, (a, v) => a.Max = v);
 	}
-
 }

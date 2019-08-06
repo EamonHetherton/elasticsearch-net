@@ -1,27 +1,32 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Elasticsearch.Net;
+
 
 namespace Nest
 {
-	[JsonConverter(typeof(StringEnumConverter))]
+	[StringEnum]
+	[SuppressMessage("ReSharper", "InconsistentNaming")]
 	public enum DFRBasicModel
 	{
 		/// <summary>
-		/// Limiting form of the Bose-Einstein model. The formula used in Lucene differs slightly from the one in the original paper: F is increased by tfn+1 and N is increased by F
+		/// Limiting form of the Bose-Einstein model. The formula used in Lucene differs slightly from the one in the original paper: F is increased by
+		/// tfn+1 and N is increased by F
 		/// </summary>
 		[EnumMember(Value = "be")]
 		BE,
 
 		/// <summary>
-		/// Implements the approximation of the binomial model with the divergence for DFR. 
-		/// The formula used in Lucene differs slightly from the one in the original paper: to avoid underflow for small values of N and F, N is increased by 1 and F is always increased by tfn+1.
+		/// Implements the approximation of the binomial model with the divergence for DFR.
+		/// The formula used in Lucene differs slightly from the one in the original paper: to avoid underflow for small values of N and F, N is
+		/// increased by 1 and F is always increased by tfn+1.
 		/// </summary>
 		[EnumMember(Value = "d")]
 		D,
 
 		/// <summary>
-		///Geometric as limiting form of the Bose-Einstein model. The formula used in Lucene differs slightly from the one in the original paper: F is increased by 1 and N is increased by F.
+		/// Geometric as limiting form of the Bose-Einstein model. The formula used in Lucene differs slightly from the one in the original paper: F is
+		/// increased by 1 and N is increased by F.
 		/// </summary>
 		[EnumMember(Value = "g")]
 		G,

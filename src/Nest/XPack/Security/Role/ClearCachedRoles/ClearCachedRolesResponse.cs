@@ -1,22 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net;
 
 namespace Nest
 {
-	public interface IClearCachedRolesResponse : IResponse
+	public class ClearCachedRolesResponse : ResponseBase
 	{
-		[JsonProperty("cluster_name")]
-		string ClusterName { get; }
-
-		[JsonProperty("nodes")]
-		IReadOnlyDictionary<string, SecurityNode>  Nodes { get; }
-	}
-
-	public class ClearCachedRolesResponse : ResponseBase, IClearCachedRolesResponse
-	{
+		[DataMember(Name = "cluster_name")]
 		public string ClusterName { get; internal set; }
+
+		[DataMember(Name = "nodes")]
 		public IReadOnlyDictionary<string, SecurityNode> Nodes { get; internal set; } = EmptyReadOnly<string, SecurityNode>.Dictionary;
 	}
 }

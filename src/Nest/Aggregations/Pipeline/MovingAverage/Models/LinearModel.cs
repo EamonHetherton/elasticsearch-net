@@ -1,13 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
+	[ReadAs(typeof(LinearModel))]
 	public interface ILinearModel : IMovingAverageModel { }
-	
+
 	public class LinearModel : ILinearModel
 	{
-		string IMovingAverageModel.Name  { get; } = "linear";
+		string IMovingAverageModel.Name { get; } = "linear";
 	}
 
 	public class LinearModelDescriptor

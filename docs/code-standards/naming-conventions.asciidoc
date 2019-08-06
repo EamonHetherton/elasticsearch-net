@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,7 +7,7 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/CodeStandards/NamingConventions.doc.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/CodeStandards/NamingConventions.doc.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
@@ -27,11 +27,16 @@ var exceptions = new[]
 {
     typeof(DateMath)
 };
-var abstractClassesNotEndingInBase = typeof(IRequest).Assembly().GetTypes()
-    .Where(t => t.IsClass() && t.IsAbstract() && !t.IsSealed() && !exceptions.Contains(t))
+
+var abstractClassesNotEndingInBase = typeof(IRequest).Assembly.GetTypes()
+    .Where(t => t.IsClass && t.IsAbstract && !t.IsSealed && !exceptions.Contains(t))
+    //when testing nuget package against merged internalize json.net skip its types.
+    .Where(t => !t.Namespace.StartsWith("Nest.Json"))
+    .Where(t => !t.Namespace.StartsWith("Elastic.Internal"))
     .Where(t => !t.Name.Split('`')[0].EndsWith("Base"))
     .Select(t => t.Name.Split('`')[0])
     .ToList();
+
 abstractClassesNotEndingInBase.Should().BeEmpty();
 ----
 
@@ -41,10 +46,10 @@ Class names that end with `Base` suffix are abstract
 ----
 var exceptions = new[] { typeof(DateMath) };
 
-var baseClassesNotAbstract = typeof(IRequest).Assembly().GetTypes()
-    .Where(t => t.IsClass() && !exceptions.Contains(t))
+var baseClassesNotAbstract = typeof(IRequest).Assembly.GetTypes()
+    .Where(t => t.IsClass && !exceptions.Contains(t))
     .Where(t => t.Name.Split('`')[0].EndsWith("Base"))
-    .Where(t => !t.IsAbstract())
+    .Where(t => !t.IsAbstract)
     .Select(t => t.Name.Split('`')[0])
     .ToList();
 
@@ -57,10 +62,9 @@ Request class names should end with `Request`
 
 [source,csharp]
 ----
-var types = typeof(IRequest).Assembly().GetTypes();
-
+var types = typeof(IRequest).Assembly.GetTypes();
 var requestsNotEndingInRequest = types
-    .Where(t => typeof(IRequest).IsAssignableFrom(t) && !t.IsAbstract())
+    .Where(t => typeof(IRequest).IsAssignableFrom(t) && !t.IsAbstract)
     .Where(t => !typeof(IDescriptor).IsAssignableFrom(t))
     .Where(t => !t.Name.Split('`')[0].EndsWith("Request"))
     .Select(t => t.Name.Split('`')[0])
@@ -73,10 +77,9 @@ Response class names should end with `Response`
 
 [source,csharp]
 ----
-var types = typeof(IRequest).Assembly().GetTypes();
-
+var types = typeof(IRequest).Assembly.GetTypes();
 var responsesNotEndingInResponse = types
-    .Where(t => typeof(IResponse).IsAssignableFrom(t) && !t.IsAbstract())
+    .Where(t => typeof(IResponse).IsAssignableFrom(t) && !t.IsAbstract)
     .Where(t => !t.Name.Split('`')[0].EndsWith("Response"))
     .Select(t => t.Name.Split('`')[0])
     .ToList();
@@ -93,6 +96,13 @@ the `Exists` requests.
 ----
 var exceptions = new[] <1>
 {
+    //TODO These are new API's should be removed, also add test that no request or response starts with Xpack
+    //only XPack
+    //TODO MAP THIS
+    //typeof(RankEvalRequest),
+    //TODO add unit tests that we have no requests starting with Exists
+    typeof(SourceExistsRequest),
+    typeof(SourceExistsRequest<>),
     typeof(DocumentExistsRequest),
     typeof(DocumentExistsRequest<>),
     typeof(AliasExistsRequest),
@@ -109,15 +119,17 @@ var exceptions = new[] <1>
     typeof(IndicesShardStoresRequest),
     typeof(RenderSearchTemplateRequest),
     typeof(MultiSearchTemplateRequest),
-    typeof(CreateRequest<>)
+    typeof(CreateRequest<>),
+    typeof(DeleteByQueryRethrottleRequest), // uses ListTasksResponse
+    typeof(UpdateByQueryRethrottleRequest) // uses ListTasksResponse
 };
 
-var types = typeof(IRequest).Assembly().GetTypes();
+var types = typeof(IRequest).Assembly.GetTypes();
 
 var requests = new HashSet<string>(types
     .Where(t =>
-        t.IsClass() &&
-        !t.IsAbstract() &&
+        t.IsClass &&
+        !t.IsAbstract &&
         typeof(IRequest).IsAssignableFrom(t) &&
         !typeof(IDescriptor).IsAssignableFrom(t)
         && !t.Name.StartsWith("Cat")
@@ -126,41 +138,38 @@ var requests = new HashSet<string>(types
 );
 
 var responses = types
-    .Where(t => t.IsClass() && !t.IsAbstract() && typeof(IResponse).IsAssignableFrom(t))
+    .Where(t => t.IsClass && !t.IsAbstract && typeof(IResponse).IsAssignableFrom(t))
     .Select(t => t.Name.Split('`')[0].Replace("Response", ""));
 
 requests.Except(responses).Should().BeEmpty();
-----
-<1> _Exceptions to the rule_
 
-[source,csharp]
-----
-var nestAssembly = typeof(IElasticClient).Assembly();
+var nestAssembly = typeof(IElasticClient).Assembly;
 
 var exceptions = new List<Type>
 {
-    nestAssembly.GetType("System.AssemblyVersionInformation"),
-#if DOTNETCORE
-    typeof(SynchronizedCollection<>),
-    nestAssembly.GetType("System.ComponentModel.Browsable")
-#endif
+    nestAssembly.GetType("System.AssemblyVersionInformation", throwOnError: false),
+    nestAssembly.GetType("System.Runtime.Serialization.Formatters.FormatterAssemblyStyle", throwOnError: false),
+    nestAssembly.GetType("System.ComponentModel.Browsable", throwOnError: false),
+    nestAssembly.GetType("Microsoft.CodeAnalysis.EmbeddedAttribute", throwOnError: false),
+    nestAssembly.GetType("System.Runtime.CompilerServices.IsReadOnlyAttribute", throwOnError: false),
 };
 
 var types = nestAssembly.GetTypes();
-
 var typesNotInNestNamespace = types
+    .Where(t => t != null)
     .Where(t => !exceptions.Contains(t))
     .Where(t => t.Namespace != "Nest")
+    //when testing nuget package against merged internalize json.net skip its types.
+    .Where(t => !string.IsNullOrWhiteSpace(t.Namespace) && !t.Namespace.StartsWith("Nest.Json"))
+    .Where(t => !string.IsNullOrWhiteSpace(t.Namespace) && !t.Namespace.StartsWith("Elastic.Internal"))
+    .Where(t => !string.IsNullOrWhiteSpace(t.Namespace) && !t.Namespace.StartsWith("Nest.Specification"))
     .Where(t => !t.Name.StartsWith("<"))
     .Where(t => IsValidTypeNameOrIdentifier(t.Name, true))
     .ToList();
 
 typesNotInNestNamespace.Should().BeEmpty();
-----
 
-[source,csharp]
-----
-var elasticsearchNetAssembly = typeof(IElasticLowLevelClient).Assembly();
+var elasticsearchNetAssembly = typeof(IElasticLowLevelClient).Assembly;
 
 var exceptions = new List<Type>
 {
@@ -173,38 +182,87 @@ var exceptions = new List<Type>
     elasticsearchNetAssembly.GetType("Purify.Purifier+PurifierDotNet"),
     elasticsearchNetAssembly.GetType("Purify.Purifier+PurifierMono"),
     elasticsearchNetAssembly.GetType("Purify.Purifier+UriInfo"),
-#if DOTNETCORE
     elasticsearchNetAssembly.GetType("System.ComponentModel.Browsable")
-#endif
 };
 
 var types = elasticsearchNetAssembly.GetTypes();
-
 var typesNotIElasticsearchNetNamespace = types
     .Where(t => !exceptions.Contains(t))
-    .Where(t => t.Namespace != "Elasticsearch.Net")
+    .Where(t => t.Namespace != null)
+    .Where(t => t.Namespace != "Elasticsearch.Net" && !t.Namespace.StartsWith("Elasticsearch.Net.Specification"))
+    .Where(t => !t.Namespace.StartsWith("Elasticsearch.Net.Utf8Json"))
+    .Where(t => !t.Namespace.StartsWith("Elasticsearch.Net.Extensions"))
+    .Where(t => !t.Namespace.StartsWith("Elasticsearch.Net.Diagnostics"))
+    .Where(t => !t.Namespace.StartsWith("Elasticsearch.Net.CrossPlatform"))
     .Where(t => !t.Name.StartsWith("<"))
     .Where(t => IsValidTypeNameOrIdentifier(t.Name, true))
     .ToList();
 
 typesNotIElasticsearchNetNamespace.Should().BeEmpty();
-----
 
-[source,csharp]
-----
-bool nextMustBeStartChar = true;
+var nextMustBeStartChar = true;
+if (value.Length == 0)
+    return false;
+for (var index = 0; index < value.Length; ++index)
+{
+    var character = value[index];
+    var unicodeCategory = char.GetUnicodeCategory(character);
 
-var character = value[index];
+    switch (unicodeCategory)
+    {
+        case UnicodeCategory.UppercaseLetter:
+        case UnicodeCategory.LowercaseLetter:
+        case UnicodeCategory.TitlecaseLetter:
+        case UnicodeCategory.ModifierLetter:
+        case UnicodeCategory.OtherLetter:
+        case UnicodeCategory.LetterNumber:
+            nextMustBeStartChar = false;
+            break;
+        case UnicodeCategory.NonSpacingMark:
+        case UnicodeCategory.SpacingCombiningMark:
+        case UnicodeCategory.DecimalDigitNumber:
+        case UnicodeCategory.ConnectorPunctuation:
+            if (nextMustBeStartChar && (int)character != 95)
+                return false;
+            nextMustBeStartChar = false;
+            break;
+        default:
+            if (!isTypeName || !IsSpecialTypeChar(character, ref nextMustBeStartChar))
+                return false;
+            break;
+    }
+}
+return true;
 
-var unicodeCategory = char.GetUnicodeCategory(character);
-
-nextMustBeStartChar = false;
-
-nextMustBeStartChar = false;
-----
-
-[source,csharp]
-----
+if ((uint)ch <= 62U)
+{
+    switch (ch)
+    {
+        case '$':
+        case '&':
+        case '*':
+        case '+':
+        case ',':
+        case '-':
+        case '.':
+        case ':':
+        case '<':
+        case '>':
+            break;
+        default:
+            goto label_6;
+    }
+}
+else if ((int)ch != 91 && (int)ch != 93)
+{
+    if ((int)ch == 96)
+        return true;
+    goto label_6;
+}
 nextMustBeStartChar = true;
+return true;
+label_6:
+return false;
 ----
+<1> _Exceptions to the rule_
 

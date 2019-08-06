@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<MatchAllQuery>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(MatchAllQuery))]
 	public interface IMatchAllQuery : IQuery
 	{
 		/// <summary>
@@ -12,14 +13,14 @@ namespace Nest
 		/// boosting into account, the norms_field needs to be provided in order to explicitly specify which
 		/// field the boosting will be done on (Note, this will result in slower execution time).
 		/// </summary>
-		[JsonProperty(PropertyName = "norm_field")]
+		[DataMember(Name ="norm_field")]
 		string NormField { get; set; }
 	}
 
 	public class MatchAllQuery : QueryBase, IMatchAllQuery
 	{
 		/// <inheritdoc />
-		public string NormField { get;  set; }
+		public string NormField { get; set; }
 
 		protected override bool Conditionless => false;
 
@@ -28,13 +29,13 @@ namespace Nest
 
 	public class MatchAllQueryDescriptor
 		: QueryDescriptorBase<MatchAllQueryDescriptor, IMatchAllQuery>
-		, IMatchAllQuery
+			, IMatchAllQuery
 	{
 		protected override bool Conditionless => false;
 
 		string IMatchAllQuery.NormField { get; set; }
 
 		/// <inheritdoc />
-		public MatchAllQueryDescriptor NormField(string normField) => Assign(a => a.NormField = normField);
+		public MatchAllQueryDescriptor NormField(string normField) => Assign(normField, (a, v) => a.NormField = v);
 	}
 }

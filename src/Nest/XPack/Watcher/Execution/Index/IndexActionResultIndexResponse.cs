@@ -1,26 +1,23 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
-	[JsonObject]
+	[DataContract]
 	public class IndexActionResultIndexResponse
 	{
-		[JsonProperty("index")]
-		public IndexName Index { get; set; }
-
-		[JsonProperty("type")]
-		public TypeName Type { get; set; }
-
-		[JsonProperty("version")]
-		public int Version { get; set; }
-
-		[JsonProperty("created")]
+		[DataMember(Name ="created")]
 		public bool? Created { get; set; }
 
-		[JsonProperty("result")]
+		[DataMember(Name ="id")]
+		public string Id { get; set; }
+
+		[DataMember(Name ="index")]
+		public IndexName Index { get; set; }
+
+		[DataMember(Name ="result")]
 		public Result Result { get; set; }
 
-		[JsonProperty("id")]
-		public string Id { get; set; }
+		[DataMember(Name = "version")]
+		public int Version { get; set; }
 	}
 }

@@ -1,4 +1,4 @@
-:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/master
+:ref_current: https://www.elastic.co/guide/en/elasticsearch/reference/7.1
 
 :github: https://github.com/elastic/elasticsearch-net
 
@@ -7,37 +7,32 @@
 ////
 IMPORTANT NOTE
 ==============
-This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Aggregations/Metric/GeoBounds/GeoBoundsAggregationUsageTests.cs. 
+This file has been generated from https://github.com/elastic/elasticsearch-net/tree/master/src/Tests/Tests/Aggregations/Metric/GeoBounds/GeoBoundsAggregationUsageTests.cs. 
 If you wish to submit a PR for any spelling mistakes, typos or grammatical errors for this file,
 please modify the original csharp file found at the link and submit the PR with that change. Thanks!
 ////
 
 [[geo-bounds-aggregation-usage]]
-== Geo Bounds Aggregation Usage
+=== Geo Bounds Aggregation Usage
 
-=== Fluent DSL Example
+==== Fluent DSL example
 
 [source,csharp]
 ----
-s => s
-.Aggregations(a => a
-    .GeoBounds("viewport", gb => gb
-        .Field(p => p.Location)
-        .WrapLongitude(true)
-    )
+a => a
+.GeoBounds("viewport", gb => gb
+    .Field(p => p.LocationPoint)
+    .WrapLongitude()
 )
 ----
 
-=== Object Initializer Syntax Example
+==== Object Initializer syntax example
 
 [source,csharp]
 ----
-new SearchRequest<Project>
+new GeoBoundsAggregation("viewport", Field<Project>(p => p.LocationPoint))
 {
-    Aggregations = new GeoBoundsAggregation("viewport", Field<Project>(p => p.Location))
-    {
-        WrapLongitude = true
-    }
+    WrapLongitude = true
 }
 ----
 
@@ -45,31 +40,31 @@ new SearchRequest<Project>
 .Example json output
 ----
 {
-  "aggs": {
-    "viewport": {
-      "geo_bounds": {
-        "field": "location",
-        "wrap_longitude": true
-      }
+  "viewport": {
+    "geo_bounds": {
+      "field": "locationPoint",
+      "wrap_longitude": true
     }
   }
 }
 ----
 
-=== Handling Responses
+==== Handling Responses
 
 [source,csharp]
 ----
 response.ShouldBeValid();
-var viewport = response.Aggs.GeoBounds("viewport");
+var viewport = response.Aggregations.GeoBounds("viewport");
 viewport.Should().NotBeNull();
 viewport.Bounds.Should().NotBeNull();
+
 var bottomRight = viewport.Bounds.BottomRight;
 bottomRight.Should().NotBeNull();
 bottomRight.Lat.Should().HaveValue();
 GeoLocation.IsValidLatitude(bottomRight.Lat.Value).Should().BeTrue();
 bottomRight.Lon.Should().HaveValue();
 GeoLocation.IsValidLongitude(bottomRight.Lon.Value).Should().BeTrue();
+
 var topLeft = viewport.Bounds.TopLeft;
 topLeft.Should().NotBeNull();
 topLeft.Lat.Should().HaveValue();

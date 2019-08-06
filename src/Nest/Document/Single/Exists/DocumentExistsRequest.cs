@@ -1,17 +1,17 @@
-﻿using Elasticsearch.Net;
-
-namespace Nest
+﻿namespace Nest
 {
+	[MapsApi("exists.json")]
 	public partial interface IDocumentExistsRequest { }
 
-	public interface IDocumentExistsRequest<T> : IDocumentExistsRequest where T : class { }
+	// ReSharper disable once UnusedMember.Global
+	// ReSharper disable once UnusedTypeParameter
+	public partial interface IDocumentExistsRequest<TDocument> where TDocument : class { }
 
 	public partial class DocumentExistsRequest { }
 
-	public partial class DocumentExistsRequest<T> where T : class { }
+	// ReSharper disable once UnusedTypeParameter
+	public partial class DocumentExistsRequest<TDocument> where TDocument : class { }
 
-	[DescriptorFor("Exists")]
-	public partial class DocumentExistsDescriptor<T> where T : class
-	{
-	}
+	// ReSharper disable once UnusedTypeParameter
+	public partial class DocumentExistsDescriptor<TDocument> where TDocument : class { }
 }

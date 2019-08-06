@@ -1,17 +1,18 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	[JsonConverter(typeof(ReadAsTypeJsonConverter<TimeOfDay>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(TimeOfDay))]
 	public interface ITimeOfDay
 	{
-		[JsonProperty("hour")]
+		[DataMember(Name ="hour")]
 		IEnumerable<int> Hour { get; set; }
 
-		[JsonProperty("minute")]
+		[DataMember(Name ="minute")]
 		IEnumerable<int> Minute { get; set; }
 	}
 
@@ -26,25 +27,26 @@ namespace Nest
 		IEnumerable<int> ITimeOfDay.Hour { get; set; }
 		IEnumerable<int> ITimeOfDay.Minute { get; set; }
 
-		public TimeOfDayDescriptor Hour(IEnumerable<int> hours) => Assign(a => a.Hour = hours);
+		public TimeOfDayDescriptor Hour(IEnumerable<int> hours) => Assign(hours, (a, v) => a.Hour = v);
 
-		public TimeOfDayDescriptor Hour(params int[] hours) => Assign(a => a.Hour = hours);
+		public TimeOfDayDescriptor Hour(params int[] hours) => Assign(hours, (a, v) => a.Hour = v);
 
-		public TimeOfDayDescriptor Minute(IEnumerable<int> minutes) => Assign(a => a.Minute = minutes);
+		public TimeOfDayDescriptor Minute(IEnumerable<int> minutes) => Assign(minutes, (a, v) => a.Minute = v);
 
-		public TimeOfDayDescriptor Minute(params int[] minutes) => Assign(a => a.Minute = minutes);
+		public TimeOfDayDescriptor Minute(params int[] minutes) => Assign(minutes, (a, v) => a.Minute = v);
 	}
 
-	[JsonObject]
+	[InterfaceDataContract]
+	[ReadAs(typeof(DailySchedule))]
 	public interface IDailySchedule : ISchedule
 	{
-		[JsonProperty("at")]
+		[DataMember(Name ="at")]
 		Union<IEnumerable<string>, ITimeOfDay> At { get; set; }
 	}
 
 	public class DailySchedule : ScheduleBase, IDailySchedule
 	{
-		public Union<IEnumerable<string>,ITimeOfDay> At { get; set; }
+		public Union<IEnumerable<string>, ITimeOfDay> At { get; set; }
 
 		internal override void WrapInContainer(IScheduleContainer container) => container.Daily = this;
 	}
@@ -54,12 +56,12 @@ namespace Nest
 		Union<IEnumerable<string>, ITimeOfDay> IDailySchedule.At { get; set; }
 
 		public DailyScheduleDescriptor At(Func<TimeOfDayDescriptor, ITimeOfDay> selector) =>
-			Assign(a => a.At = new Union<IEnumerable<string>, ITimeOfDay>(selector?.InvokeOrDefault(new TimeOfDayDescriptor())));
+			Assign(selector, (a, v) => a.At = new Union<IEnumerable<string>, ITimeOfDay>(v?.InvokeOrDefault(new TimeOfDayDescriptor())));
 
 		public DailyScheduleDescriptor At(IEnumerable<string> times) =>
-			Assign(a => a.At = new Union<IEnumerable<string>, ITimeOfDay>(times));
+			Assign(new Union<IEnumerable<string>, ITimeOfDay>(times), (a, v) => a.At = v);
 
 		public DailyScheduleDescriptor At(params string[] times) =>
-			Assign(a => a.At = new Union<IEnumerable<string>, ITimeOfDay>(times));
+			Assign(new Union<IEnumerable<string>, ITimeOfDay>(times), (a, v) => a.At = v);
 	}
 }

@@ -1,26 +1,27 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization.OptIn)]
-	[JsonConverter(typeof(ReserializeJsonConverter<SmoothingModelContainer, ISmoothingModelContainer>))]
+	[InterfaceDataContract]
+	[ReadAs(typeof(SmoothingModelContainer))]
 	public interface ISmoothingModelContainer
 	{
-		[JsonProperty("stupid_backoff")]
-		IStupidBackoffSmoothingModel StupidBackoff { get; set; }
-
-		[JsonProperty("laplace")]
+		[DataMember(Name = "laplace")]
 		ILaplaceSmoothingModel Laplace { get; set; }
 
-		[JsonProperty("linear_interpolation")]
+		[DataMember(Name = "linear_interpolation")]
 		ILinearInterpolationSmoothingModel LinearInterpolation { get; set; }
+
+		[DataMember(Name = "stupid_backoff")]
+		IStupidBackoffSmoothingModel StupidBackoff { get; set; }
 	}
 
-	[JsonObject(MemberSerialization.OptIn)]
+	[DataContract]
 	public class SmoothingModelContainer : ISmoothingModelContainer, IDescriptor
 	{
-		internal SmoothingModelContainer() {}
+		internal SmoothingModelContainer() { }
 
 		public SmoothingModelContainer(SmoothingModelBase model)
 		{
@@ -28,22 +29,25 @@ namespace Nest
 			model.WrapInContainer(this);
 		}
 
-		IStupidBackoffSmoothingModel ISmoothingModelContainer.StupidBackoff { get; set; }
 		ILaplaceSmoothingModel ISmoothingModelContainer.Laplace { get; set; }
 		ILinearInterpolationSmoothingModel ISmoothingModelContainer.LinearInterpolation { get; set; }
+		IStupidBackoffSmoothingModel ISmoothingModelContainer.StupidBackoff { get; set; }
 	}
 
 	public class SmoothingModelContainerDescriptor : SmoothingModelContainer
 	{
-		private SmoothingModelContainerDescriptor Assign(Action<ISmoothingModelContainer> assigner) => Fluent.Assign(this, assigner);
+		private SmoothingModelContainerDescriptor Assign<TValue>(TValue value, Action<ISmoothingModelContainer, TValue> assigner) =>
+			Fluent.Assign(this, value, assigner);
 
 		public SmoothingModelContainerDescriptor StupidBackoff(Func<StupidBackoffSmoothingModelDescriptor, IStupidBackoffSmoothingModel> selector) =>
-			Assign(a => a.StupidBackoff = selector?.InvokeOrDefault(new StupidBackoffSmoothingModelDescriptor()));
+			Assign(selector,(a, v) => a.StupidBackoff = v?.InvokeOrDefault(new StupidBackoffSmoothingModelDescriptor()));
 
-		public SmoothingModelContainerDescriptor LinearInterpolation(Func<LinearInterpolationSmoothingModelDescriptor, ILinearInterpolationSmoothingModel> selector) =>
-			Assign(a => a.LinearInterpolation = selector?.InvokeOrDefault(new LinearInterpolationSmoothingModelDescriptor()));
+		public SmoothingModelContainerDescriptor LinearInterpolation(
+			Func<LinearInterpolationSmoothingModelDescriptor, ILinearInterpolationSmoothingModel> selector
+		) =>
+			Assign(selector, (a, v) => a.LinearInterpolation = v?.InvokeOrDefault(new LinearInterpolationSmoothingModelDescriptor()));
 
 		public SmoothingModelContainerDescriptor Laplace(Func<LaplaceSmoothingModelDescriptor, ILaplaceSmoothingModel> selector) =>
-			Assign(a => a.Laplace = selector?.InvokeOrDefault(new LaplaceSmoothingModelDescriptor()));
+			Assign(selector, (a, v) => a.Laplace = v?.InvokeOrDefault(new LaplaceSmoothingModelDescriptor()));
 	}
 }

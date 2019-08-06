@@ -1,19 +1,31 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject]
-	public class InstantGet<T> where T : class
+	[InterfaceDataContract]
+	[ReadAs(typeof(InlineGet<>))]
+	public interface IInlineGet<out TDocument> where TDocument : class
 	{
-		[JsonProperty(PropertyName = "found")]
-		public bool Found { get; internal set; }
+		[DataMember(Name = "fields")]
+		FieldValues Fields { get; }
 
-		[JsonProperty(PropertyName = "_source")]
-		public T Source { get; internal set; }
+		[DataMember(Name = "found")]
+		bool Found { get; }
 
-		[JsonProperty(PropertyName = "fields")]
+		[DataMember(Name = "_source")]
+		[JsonFormatter(typeof(SourceFormatter<>))]
+		TDocument Source { get; }
+	}
+
+
+	public class InlineGet<TDocument> : IInlineGet<TDocument>
+		where TDocument : class
+	{
 		public FieldValues Fields { get; internal set; }
 
+		public bool Found { get; internal set; }
+
+		public TDocument Source { get; internal set; }
 	}
 }

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Runtime.Serialization;
 
 namespace Nest
 {
@@ -7,28 +7,30 @@ namespace Nest
 	/// like the standard tokenizer, but adds better support for some Asian languages by using a dictionary-based approach
 	/// to identify words in Thai, Lao, Chinese, Japanese, and Korean, and using custom rules to break Myanmar and Khmer
 	/// text into syllables.
-	/// Part of the `analysis-icu` plugin: https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-icu.html
 	/// </summary>
+	/// <remarks>
+	/// Requires analysis-icu plugin to be installed
+	/// </remarks>
 	public interface IIcuTokenizer : ITokenizer
 	{
 		/// <summary>
 		/// You can customize the icu-tokenizer behavior by specifying per-script rule files,
 		/// see the RBBI rules syntax reference for a more detailed explanation.
 		/// </summary>
-		[JsonProperty("rule_files")]
+		[DataMember(Name ="rule_files")]
 		string RuleFiles { get; set; }
 	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class IcuTokenizer : TokenizerBase, IIcuTokenizer
-    {
-		public IcuTokenizer() { Type = "icu_tokenizer"; }
+	{
+		public IcuTokenizer() => Type = "icu_tokenizer";
 
-		/// <inheritdoc/>
+		/// <inheritdoc />
 		public string RuleFiles { get; set; }
-    }
+	}
 
-	/// <inheritdoc/>
+	/// <inheritdoc />
 	public class IcuTokenizerDescriptor
 		: TokenizerDescriptorBase<IcuTokenizerDescriptor, IIcuTokenizer>, IIcuTokenizer
 	{
@@ -36,7 +38,7 @@ namespace Nest
 
 		string IIcuTokenizer.RuleFiles { get; set; }
 
-		/// <inheritdoc/>
-		public IcuTokenizerDescriptor RuleFiles(string ruleFiles) => Assign(a => a.RuleFiles = ruleFiles);
+		/// <inheritdoc />
+		public IcuTokenizerDescriptor RuleFiles(string ruleFiles) => Assign(ruleFiles, (a, v) => a.RuleFiles = v);
 	}
 }

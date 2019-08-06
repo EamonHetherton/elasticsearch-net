@@ -1,71 +1,99 @@
 using System;
 using System.ComponentModel;
+using System.Runtime.Serialization;
 using Elasticsearch.Net;
-using Newtonsoft.Json;
+using Elasticsearch.Net.Utf8Json;
 
 namespace Nest
 {
-	[JsonObject(MemberSerialization = MemberSerialization.OptIn)]
+	[InterfaceDataContract]
 	public interface IRequest
 	{
+		[IgnoreDataMember]
+		string ContentType { get; }
+
+		[IgnoreDataMember]
 		HttpMethod HttpMethod { get; }
 
+		[IgnoreDataMember]
 		RouteValues RouteValues { get; }
+
+		[IgnoreDataMember]
+		IRequestParameters RequestParameters { get; }
+
+		string GetUrl(IConnectionSettingsValues settings);
 	}
 
-	public interface IRequest<TParameters> : IRequest
-		where TParameters : IRequestParameters, new()
+	public interface IRequest<out TParameters> : IRequest
+		where TParameters : class, IRequestParameters, new()
 	{
 		/// <summary>
-		/// Used to describe request parameters that are not part of the body. e.g. query string, connection configuration overrides, etc.
+		/// Used to describe request parameters that are not part of the body. e.g. query string, connection configuration
+		/// overrides, etc.
 		/// </summary>
-		TParameters RequestParameters { get; set; }
+		[IgnoreDataMember]
+		new TParameters RequestParameters { get; }
 	}
 
-	/// <summary>
-	/// A request that has an untyped document property
-	/// </summary>
-	public interface IUntypedDocumentRequest : IRequest
+	public abstract class RequestBase<TParameters> : IRequest<TParameters> where TParameters : class, IRequestParameters, new()
 	{
-		/// <summary>
-		/// The untyped document
-		/// </summary>
-		object UntypedDocument { get; }
-	}
+		// ReSharper disable once VirtualMemberCallInConstructor
+		protected RequestBase()
+		{
+			_parameters = new TParameters();
+			// ReSharper disable once VirtualMemberCallInConstructor
+			RequestDefaults(_parameters);
+		}
 
-	public abstract class RequestBase<TParameters> : IRequest<TParameters>
-		where TParameters : IRequestParameters, new()
-	{
-		[JsonIgnore]
-		protected IRequest<TParameters> RequestState => this;
-
-		protected RequestBase() { }
 		protected RequestBase(Func<RouteValues, RouteValues> pathSelector)
 		{
 			pathSelector(RequestState.RouteValues);
+			_parameters = new TParameters();
+			// ReSharper disable once VirtualMemberCallInConstructor
+			RequestDefaults(_parameters);
 		}
 
 		protected virtual HttpMethod HttpMethod => RequestState.RequestParameters.DefaultHttpMethod;
 
-		[JsonIgnore]
-		HttpMethod IRequest.HttpMethod => this.HttpMethod;
+		[IgnoreDataMember]
+		protected IRequest<TParameters> RequestState => this;
 
-		[JsonIgnore]
+		[IgnoreDataMember]
+		HttpMethod IRequest.HttpMethod => HttpMethod;
+
+		[IgnoreDataMember]
+		string IRequest.ContentType => ContentType;
+		protected virtual string ContentType { get; } = null;
+
+		private readonly TParameters _parameters;
+
+		[IgnoreDataMember]
+		TParameters IRequest<TParameters>.RequestParameters => _parameters;
+		IRequestParameters IRequest.RequestParameters => _parameters;
+
+		[IgnoreDataMember]
 		RouteValues IRequest.RouteValues { get; } = new RouteValues();
 
-		[JsonIgnore]
-		TParameters IRequest<TParameters>.RequestParameters { get; set; } = new TParameters();
+		internal abstract ApiUrls ApiUrls { get;  }
+
+		string IRequest.GetUrl(IConnectionSettingsValues settings) => ApiUrls.Resolve(RequestState.RouteValues, settings);
+
+
+		/// <summary>
+		/// Allows a request implementation to set certain request parameter defaults, use sparingly!
+		/// </summary>
+		protected virtual void RequestDefaults(TParameters parameters) { }
 
 		protected TOut Q<TOut>(string name) => RequestState.RequestParameters.GetQueryStringValue<TOut>(name);
 
-		protected void Q(string name, object value) => RequestState.RequestParameters.AddQueryStringValue(name, value);
-
+		protected void Q(string name, object value) => RequestState.RequestParameters.SetQueryString(name, value);
 	}
 
-	public abstract class PlainRequestBase<TParameters> : RequestBase<TParameters>
-		where TParameters : IRequestParameters, new()
+	public abstract partial class PlainRequestBase<TParameters> : RequestBase<TParameters>
+		where TParameters : class, IRequestParameters, new()
 	{
 		protected PlainRequestBase() { }
+
 		protected PlainRequestBase(Func<RouteValues, RouteValues> pathSelector) : base(pathSelector) { }
 
 		/// <summary>
@@ -73,28 +101,31 @@ namespace Nest
 		/// </summary>
 		public IRequestConfiguration RequestConfiguration
 		{
-			get { return RequestState.RequestParameters.RequestConfiguration;  }
-			set { RequestState.RequestParameters.RequestConfiguration = value; }
+			get => RequestState.RequestParameters.RequestConfiguration;
+			set => RequestState.RequestParameters.RequestConfiguration = value;
 		}
 	}
 
-	public abstract class RequestDescriptorBase<TDescriptor, TParameters, TInterface> : RequestBase<TParameters>, IDescriptor
+	/// <summary>
+	///  Base class for all Request descriptor types
+	/// </summary>
+	public abstract partial class RequestDescriptorBase<TDescriptor, TParameters, TInterface> : RequestBase<TParameters>, IDescriptor
 		where TDescriptor : RequestDescriptorBase<TDescriptor, TParameters, TInterface>, TInterface
-		where TParameters : FluentRequestParameters<TParameters>, new()
+		where TParameters : RequestParameters<TParameters>, new()
 	{
 		private readonly TDescriptor _descriptor;
 
-		protected RequestDescriptorBase() { _descriptor = (TDescriptor)this; }
-		protected RequestDescriptorBase(Func<RouteValues, RouteValues> pathSelector) : base(pathSelector) { _descriptor = (TDescriptor)this;  }
+		protected RequestDescriptorBase() => _descriptor = (TDescriptor)this;
+
+		protected RequestDescriptorBase(Func<RouteValues, RouteValues> pathSelector) : base(pathSelector) => _descriptor = (TDescriptor)this;
 
 		protected TInterface Self => _descriptor;
-		protected IRequestConfiguration RequestConfig => ((IRequestParameters)RequestState.RequestParameters).RequestConfiguration;
 
-		protected TDescriptor Assign(Action<TInterface> assign) => Fluent.Assign(_descriptor, assign);
+		protected TDescriptor Assign<TValue>(TValue value, Action<TInterface, TValue> assign) => Fluent.Assign(_descriptor, value, assign);
 
-		protected TDescriptor AssignParam(Action<TParameters> assigner)
+		protected TDescriptor Qs(string name, object value)
 		{
-			assigner?.Invoke(this.RequestState.RequestParameters);
+			Q(name, value);
 			return _descriptor;
 		}
 
@@ -103,26 +134,30 @@ namespace Nest
 		/// </summary>
 		public TDescriptor RequestConfiguration(Func<RequestConfigurationDescriptor, IRequestConfiguration> configurationSelector)
 		{
-			RequestState.RequestParameters.RequestConfiguration(configurationSelector);
+			var rc = RequestState.RequestParameters.RequestConfiguration;
+			RequestState.RequestParameters.RequestConfiguration = configurationSelector?.Invoke(new RequestConfigurationDescriptor(rc)) ?? rc;
 			return _descriptor;
 		}
 
 		/// <summary>
-		/// Hides the <see cref="Equals"/> method.
+		/// Hides the <see cref="Equals" /> method.
 		/// </summary>
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
+		// ReSharper disable BaseObjectEqualsIsObjectEquals
 		public override bool Equals(object obj) => base.Equals(obj);
 
 		/// <summary>
-		/// Hides the <see cref="GetHashCode"/> method.
+		/// Hides the <see cref="GetHashCode" /> method.
 		/// </summary>
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
+		// ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
 		public override int GetHashCode() => base.GetHashCode();
+		// ReSharper restore BaseObjectEqualsIsObjectEquals
 
 		/// <summary>
-		/// Hides the <see cref="ToString"/> method.
+		/// Hides the <see cref="ToString" /> method.
 		/// </summary>
 		[Browsable(false)]
 		[EditorBrowsable(EditorBrowsableState.Never)]
